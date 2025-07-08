@@ -1,5 +1,6 @@
 import { QueryProvider } from '@/providers/query-provider'
 import { SessionProvider } from '@/providers/session-provider'
+import { SpaceProvider } from '@/providers/space-provider'
 import { ThemeConfigProvider } from '@/providers/theme-config-provider'
 import { ThemeProvider } from '@/providers/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
@@ -44,15 +45,17 @@ export default function RootLayout({
             <SessionProvider>
               <LoginLogger />
               <QueryProvider>
-                {children}
-                <Analytics />
-                <Toaster
-                  expand
-                  richColors
-                  toastOptions={{
-                    duration: 5000,
-                  }}
-                />
+                <SpaceProvider>
+                  {children}
+                  <Analytics />
+                  <Toaster
+                    expand
+                    richColors
+                    toastOptions={{
+                      duration: 5000,
+                    }}
+                  />
+                </SpaceProvider>
               </QueryProvider>
             </SessionProvider>
           </ThemeConfigProvider>

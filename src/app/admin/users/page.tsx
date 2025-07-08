@@ -281,7 +281,7 @@ export default function UsuariosPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDate(user.createdAt)}</TableCell>
-                        <TableCell>{formatDate(user.updatedAt)}</TableCell>
+                        <TableCell>{user.updatedAt ? formatDate(user.updatedAt) : ''}</TableCell>
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

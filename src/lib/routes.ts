@@ -25,8 +25,16 @@ export const routes = {
       settings: '/admin/settings',
       users: {
         index: '/admin/users',
-        create: '/admin/users/novo',
-        edit: (id: string) => `/admin/users/${validateId(id)}/editar`,
+      },
+      transactions: {
+        index: '/admin/transactions',
+        create: '/admin/transactions/new',
+        edit: (id: string) => `/admin/transactions/${validateId(id)}/edit`,
+      },
+      spaces: {
+        index: '/admin/spaces',
+        create: '/admin/spaces/new',
+        edit: (id: string) => `/admin/spaces/${validateId(id)}/edit`,
       },
     },
 
@@ -41,6 +49,10 @@ export const routes = {
     users: {
       base: '/api/users',
       byId: (id: string) => `/api/users/${validateId(id)}`,
+    },
+    spaces: {
+      base: '/api/spaces',
+      byId: (id: string) => `/api/spaces/${validateId(id)}`,
     },
   },
 }

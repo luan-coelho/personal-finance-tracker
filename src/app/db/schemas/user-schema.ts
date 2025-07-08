@@ -6,8 +6,8 @@ export const usersTable = pgTable('users', {
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   active: boolean('active').notNull().default(true),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull().defaultNow(),
+  updatedAt: timestamp('updated_at'),
 })
 
 // Zod schemas for validation

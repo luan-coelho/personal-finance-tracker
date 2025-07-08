@@ -94,6 +94,41 @@ export class ActivityLogger {
     )
   }
 
+  // Registrar criação de espaço
+  async logSpaceCreated(actorUserId: string, spaceName: string) {
+    await logActivity(actorUserId, 'SPACE_CREATED' as ActivityAction, `Criou o espaço "${spaceName}"`, {
+      spaceName,
+    })
+  }
+
+  // Registrar atualização de espaço
+  async logSpaceUpdated(actorUserId: string, spaceName: string) {
+    await logActivity(actorUserId, 'SPACE_UPDATED' as ActivityAction, `Atualizou o espaço "${spaceName}"`, {
+      spaceName,
+    })
+  }
+
+  // Registrar exclusão de espaço
+  async logSpaceDeleted(actorUserId: string, spaceName: string) {
+    await logActivity(actorUserId, 'SPACE_DELETED' as ActivityAction, `Excluiu o espaço "${spaceName}"`, {
+      spaceName,
+    })
+  }
+
+  // Registrar ativação de espaço
+  async logSpaceActivated(actorUserId: string, spaceName: string) {
+    await logActivity(actorUserId, 'SPACE_ACTIVATED' as ActivityAction, `Ativou o espaço "${spaceName}"`, {
+      spaceName,
+    })
+  }
+
+  // Registrar desativação de espaço
+  async logSpaceDeactivated(actorUserId: string, spaceName: string) {
+    await logActivity(actorUserId, 'SPACE_DEACTIVATED' as ActivityAction, `Desativou o espaço "${spaceName}"`, {
+      spaceName,
+    })
+  }
+
   // Método genérico para registrar qualquer atividade
   async log(userId: string, action: ActivityAction, description: string, metadata?: Record<string, unknown>) {
     await logActivity(userId, action, description, metadata)

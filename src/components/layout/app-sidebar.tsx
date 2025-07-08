@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, Settings, Users } from 'lucide-react'
+import { Building2, CreditCard, FileText, Settings, Users } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
 import { UserAvatar } from '@/components/auth/user-avatar'
@@ -27,10 +27,20 @@ const items = [
     url: routes.frontend.admin.index,
     icon: FileText,
   },
+  {
+    title: 'Transações',
+    url: routes.frontend.admin.transactions.index,
+    icon: CreditCard,
+  },
 ]
 
 // Menu items de usuários (administração)
 const userManagementItems = [
+  {
+    title: 'Espaços',
+    url: routes.frontend.admin.spaces.index,
+    icon: Building2,
+  },
   {
     title: 'Usuários',
     url: routes.frontend.admin.users.index,
