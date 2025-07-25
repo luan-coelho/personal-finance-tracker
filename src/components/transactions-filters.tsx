@@ -107,16 +107,16 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
         {/* Botão de filtros */}
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" className="relative">
-              <Filter className="mr-2 h-4 w-4" />
+            <Button variant="outline" className="relative h-10">
+              <Filter className="mr-2 h-6 w-6" />
               Filtros
               {activeFiltersCount > 0 && (
                 <Badge className="ml-2 h-5 w-5 rounded-full p-0 text-xs">{activeFiltersCount}</Badge>
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
+          <SheetContent className="p-5">
+            <SheetHeader className="p-0">
               <SheetTitle>Filtros</SheetTitle>
               <SheetDescription>Filtre as transações por tipo, categoria, tags e período.</SheetDescription>
             </SheetHeader>
@@ -126,7 +126,7 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
               <div className="space-y-2">
                 <Label>Tipo</Label>
                 <Select value={filters.type || 'all'} onValueChange={handleTypeChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -141,7 +141,7 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
               <div className="space-y-2">
                 <Label>Categoria</Label>
                 <Select value={filters.category || 'all'} onValueChange={handleCategoryChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

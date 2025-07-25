@@ -10,6 +10,7 @@ import { TransactionSummary } from '@/components/transaction-summary'
 import { TransactionFilters, TransactionsFilters } from '@/components/transactions-filters'
 import { TransactionsTable } from '@/components/transactions-table'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import {
   Pagination,
@@ -88,7 +89,7 @@ export default function TransacoesPage() {
               Nova Transação
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="sm:max-w-md md:min-w-3xl">
             <DialogHeader>
               <DialogTitle>Nova Transação</DialogTitle>
             </DialogHeader>
@@ -102,60 +103,68 @@ export default function TransacoesPage() {
         <TransactionSummary dateFrom={filters.dateFrom} dateTo={filters.dateTo} />
       </div>
 
-      {/* Filtros */}
-      <div className="mb-6">
-        <TransactionsFilters
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
-        />
-      </div>
+      {/* Card principal com filtros, tabela e paginação */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Transações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Filtros */}
+          <div className="mb-6">
+            <TransactionsFilters
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
 
-      {/* Tabela de transações */}
-      <div className="mb-6">
-        <TransactionsTable transactions={data?.transactions || []} onEdit={handleEdit} isLoading={isLoading} />
-      </div>
+          {/* Tabela de transações */}
+          <div className="mb-6">
+            <TransactionsTable transactions={data?.transactions || []} onEdit={handleEdit} isLoading={isLoading} />
+          </div>
 
-      {/* Paginação */}
-      {totalPages > 1 && (
-        <div className="flex justify-center">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
-              </PaginationItem>
-
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNumber = Math.max(1, Math.min(totalPages - 4, page - 2)) + i
-                return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink
-                      onClick={() => setPage(pageNumber)}
-                      isActive={pageNumber === page}
-                      className="cursor-pointer">
-                      {pageNumber}
-                    </PaginationLink>
+          {/* Paginação */}
+          {totalPages > 1 && (
+            <div className="flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setPage(Math.max(1, page - 1))}
+                      className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
                   </PaginationItem>
-                )
-              })}
 
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
-                  className={page === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNumber = Math.max(1, Math.min(totalPages - 4, page - 2)) + i
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          onClick={() => setPage(pageNumber)}
+                          isActive={pageNumber === page}
+                          className="cursor-pointer">
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  })}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => setPage(Math.min(totalPages, page + 1))}
+                      className={page === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Dialog de edição */}
       <Dialog open={!!editingTransaction} onOpenChange={() => setEditingTransaction(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-md md:min-w-3xl">
           <DialogHeader>
             <DialogTitle>Editar Transação</DialogTitle>
           </DialogHeader>

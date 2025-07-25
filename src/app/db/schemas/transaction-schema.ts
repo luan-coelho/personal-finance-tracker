@@ -40,7 +40,7 @@ export const insertTransactionSchema = z.object({
         return !isNaN(num) && num > 0
       },
       {
-        message: 'Valor deve ser um número positivo',
+        message: 'Informe um número positivo',
       },
     )
     .transform(val => val),

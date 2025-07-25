@@ -92,7 +92,7 @@ export function TransactionsTable({ transactions, onEdit, isLoading }: Transacti
           {transactions.map(transaction => (
             <TableRow key={transaction.id}>
               <TableCell>
-                <Badge className={getTypeColor(transaction.type)}>
+                <Badge className={`${getTypeColor(transaction.type)} space-y-10`}>
                   {getTypeIcon(transaction.type)} {transaction.type === 'entrada' ? 'Entrada' : 'Saída'}
                 </Badge>
               </TableCell>

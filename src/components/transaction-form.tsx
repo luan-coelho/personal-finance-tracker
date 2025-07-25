@@ -185,54 +185,57 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
           )}
         />
 
-        {/* Valor */}
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Valor *</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 transform">R$</span>
-                  <Input
-                    {...field}
-                    placeholder="0,00"
-                    className="pl-10"
-                    inputMode="decimal"
-                    pattern="[0-9,.]*"
-                    autoComplete="off"
-                    onChange={handleAmountChange}
-                    disabled={isLoading}
-                  />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Grid para Valor, Data e Categoria */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Valor */}
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor *</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 transform">R$</span>
+                    <Input
+                      {...field}
+                      placeholder="0,00"
+                      className="h-9 pl-10"
+                      inputMode="decimal"
+                      pattern="[0-9,.]*"
+                      autoComplete="off"
+                      onChange={handleAmountChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* Data */}
-        <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Data *</FormLabel>
-              <FormControl>
-                <DatePicker
-                  className="w-full"
-                  date={field.value}
-                  onSelect={field.onChange}
-                  placeholder="Selecione uma data"
-                  disabled={isLoading}
-                  error={form.formState.errors.date}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          {/* Data */}
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data *</FormLabel>
+                <FormControl>
+                  <DatePicker
+                    className="h-9 w-full"
+                    date={field.value}
+                    onSelect={field.onChange}
+                    placeholder="Selecione uma data"
+                    disabled={isLoading}
+                    error={form.formState.errors.date}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* Categoria */}
         <FormField
@@ -243,7 +246,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
               <FormLabel>Categoria</FormLabel>
               <FormControl>
                 <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-9 w-full">
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
                   <SelectContent>
@@ -260,7 +263,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
           )}
         />
 
-        {/* Tags */}
+        {/* Tags - Campo independente */}
         <FormField
           control={form.control}
           name="tags"
@@ -276,10 +279,10 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
               <FormItem>
                 <FormLabel>Tags</FormLabel>
                 <FormControl>
-                  <div className="w-full space-y-2">
-                    <div className="flex w-full gap-2">
+                  <div className="space-y-2">
+                    <div className="grid w-full grid-cols-[1fr_auto] gap-2">
                       <Input
-                        className="w-full flex-1"
+                        className="h-9"
                         placeholder="Adicionar tag..."
                         value={tagInput}
                         onChange={e => setTagInput(e.target.value)}
@@ -292,7 +295,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
                         disabled={isLoading}
                       />
                       <Button
-                        className="h-8 w-auto"
+                        className="h-9 whitespace-nowrap"
                         type="button"
                         variant="outline"
                         onClick={addTag}
@@ -300,7 +303,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
                         Adicionar
                       </Button>
                     </div>
-                    {/* Tags selecionadas */}
+                    {/* Tags selecionadas - sempre abaixo do input */}
                     {Array.isArray(field.value) && field.value.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {field.value.map((tag: string) => (
