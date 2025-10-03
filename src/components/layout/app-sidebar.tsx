@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, CreditCard, FileText, Settings, Users } from 'lucide-react'
+import { Building2, CreditCard, FileText, Rabbit, Settings, Users } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
 import { UserAvatar } from '@/components/auth/user-avatar'
@@ -22,11 +22,6 @@ import { routes } from '@/lib/routes'
 
 // Menu items principais
 const items = [
-  {
-    title: 'Planilhas',
-    url: routes.frontend.admin.index,
-    icon: FileText,
-  },
   {
     title: 'Transações',
     url: routes.frontend.admin.transactions.index,
@@ -67,11 +62,11 @@ export function AppSidebar() {
         <SidebarHeader>
           <div className="flex items-center gap-2 px-4 py-2">
             <div className="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-lg">
-              <FileText className="h-4 w-4" />
+              <Rabbit className="h-4 w-4" />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">Sistema</span>
-              <span className="text-muted-foreground truncate text-xs">Gestão de Planilhas</span>
+              <span className="truncate font-semibold">Coêlho</span>
+              <span className="text-muted-foreground truncate text-xs">Gestão Financeira</span>
             </div>
           </div>
         </SidebarHeader>
@@ -131,25 +126,6 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <div className="flex items-center gap-2">
-                  <UserAvatar size="sm" />
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{session?.user?.name || 'Usuário'}</span>
-                    <span className="text-muted-foreground truncate text-xs">
-                      {session?.user?.email || 'Faça login'}
-                    </span>
-                  </div>
-                </div>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-
         <SidebarRail />
       </Sidebar>
     </div>

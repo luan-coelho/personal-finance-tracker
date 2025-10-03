@@ -23,8 +23,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'NextJS Boilerplate',
-  description: 'NextJS Boilerplate',
+  title: 'Finanças Pessoais',
+  description: 'Aplicativo pessoal de controle financeiro.',
 }
 
 export default function RootLayout({

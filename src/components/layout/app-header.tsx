@@ -21,13 +21,7 @@ export function AppHeader() {
 
         {/* Controles do usuário no lado direito */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-4 w-4" />
-            <span className="sr-only">Notificações</span>
-          </Button>
-
           <ThemeToggle />
-
           <UserMenu />
         </div>
       </div>

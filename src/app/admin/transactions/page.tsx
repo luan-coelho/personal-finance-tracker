@@ -65,7 +65,7 @@ export default function TransacoesPage() {
 
   if (!selectedSpace) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto">
         <div className="text-center">
           <h1 className="mb-4 text-2xl font-bold">Transações</h1>
           <p className="text-muted-foreground">Selecione um espaço para visualizar as transações.</p>
@@ -75,7 +75,7 @@ export default function TransacoesPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Transações</h1>
