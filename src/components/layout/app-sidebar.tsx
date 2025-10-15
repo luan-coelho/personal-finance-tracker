@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, CreditCard, FileText, Rabbit, Settings, Users } from 'lucide-react'
+import { Building2, CreditCard, FileText, PiggyBank, Rabbit, Settings, Users } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
 import { UserAvatar } from '@/components/auth/user-avatar'
@@ -26,6 +26,11 @@ const items = [
     title: 'Transações',
     url: routes.frontend.admin.transactions.index,
     icon: CreditCard,
+  },
+  {
+    title: 'Reservas',
+    url: routes.frontend.admin.reserves.index,
+    icon: PiggyBank,
   },
 ]
 

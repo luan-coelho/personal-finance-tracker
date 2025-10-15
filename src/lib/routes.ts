@@ -35,6 +35,14 @@ export const routes = {
         index: '/admin/spaces',
         create: '/admin/spaces/new',
         edit: (id: string) => `/admin/spaces/${validateId(id)}/edit`,
+        members: (id: string) => `/admin/spaces/${validateId(id)}/members`,
+      },
+      reserves: {
+        index: '/admin/reserves',
+        bySpace: (spaceId: string) => `/admin/reserves?spaceId=${validateId(spaceId)}`,
+        create: '/admin/reserves/new',
+        edit: (id: string) => `/admin/reserves/${validateId(id)}/edit`,
+        movements: (id: string) => `/admin/reserves/${validateId(id)}/movements`,
       },
     },
 
@@ -53,6 +61,12 @@ export const routes = {
     spaces: {
       base: '/api/spaces',
       byId: (id: string) => `/api/spaces/${validateId(id)}`,
+    },
+    reserves: {
+      base: '/api/reserves',
+      byId: (id: string) => `/api/reserves/${validateId(id)}`,
+      bySpace: (spaceId: string) => `/api/reserves?spaceId=${validateId(spaceId)}`,
+      movements: (reserveId: string) => `/api/reserves/${validateId(reserveId)}/movements`,
     },
   },
 }

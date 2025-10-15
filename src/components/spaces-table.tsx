@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Edit, MoreHorizontal, Trash2 } from 'lucide-react'
+import { Edit, MoreHorizontal, Trash2, UserCheck, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -28,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 import { useDeleteSpace, useSpaces } from '@/hooks/use-spaces'
 
@@ -93,6 +95,12 @@ export function SpacesTable() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                      <Link href={routes.frontend.admin.spaces.members(space.id)}>
+                        <Users className="mr-2 h-4 w-4" />
+                        Membros
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href={routes.frontend.admin.spaces.edit(space.id)}>
                         <Edit className="mr-2 h-4 w-4" />

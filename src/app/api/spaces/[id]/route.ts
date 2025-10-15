@@ -5,6 +5,7 @@ import { db } from '@/app/db'
 import { spacesTable, updateSpaceSchema } from '@/app/db/schemas/space-schema'
 
 import { auth } from '@/lib/auth'
+import { checkSpaceAccess } from '@/lib/space-access'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -16,23 +17,20 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const session = await auth()
     const { id } = await context.params
 
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 })
     }
 
-    const [space] = await db
-      .select()
-      .from(spacesTable)
-      .where(and(eq(spacesTable.id, id), eq(spacesTable.ownerId, session.user.id)))
-      .limit(1)
+    // Verificar acesso ao espaço
+    const access = await checkSpaceAccess(session.user.email, id)
 
-    if (!space) {
-      return NextResponse.json({ success: false, message: 'Espaço não encontrado' }, { status: 404 })
+    if (!access.hasAccess || !access.space) {
+      return NextResponse.json({ success: false, message: 'Espaço não encontrado ou sem permissão' }, { status: 404 })
     }
 
     return NextResponse.json({
       success: true,
-      data: space,
+      data: access.space,
       message: 'Espaço encontrado',
     })
   } catch (error) {
@@ -47,8 +45,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const session = await auth()
     const { id } = await context.params
 
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 })
+    }
+
+    // Verificar se é dono (apenas donos podem editar o espaço)
+    const access = await checkSpaceAccess(session.user.email, id)
+
+    if (!access.isOwner) {
+      return NextResponse.json(
+        { success: false, message: 'Apenas o proprietário pode editar o espaço' },
+        { status: 403 },
+      )
     }
 
     const body = await request.json()
@@ -56,14 +64,14 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     // Validar dados (schema para update é partial)
     const validatedData = updateSpaceSchema.parse({ id, ...body })
 
-    // Atualizar no banco (apenas espaços do usuário atual)
+    // Atualizar no banco
     const [updatedSpace] = await db
       .update(spacesTable)
       .set({
         ...validatedData,
         updatedAt: new Date(),
       })
-      .where(and(eq(spacesTable.id, id), eq(spacesTable.ownerId, session.user.id)))
+      .where(eq(spacesTable.id, id))
       .returning()
 
     if (!updatedSpace) {
@@ -92,15 +100,22 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     const session = await auth()
     const { id } = await context.params
 
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 })
     }
 
+    // Verificar se é dono (apenas donos podem excluir)
+    const access = await checkSpaceAccess(session.user.email, id)
+
+    if (!access.isOwner) {
+      return NextResponse.json(
+        { success: false, message: 'Apenas o proprietário pode excluir o espaço' },
+        { status: 403 },
+      )
+    }
+
     // Deletar fisicamente o espaço
-    const [deletedSpace] = await db
-      .delete(spacesTable)
-      .where(and(eq(spacesTable.id, id), eq(spacesTable.ownerId, session.user.id)))
-      .returning()
+    const [deletedSpace] = await db.delete(spacesTable).where(eq(spacesTable.id, id)).returning()
 
     if (!deletedSpace) {
       return NextResponse.json({ success: false, message: 'Espaço não encontrado' }, { status: 404 })

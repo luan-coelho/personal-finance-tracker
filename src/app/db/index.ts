@@ -13,7 +13,7 @@ const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE
 function createDatabase() {
   if (isDevelopment) {
     // Configuração para desenvolvimento local (PostgreSQL com Docker)
-    return drizzlePostgres(process.env.DATABASE_URL!)
+    return drizzlePostgres(process.env.DATABASE_URL!, { schema })
   } else {
     // Configuração para produção (Neon na Vercel)
     const sql = neon(process.env.DATABASE_URL!)

@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
@@ -62,8 +62,13 @@ export async function POST(request: NextRequest) {
     // Validar dados de entrada
     const validatedData = insertTransactionSchema.parse(body)
 
-    // Verificar se o usuário tem acesso ao espaço
-    // TODO: Implementar verificação de acesso ao espaço
+    // Verificar se o usuário tem acesso ao espaço e pode editar
+    const { canEditSpace } = await import('@/lib/space-access')
+    const canEdit = await canEditSpace(session.user.email, validatedData.spaceId)
+
+    if (!canEdit) {
+      return NextResponse.json({ error: 'Sem permissão para criar transações neste espaço' }, { status: 403 })
+    }
 
     const transaction = await TransactionService.create(validatedData)
 
