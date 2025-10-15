@@ -54,7 +54,7 @@ export const insertTransactionSchema = z.object({
     .min(1, 'Descrição é obrigatória')
     .max(500, 'Descrição deve ter no máximo 500 caracteres'),
   category: z.string().max(100, 'Categoria deve ter no máximo 100 caracteres'),
-  tags: z.array(z.string().max(50, 'Tag deve ter no máximo 50 caracteres')).optional().default([]),
+  tags: z.array(z.string().max(50, 'Tag deve ter no máximo 50 caracteres')).default([]),
   spaceId: z.string().uuid('ID do espaço deve ser um UUID válido'),
   userId: z.string().uuid('ID do usuário deve ser um UUID válido'),
 })

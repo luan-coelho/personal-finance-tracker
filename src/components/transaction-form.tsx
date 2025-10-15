@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transactions'
 
-type TransactionFormStrictValues = Omit<z.infer<typeof insertTransactionSchema>, 'tags'> & { tags: string[] }
+type TransactionFormValues = Omit<z.infer<typeof insertTransactionSchema>, 'tags'> & { tags?: string[] }
 
 interface TransactionFormProps {
   transaction?: Transaction
@@ -42,7 +42,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
   const isEditing = !!transaction
 
   // Formulário react-hook-form
-  const form = useForm<TransactionFormStrictValues>({
+  const form = useForm<TransactionFormValues>({
     resolver: zodResolver(insertTransactionSchema),
     defaultValues: {
       type: transaction?.type || 'saida',
@@ -84,7 +84,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
   }
 
   // Submit
-  async function onSubmit(values: TransactionFormStrictValues) {
+  async function onSubmit(values: TransactionFormValues) {
     if (!selectedSpace || !session?.user?.id) return
     try {
       const numericAmount = values.amount ? String(Number(values.amount.replace(/\./g, '').replace(',', '.'))) : ''
@@ -93,7 +93,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
         amount: numericAmount,
         date: values.date,
         description: values.description,
-        category: values.category || undefined,
+        category: values.category,
         tags: Array.isArray(values.tags) ? values.tags : [],
         spaceId: selectedSpace.id,
         userId: session.user.id,
@@ -269,10 +269,11 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
           name="tags"
           render={({ field }) => {
             const [tagInput, setTagInput] = useState('')
+            const currentTags = field.value ?? []
             const addTag = () => {
               const newTag = tagInput.trim()
-              if (!newTag || field.value.includes(newTag)) return
-              field.onChange([...field.value, newTag])
+              if (!newTag || currentTags.includes(newTag)) return
+              field.onChange([...currentTags, newTag])
               setTagInput('')
             }
             return (
@@ -304,16 +305,16 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
                       </Button>
                     </div>
                     {/* Tags selecionadas - sempre abaixo do input */}
-                    {Array.isArray(field.value) && field.value.length > 0 && (
+                    {currentTags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        {field.value.map((tag: string) => (
+                        {currentTags.map((tag: string) => (
                           <span
                             key={tag}
                             className="bg-secondary inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs">
                             {tag}
                             <button
                               type="button"
-                              onClick={() => field.onChange(field.value.filter((t: string) => t !== tag))}
+                              onClick={() => field.onChange(currentTags.filter((t: string) => t !== tag))}
                               className="hover:text-destructive"
                               disabled={isLoading}>
                               ×
