@@ -6,8 +6,10 @@ import {
   type Budget,
   type BudgetFormValues,
   type BudgetWithSpending,
+  type BudgetWithSpendingAndUser,
 } from '@/app/db/schemas/budget-schema'
 import { transactionsTable } from '@/app/db/schemas/transaction-schema'
+import { usersTable } from '@/app/db/schemas/user-schema'
 
 export interface BudgetFilters {
   spaceId?: string
@@ -62,16 +64,25 @@ export class BudgetService {
   }
 
   // Buscar orçamentos com informações de gastos
-  static async findManyWithSpending(spaceId: string, month: string): Promise<BudgetWithSpending[]> {
-    // Buscar orçamentos do mês
-    const budgets = await db
-      .select()
+  static async findManyWithSpending(spaceId: string, month: string): Promise<BudgetWithSpendingAndUser[]> {
+    // Buscar orçamentos do mês com informações do criador
+    const budgetsWithCreator = await db
+      .select({
+        budget: budgetsTable,
+        createdBy: {
+          id: usersTable.id,
+          name: usersTable.name,
+          email: usersTable.email,
+          image: usersTable.image,
+        },
+      })
       .from(budgetsTable)
+      .leftJoin(usersTable, eq(budgetsTable.createdById, usersTable.id))
       .where(and(eq(budgetsTable.spaceId, spaceId), eq(budgetsTable.month, month)))
       .orderBy(budgetsTable.category)
 
     // Se não há orçamentos, retornar array vazio
-    if (budgets.length === 0) {
+    if (budgetsWithCreator.length === 0) {
       return []
     }
 
@@ -105,8 +116,8 @@ export class BudgetService {
       }
     })
 
-    // Combinar orçamentos com gastos
-    return budgets.map(budget => {
+    // Combinar orçamentos com gastos e informações do criador
+    return budgetsWithCreator.map(({ budget, createdBy }) => {
       const budgetAmount = Number(budget.amount)
       const spent = spentMap.get(budget.category) || 0
       const remaining = Math.max(0, budgetAmount - spent)
@@ -117,6 +128,7 @@ export class BudgetService {
         spent,
         remaining,
         percentage,
+        createdBy: createdBy || undefined,
       }
     })
   }

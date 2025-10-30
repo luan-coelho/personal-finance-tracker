@@ -4,7 +4,7 @@ import { Edit2, MoreHorizontal, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
-import { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
+import { BudgetWithSpendingAndUser } from '@/app/db/schemas/budget-schema'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -17,15 +17,16 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
 import { useDeleteBudget } from '@/hooks/use-budgets'
 
 import { cn } from '@/lib/utils'
 
 interface BudgetsTableProps {
-  budgets: BudgetWithSpending[]
-  onEdit?: (budget: BudgetWithSpending) => void
-  onView?: (budget: BudgetWithSpending) => void
+  budgets: BudgetWithSpendingAndUser[]
+  onEdit?: (budget: BudgetWithSpendingAndUser) => void
+  onView?: (budget: BudgetWithSpendingAndUser) => void
   isLoading?: boolean
 }
 
@@ -33,7 +34,7 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const deleteBudget = useDeleteBudget()
 
-  const handleDelete = async (budget: BudgetWithSpending) => {
+  const handleDelete = async (budget: BudgetWithSpendingAndUser) => {
     if (confirm(`Tem certeza que deseja excluir o orçamento da categoria "${budget.category}"?`)) {
       setDeletingId(budget.id)
       try {
@@ -108,6 +109,7 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[50px]">Criado por</TableHead>
             <TableHead>Categoria</TableHead>
             <TableHead>Mês</TableHead>
             <TableHead className="text-right">Orçamento</TableHead>
@@ -125,6 +127,9 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
 
             return (
               <TableRow key={budget.id}>
+                <TableCell>
+                  <UserAvatarDisplay user={budget.createdBy} size="sm" />
+                </TableCell>
                 <TableCell>
                   <Link href={`/admin/budgets/${budget.id}`} className="hover:underline">
                     <div className="font-medium">{budget.category}</div>

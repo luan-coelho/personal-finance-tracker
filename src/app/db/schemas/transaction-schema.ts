@@ -84,6 +84,16 @@ export type TransactionFormValues = z.infer<typeof insertTransactionSchema>
 export type UpdateTransactionFormValues = z.infer<typeof updateTransactionSchema>
 export type TransactionType = 'entrada' | 'saida'
 
+// Transaction com informações do usuário
+export type TransactionWithUser = Transaction & {
+  user?: {
+    id: string
+    name: string
+    email: string
+    image: string | null
+  }
+}
+
 // Helper para categorias padrão
 export const DefaultCategories = {
   entrada: ['Salário', 'Freelance', 'Investimentos', 'Vendas', 'Presente', 'Outros'],

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import type {
   Budget,
   BudgetWithSpending,
+  BudgetWithSpendingAndUser,
   CreateBudgetFormValues,
   UpdateBudgetFormValues,
 } from '@/app/db/schemas/budget-schema'
@@ -18,7 +19,7 @@ export interface BudgetSummary {
   categoriesCount: number
   categoriesOverBudget: number
   categoriesNearLimit: number
-  budgets: BudgetWithSpending[]
+  budgets: BudgetWithSpendingAndUser[]
 }
 
 // Chaves de query para cache
@@ -65,7 +66,7 @@ export function useBudgetsWithSpending(spaceId: string, month: string) {
         throw new Error('Erro ao buscar orçamentos com gastos')
       }
 
-      return response.json() as Promise<BudgetWithSpending[]>
+      return response.json() as Promise<BudgetWithSpendingAndUser[]>
     },
     enabled: !!spaceId && !!month,
     staleTime: 2 * 60 * 1000, // 2 minutos

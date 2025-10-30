@@ -63,3 +63,23 @@ export type BudgetWithSpending = Budget & {
   remaining: number
   percentage: number
 }
+
+// Budget com informações do usuário criador
+export type BudgetWithUser = Budget & {
+  createdBy?: {
+    id: string
+    name: string
+    email: string
+    image: string | null
+  }
+}
+
+// Budget com gastos e informações do usuário
+export type BudgetWithSpendingAndUser = BudgetWithSpending & {
+  createdBy?: {
+    id: string
+    name: string
+    email: string
+    image: string | null
+  }
+}

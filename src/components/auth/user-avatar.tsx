@@ -23,12 +23,29 @@ export function UserAvatar({ className, size = 'default' }: UserAvatarProps) {
     lg: 'h-10 w-10',
   }
 
+  // Função para extrair iniciais de duas palavras do nome
+  const getInitials = (name: string): string => {
+    const words = name
+      .trim()
+      .split(/\s+/)
+      .filter(word => word.length > 0)
+
+    if (words.length === 0) return ''
+    if (words.length === 1) return words[0].charAt(0).toUpperCase()
+
+    // Pega a primeira e última palavra
+    const firstInitial = words[0].charAt(0).toUpperCase()
+    const lastInitial = words[words.length - 1].charAt(0).toUpperCase()
+
+    return firstInitial + lastInitial
+  }
+
+  const initials = session.user.name ? getInitials(session.user.name) : ''
+
   return (
     <Avatar className={`${sizeClasses[size]} ${className}`}>
       <AvatarImage src={session.user.image || ''} alt={session.user.name || 'User'} />
-      <AvatarFallback>
-        {session.user.name ? session.user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
-      </AvatarFallback>
+      <AvatarFallback>{initials || <User className="h-4 w-4" />}</AvatarFallback>
     </Avatar>
   )
 }

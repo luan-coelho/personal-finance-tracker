@@ -1,7 +1,14 @@
 import { and, desc, eq, ilike, sql } from 'drizzle-orm'
 
 import { db } from '@/app/db'
-import { transactionsTable, type Transaction, type TransactionFormValues, type TransactionType } from '@/app/db/schemas'
+import {
+  transactionsTable,
+  type Transaction,
+  type TransactionFormValues,
+  type TransactionType,
+  type TransactionWithUser,
+} from '@/app/db/schemas'
+import { usersTable } from '@/app/db/schemas/user-schema'
 
 export interface TransactionFilters {
   spaceId?: string
@@ -48,7 +55,7 @@ export class TransactionService {
     filters: TransactionFilters = {},
     page: number = 1,
     limit: number = 20,
-  ): Promise<{ transactions: Transaction[]; total: number }> {
+  ): Promise<{ transactions: TransactionWithUser[]; total: number }> {
     const conditions = []
 
     if (filters.spaceId) {
@@ -85,10 +92,19 @@ export class TransactionService {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined
 
-    // Buscar transações com paginação
+    // Buscar transações com paginação e informações do usuário
     const transactions = await db
-      .select()
+      .select({
+        transaction: transactionsTable,
+        user: {
+          id: usersTable.id,
+          name: usersTable.name,
+          email: usersTable.email,
+          image: usersTable.image,
+        },
+      })
       .from(transactionsTable)
+      .leftJoin(usersTable, eq(transactionsTable.userId, usersTable.id))
       .where(whereClause)
       .orderBy(desc(transactionsTable.date), desc(transactionsTable.createdAt))
       .limit(limit)
@@ -100,8 +116,14 @@ export class TransactionService {
       .from(transactionsTable)
       .where(whereClause)
 
+    // Mapear resultados para incluir informações do usuário
+    const transactionsWithUser: TransactionWithUser[] = transactions.map(({ transaction, user }) => ({
+      ...transaction,
+      user: user || undefined,
+    }))
+
     return {
-      transactions,
+      transactions: transactionsWithUser,
       total: Number(count),
     }
   }

@@ -3,7 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import type { Transaction, TransactionFormValues, TransactionType, UpdateTransactionFormValues } from '@/app/db/schemas'
+import type {
+  Transaction,
+  TransactionFormValues,
+  TransactionType,
+  TransactionWithUser,
+  UpdateTransactionFormValues,
+} from '@/app/db/schemas'
 
 import type { TransactionFilters, TransactionSummary } from '@/services/transaction-service'
 
@@ -47,7 +53,7 @@ export function useTransactions(filters: TransactionFilters = {}, page: number =
         throw new Error('Erro ao buscar transações')
       }
 
-      return response.json() as Promise<{ transactions: Transaction[]; total: number }>
+      return response.json() as Promise<{ transactions: TransactionWithUser[]; total: number }>
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   })

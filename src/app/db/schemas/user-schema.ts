@@ -5,6 +5,7 @@ export const usersTable = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
+  image: text('image'), // URL da foto do usuário
   active: boolean('active').notNull().default(true),
   createdAt: timestamp('created_at').defaultNow().notNull().defaultNow(),
   updatedAt: timestamp('updated_at'),
@@ -25,6 +26,7 @@ export const selectUserSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   email: z.string().email(),
+  image: z.string().nullable(),
   active: z.boolean(),
   createdAt: z.date(),
   updatedAt: z.date(),

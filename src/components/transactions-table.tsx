@@ -5,18 +5,19 @@ import { ptBR } from 'date-fns/locale'
 import { ArrowDownCircle, ArrowUpCircle, Edit, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { Transaction, TransactionType } from '@/app/db/schemas'
+import { TransactionType, TransactionWithUser } from '@/app/db/schemas'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
 import { useDeleteTransaction } from '@/hooks/use-transactions'
 
 interface TransactionsTableProps {
-  transactions: Transaction[]
-  onEdit?: (transaction: Transaction) => void
+  transactions: TransactionWithUser[]
+  onEdit?: (transaction: TransactionWithUser) => void
   isLoading?: boolean
 }
 
@@ -24,7 +25,7 @@ export function TransactionsTable({ transactions, onEdit, isLoading }: Transacti
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const deleteMutation = useDeleteTransaction()
 
-  const handleDelete = async (transaction: Transaction) => {
+  const handleDelete = async (transaction: TransactionWithUser) => {
     if (confirm(`Tem certeza que deseja excluir a transação "${transaction.description}"?`)) {
       setDeletingId(transaction.id)
       try {
@@ -79,6 +80,7 @@ export function TransactionsTable({ transactions, onEdit, isLoading }: Transacti
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[50px]">Usuário</TableHead>
             <TableHead>Tipo</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Categoria</TableHead>
@@ -91,6 +93,9 @@ export function TransactionsTable({ transactions, onEdit, isLoading }: Transacti
         <TableBody>
           {transactions.map(transaction => (
             <TableRow key={transaction.id}>
+              <TableCell>
+                <UserAvatarDisplay user={transaction.user} size="sm" />
+              </TableCell>
               <TableCell>
                 <Badge className={`${getTypeColor(transaction.type)} space-y-10`}>
                   {getTypeIcon(transaction.type)} {transaction.type === 'entrada' ? 'Entrada' : 'Saída'}
