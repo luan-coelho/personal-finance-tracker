@@ -48,18 +48,20 @@ export default function TransacoesPage() {
   const queryFilters = {
     ...filters,
     spaceId: selectedSpace?.id || '',
-    // Só aplicar filtro de data se não estiver em modo "ver todas"
-    dateFrom: showAllTransactions ? undefined : monthStartDate,
-    dateTo: showAllTransactions ? undefined : monthEndDate,
+    // Se o usuário definiu filtros de data manualmente, usar eles; senão usar filtro mensal
+    dateFrom: filters.dateFrom || (showAllTransactions ? undefined : monthStartDate),
+    dateTo: filters.dateTo || (showAllTransactions ? undefined : monthEndDate),
   }
 
   const { data, isLoading } = useTransactions(queryFilters, page, 20)
 
   const handleFiltersChange = (newFilters: TransactionFilters) => {
-    // Não sobrescrever as datas se estão sendo controladas pelo seletor mensal
-    const { dateFrom, dateTo, ...otherFilters } = newFilters
-    setFilters(otherFilters)
+    setFilters(newFilters)
     setPage(1) // Reset para primeira página quando filtros mudam
+    // Se o usuário definiu filtros de data, desabilitar o filtro mensal automático
+    if (newFilters.dateFrom || newFilters.dateTo) {
+      setShowAllTransactions(true)
+    }
   }
 
   const handleClearFilters = () => {

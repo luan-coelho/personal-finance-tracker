@@ -81,12 +81,26 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
   }
 
   const handleDateFromChange = (date: Date | undefined) => {
-    onFiltersChange({ ...filters, dateFrom: date })
+    if (date) {
+      // Garantir que a data inicial comece às 00:00:00
+      const adjustedDate = new Date(date)
+      adjustedDate.setHours(0, 0, 0, 0)
+      onFiltersChange({ ...filters, dateFrom: adjustedDate })
+    } else {
+      onFiltersChange({ ...filters, dateFrom: undefined })
+    }
     setDateFromOpen(false)
   }
 
   const handleDateToChange = (date: Date | undefined) => {
-    onFiltersChange({ ...filters, dateTo: date })
+    if (date) {
+      // Garantir que a data final termine às 23:59:59.999
+      const adjustedDate = new Date(date)
+      adjustedDate.setHours(23, 59, 59, 999)
+      onFiltersChange({ ...filters, dateTo: adjustedDate })
+    } else {
+      onFiltersChange({ ...filters, dateTo: undefined })
+    }
     setDateToOpen(false)
   }
 

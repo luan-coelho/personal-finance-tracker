@@ -84,11 +84,15 @@ export class TransactionService {
     }
 
     if (filters.dateFrom) {
-      conditions.push(sql`${transactionsTable.date} >= ${filters.dateFrom.toISOString()}`)
+      const dateFrom = new Date(filters.dateFrom)
+      dateFrom.setHours(0, 0, 0, 0)
+      conditions.push(sql`${transactionsTable.date} >= ${dateFrom.toISOString()}`)
     }
 
     if (filters.dateTo) {
-      conditions.push(sql`${transactionsTable.date} <= ${filters.dateTo.toISOString()}`)
+      const dateTo = new Date(filters.dateTo)
+      dateTo.setHours(23, 59, 59, 999)
+      conditions.push(sql`${transactionsTable.date} <= ${dateTo.toISOString()}`)
     }
 
     if (filters.search) {
@@ -168,11 +172,15 @@ export class TransactionService {
     }
 
     if (filters.dateFrom) {
-      conditions.push(sql`${transactionsTable.date} >= ${filters.dateFrom.toISOString()}`)
+      const dateFrom = new Date(filters.dateFrom)
+      dateFrom.setHours(0, 0, 0, 0)
+      conditions.push(sql`${transactionsTable.date} >= ${dateFrom.toISOString()}`)
     }
 
     if (filters.dateTo) {
-      conditions.push(sql`${transactionsTable.date} <= ${filters.dateTo.toISOString()}`)
+      const dateTo = new Date(filters.dateTo)
+      dateTo.setHours(23, 59, 59, 999)
+      conditions.push(sql`${transactionsTable.date} <= ${dateTo.toISOString()}`)
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined
