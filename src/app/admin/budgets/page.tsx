@@ -1,20 +1,19 @@
 'use client'
 
-import { Edit2, Eye, Grid3X3, Plus, Table2 } from 'lucide-react'
+import { Grid3X3, Plus, Table2 } from 'lucide-react'
 import Link from 'next/link'
-import { use, useState } from 'react'
+import { useState } from 'react'
 
 import { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
 
 import { BudgetCard } from '@/components/budget-card'
 import { BudgetForm } from '@/components/budget-form'
 import { BudgetSummary } from '@/components/budget-summary'
-import { BudgetsTable } from '@/components/budgets-table'
 import { MonthSelector } from '@/components/month-selector'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 
 import { useBudgetSummary, useBudgetsWithSpending } from '@/hooks/use-budgets'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -175,9 +174,11 @@ export default function OrcamentosPage() {
               )}
             </TabsContent>
 
+            {/* Este é um comentário em JSX
             <TabsContent value="table" className="mt-0">
               <BudgetsTable budgets={budgets} onEdit={handleEdit} onView={handleView} isLoading={budgetsLoading} />
             </TabsContent>
+            */}
           </Tabs>
         </CardContent>
       </Card>
