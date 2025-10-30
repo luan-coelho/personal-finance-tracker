@@ -110,7 +110,7 @@ export default function TransacoesPage() {
 
   return (
     <div className="container mx-auto">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-3 flex flex-col items-center justify-between md:mb-8 md:flex-row">
         <div>
           <h1 className="text-3xl font-bold">Transações</h1>
           <p className="text-muted-foreground">Gerencie suas transações financeiras em {selectedSpace.name}</p>
@@ -118,7 +118,7 @@ export default function TransacoesPage() {
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full md:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Nova Transação
             </Button>

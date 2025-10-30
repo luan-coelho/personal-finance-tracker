@@ -1,17 +1,18 @@
 'use client'
 
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useEffect } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-import { useMonthSelector, UseMonthSelectorReturn } from '@/hooks/use-month-selector'
+import { UseMonthSelectorReturn } from '@/hooks/use-month-selector'
 
 import { cn } from '@/lib/utils'
 
 export interface MonthSelectorProps {
-  initialDate?: Date
   onMonthChange?: (state: UseMonthSelectorReturn) => void
   showDateRange?: boolean
   showTodayButton?: boolean
@@ -22,7 +23,6 @@ export interface MonthSelectorProps {
 }
 
 export function MonthSelector({
-  initialDate,
   onMonthChange,
   showDateRange = true,
   showTodayButton = true,
@@ -31,26 +31,27 @@ export function MonthSelector({
   className,
   onShowAll,
 }: MonthSelectorProps) {
-  const monthSelector = useMonthSelector(initialDate)
+  const monthSelector = useMonthSelectorContext()
+
+  // Notify parent when month changes
+  useEffect(() => {
+    onMonthChange?.(monthSelector)
+  }, [monthSelector.selectedMonth, monthSelector.selectedYear, onMonthChange])
 
   const handlePreviousMonth = () => {
     monthSelector.goToPreviousMonth()
-    onMonthChange?.(monthSelector)
   }
 
   const handleNextMonth = () => {
     monthSelector.goToNextMonth()
-    onMonthChange?.(monthSelector)
   }
 
   const handleYearChange = (year: string) => {
     monthSelector.setYear(parseInt(year))
-    onMonthChange?.(monthSelector)
   }
 
   const handleTodayClick = () => {
     monthSelector.goToCurrentMonth()
-    onMonthChange?.(monthSelector)
   }
 
   if (compact) {

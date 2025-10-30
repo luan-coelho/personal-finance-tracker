@@ -24,11 +24,19 @@ export const budgetsTable = pgTable('budgets', {
 // Relations are defined in relations.ts
 
 // Zod schemas
-export const insertBudgetSchema = z.object({
+// Schema para criação (frontend) - sem createdById
+export const createBudgetSchema = z.object({
   spaceId: z.string().uuid('ID do espaço deve ser um UUID válido'),
   category: z.string().min(1, 'Categoria é obrigatória').max(255, 'Categoria muito longa'),
-  amount: z.number().positive('O valor deve ser positivo').min(0.01, 'O valor mínimo é R$ 0,01'),
+  amount: z.union([
+    z.number().positive('O valor deve ser positivo').min(0.01, 'O valor mínimo é R$ 0,01'),
+    z.string().min(1, 'Valor é obrigatório'),
+  ]),
   month: z.string().regex(/^\d{4}-\d{2}$/, 'Formato do mês deve ser YYYY-MM'),
+})
+
+// Schema para inserção no banco (backend) - com createdById
+export const insertBudgetSchema = createBudgetSchema.extend({
   createdById: z.string().uuid('ID do usuário deve ser um UUID válido'),
 })
 
@@ -45,6 +53,7 @@ export const selectBudgetSchema = createSelectSchema(budgetsTable)
 
 // Types
 export type Budget = typeof budgetsTable.$inferSelect
+export type CreateBudgetFormValues = z.infer<typeof createBudgetSchema>
 export type BudgetFormValues = z.infer<typeof insertBudgetSchema>
 export type UpdateBudgetFormValues = z.infer<typeof updateBudgetSchema>
 

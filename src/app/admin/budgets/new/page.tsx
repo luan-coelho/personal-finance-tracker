@@ -13,15 +13,11 @@ import { useSelectedSpace } from '@/hooks/use-selected-space'
 export default function NovoBudgetPage() {
   const router = useRouter()
   const { selectedSpace } = useSelectedSpace()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [, setIsSubmitting] = useState(false)
 
   const handleSuccess = () => {
     setIsSubmitting(false)
     router.push('/admin/budgets')
-  }
-
-  const handleBack = () => {
-    router.back()
   }
 
   if (!selectedSpace) {
@@ -38,19 +34,13 @@ export default function NovoBudgetPage() {
   return (
     <div className="container mx-auto max-w-2xl">
       {/* Header */}
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={handleBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">Criar Novo Orçamento</h1>
-          <p className="text-muted-foreground">Defina um limite de gastos para uma categoria em {selectedSpace.name}</p>
-        </div>
+      <div className="flex-1">
+        <h1 className="text-3xl font-bold">Criar Novo Orçamento</h1>
+        <p className="text-muted-foreground">Defina um limite de gastos para uma categoria em {selectedSpace.name}</p>
       </div>
 
       {/* Breadcrumb */}
-      <nav className="text-muted-foreground mb-6 flex items-center space-x-2 text-sm">
+      <nav className="text-muted-foreground my-6 flex items-center space-x-2 text-sm">
         <a href="/admin/budgets" className="hover:text-foreground">
           Orçamentos
         </a>
@@ -67,32 +57,7 @@ export default function NovoBudgetPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <BudgetForm
-            onSuccess={handleSuccess}
-            defaultMonth={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Informações Adicionais */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-lg">💡 Dicas para Definir Orçamentos</CardTitle>
-        </CardHeader>
-        <CardContent className="text-muted-foreground space-y-3 text-sm">
-          <p>
-            <strong>Seja realista:</strong> Analise seus gastos dos meses anteriores antes de definir o limite.
-          </p>
-          <p>
-            <strong>Categorias específicas:</strong> Use categorias bem definidas como "Supermercado", "Combustível",
-            "Lazer".
-          </p>
-          <p>
-            <strong>Margem de segurança:</strong> Considere adicionar 10-15% de margem para imprevistos.
-          </p>
-          <p>
-            <strong>Reavalie mensalmente:</strong> Ajuste os valores conforme sua realidade financeira muda.
-          </p>
+          <BudgetForm onSuccess={handleSuccess} />
         </CardContent>
       </Card>
     </div>

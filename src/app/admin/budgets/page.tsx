@@ -1,5 +1,6 @@
 'use client'
 
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { Grid3X3, Plus, Table2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -7,8 +8,12 @@ import { useState } from 'react'
 import { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
 
 import { BudgetCard } from '@/components/budget-card'
+import { BudgetComparisonCard } from '@/components/budget-comparison-card'
+import { BudgetFilters, BudgetFilters as BudgetFiltersType } from '@/components/budget-filters'
 import { BudgetForm } from '@/components/budget-form'
 import { BudgetSummary } from '@/components/budget-summary'
+import { BudgetsTable } from '@/components/budgets-table'
+import { CopyBudgetDialog } from '@/components/copy-budget-dialog'
 import { MonthSelector } from '@/components/month-selector'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,7 +22,6 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 
 import { useBudgetSummary, useBudgetsWithSpending } from '@/hooks/use-budgets'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { useMonthSelector } from '@/hooks/use-month-selector'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 
 export default function OrcamentosPage() {
@@ -26,10 +30,15 @@ export default function OrcamentosPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<BudgetWithSpending | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
+  const [filters, setFilters] = useState<BudgetFiltersType>({})
 
-  // Hook para controle de mês/ano
-  const monthSelector = useMonthSelector()
+  // Hook para controle de mês/ano do contexto global
+  const monthSelector = useMonthSelectorContext()
   const currentMonthString = `${monthSelector.selectedYear}-${String(monthSelector.selectedMonth + 1).padStart(2, '0')}`
+
+  // Calcular mês anterior
+  const previousDate = new Date(monthSelector.selectedYear, monthSelector.selectedMonth - 1)
+  const previousMonthString = `${previousDate.getFullYear()}-${String(previousDate.getMonth() + 1).padStart(2, '0')}`
 
   // Queries para dados do orçamento
   const { data: budgets = [], isLoading: budgetsLoading } = useBudgetsWithSpending(
@@ -37,6 +46,38 @@ export default function OrcamentosPage() {
     currentMonthString,
   )
   const { data: summary, isLoading: summaryLoading } = useBudgetSummary(selectedSpace?.id || '', currentMonthString)
+
+  // Buscar orçamentos do mês anterior para comparação
+  const { data: previousBudgets = [] } = useBudgetsWithSpending(selectedSpace?.id || '', previousMonthString)
+
+  // Aplicar filtros aos orçamentos
+  const filteredBudgets = budgets.filter(budget => {
+    // Filtro de busca
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase()
+      if (!budget.category.toLowerCase().includes(searchLower)) {
+        return false
+      }
+    }
+
+    // Filtro de categoria
+    if (filters.category && budget.category !== filters.category) {
+      return false
+    }
+
+    // Filtro de status
+    if (filters.status && filters.status !== 'all') {
+      if (filters.status === 'exceeded' && budget.percentage <= 100) return false
+      if (filters.status === 'near' && (budget.percentage < 80 || budget.percentage > 100)) return false
+      if (filters.status === 'within' && budget.percentage >= 80) return false
+    }
+
+    // Filtro de valor
+    if (filters.amountFrom && Number(budget.amount) < filters.amountFrom) return false
+    if (filters.amountTo && Number(budget.amount) > filters.amountTo) return false
+
+    return true
+  })
 
   const handleMonthChange = () => {
     // Não precisa fazer nada específico, as queries serão refetch automaticamente
@@ -57,6 +98,24 @@ export default function OrcamentosPage() {
   const handleEditSuccess = () => {
     setEditingBudget(null)
   }
+
+  const handleClearFilters = () => {
+    setFilters({})
+  }
+
+  // Preparar dados de comparação
+  const budgetComparisons = filteredBudgets.map(current => {
+    const previous = previousBudgets.find(p => p.category === current.category)
+    return {
+      category: current.category,
+      currentAmount: Number(current.amount),
+      currentSpent: current.spent,
+      currentPercentage: current.percentage,
+      previousAmount: previous ? Number(previous.amount) : undefined,
+      previousSpent: previous?.spent,
+      previousPercentage: previous?.percentage,
+    }
+  })
 
   if (!selectedSpace) {
     return (
@@ -80,6 +139,7 @@ export default function OrcamentosPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <CopyBudgetDialog currentMonth={currentMonthString} />
           <Button asChild>
             <Link href="/admin/budgets/new">
               <Plus className="mr-2 h-4 w-4" />
@@ -97,7 +157,7 @@ export default function OrcamentosPage() {
               <DialogHeader>
                 <DialogTitle>Criar Novo Orçamento</DialogTitle>
               </DialogHeader>
-              <BudgetForm defaultMonth={currentMonthString} onSuccess={handleCreateSuccess} />
+              <BudgetForm onSuccess={handleCreateSuccess} />
             </DialogContent>
           </Dialog>
         </div>
@@ -106,10 +166,27 @@ export default function OrcamentosPage() {
       {/* Seletor de Mês/Ano */}
       <MonthSelector onMonthChange={handleMonthChange} className="mb-6" />
 
+      {/* Filtros */}
+      <div className="mb-6">
+        <BudgetFilters filters={filters} onFiltersChange={setFilters} onClearFilters={handleClearFilters} />
+      </div>
+
       {/* Resumo dos Orçamentos */}
       <div className="mb-8">
         <BudgetSummary summary={summary} isLoading={summaryLoading} month={currentMonthString} />
       </div>
+
+      {/* Comparação com Mês Anterior */}
+      {budgets.length > 0 && (
+        <div className="mb-8">
+          <BudgetComparisonCard
+            comparisons={budgetComparisons}
+            currentMonth={currentMonthString}
+            previousMonth={previousMonthString}
+            isLoading={budgetsLoading}
+          />
+        </div>
+      )}
 
       {/* Lista de Orçamentos */}
       <Card>
@@ -143,14 +220,18 @@ export default function OrcamentosPage() {
                     <div key={i} className="bg-muted h-48 animate-pulse rounded-lg" />
                   ))}
                 </div>
-              ) : budgets.length === 0 ? (
+              ) : filteredBudgets.length === 0 ? (
                 <div className="py-4 text-center md:py-12">
                   <div className="bg-muted mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full md:h-24 md:w-24">
                     <Plus className="text-muted-foreground h-4 w-4 md:h-12 md:w-12" />
                   </div>
-                  <h3 className="mb-2 text-lg font-medium">Nenhum orçamento definido</h3>
+                  <h3 className="mb-2 text-lg font-medium">
+                    {budgets.length === 0 ? 'Nenhum orçamento definido' : 'Nenhum orçamento encontrado'}
+                  </h3>
                   <p className="text-muted-foreground mb-4">
-                    Crie seu primeiro orçamento para começar a controlar os gastos por categoria
+                    {budgets.length === 0
+                      ? 'Crie seu primeiro orçamento para começar a controlar os gastos por categoria'
+                      : 'Tente ajustar os filtros ou criar um novo orçamento'}
                   </p>
                   <div className="flex flex-col justify-center gap-2 md:flex-row">
                     <Button asChild>
@@ -167,18 +248,21 @@ export default function OrcamentosPage() {
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {budgets.map(budget => (
+                  {filteredBudgets.map(budget => (
                     <BudgetCard key={budget.id} budget={budget} onEdit={handleEdit} />
                   ))}
                 </div>
               )}
             </TabsContent>
 
-            {/* Este é um comentário em JSX
             <TabsContent value="table" className="mt-0">
-              <BudgetsTable budgets={budgets} onEdit={handleEdit} onView={handleView} isLoading={budgetsLoading} />
+              <BudgetsTable
+                budgets={filteredBudgets}
+                onEdit={handleEdit}
+                onView={handleView}
+                isLoading={budgetsLoading}
+              />
             </TabsContent>
-            */}
           </Tabs>
         </CardContent>
       </Card>

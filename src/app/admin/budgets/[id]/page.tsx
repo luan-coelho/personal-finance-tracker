@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-import { useBudget, useDeleteBudget } from '@/hooks/use-budgets'
+import { useBudget, useBudgetsWithSpending, useDeleteBudget } from '@/hooks/use-budgets'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 
 interface BudgetDetailPageProps {
@@ -28,6 +28,11 @@ export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
 
   const { data: budget, isLoading, error } = useBudget(id)
   const deleteBudget = useDeleteBudget()
+
+  // Buscar dados de gastos do orçamento
+  const { data: budgetsWithSpending = [] } = useBudgetsWithSpending(selectedSpace?.id || '', budget?.month || '')
+
+  const budgetWithSpending = budgetsWithSpending.find(b => b.id === id)
 
   const handleSuccess = () => {
     router.push('/admin/budgets')
@@ -198,21 +203,70 @@ export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
           {/* Preview Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Preview do Orçamento</CardTitle>
+              <CardTitle>Status Atual do Orçamento</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="max-w-md">
                 <BudgetCard
-                  budget={{
-                    ...budget,
-                    spent: 0,
-                    remaining: Number(budget.amount),
-                    percentage: 0,
-                  }}
+                  budget={
+                    budgetWithSpending || {
+                      ...budget,
+                      spent: 0,
+                      remaining: Number(budget.amount),
+                      percentage: 0,
+                    }
+                  }
                 />
               </div>
             </CardContent>
           </Card>
+
+          {/* Estatísticas Detalhadas */}
+          {budgetWithSpending && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Estatísticas do Mês</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <label className="text-muted-foreground text-sm font-medium">Valor Gasto</label>
+                    <p className="text-2xl font-bold">{formatCurrency(budgetWithSpending.spent)}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {((budgetWithSpending.spent / Number(budget.amount)) * 100).toFixed(1)}% do orçamento
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-muted-foreground text-sm font-medium">Saldo Restante</label>
+                    <p
+                      className={`text-2xl font-bold ${budgetWithSpending.remaining <= 0 ? 'text-destructive' : 'text-green-600'}`}>
+                      {budgetWithSpending.remaining <= 0 ? '−' : ''}
+                      {formatCurrency(Math.abs(budgetWithSpending.remaining))}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {budgetWithSpending.remaining <= 0
+                        ? `Excedido em ${formatCurrency(Math.abs(budgetWithSpending.remaining))}`
+                        : 'Disponível para gastar'}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-muted-foreground text-sm font-medium">Percentual Usado</label>
+                    <p
+                      className={`text-2xl font-bold ${budgetWithSpending.percentage > 100 ? 'text-destructive' : budgetWithSpending.percentage >= 80 ? 'text-yellow-600' : 'text-green-600'}`}>
+                      {budgetWithSpending.percentage.toFixed(1)}%
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {budgetWithSpending.percentage > 100
+                        ? 'Orçamento excedido'
+                        : budgetWithSpending.percentage >= 80
+                          ? 'Próximo do limite'
+                          : 'Dentro do orçamento'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Instruções */}
           <Card>

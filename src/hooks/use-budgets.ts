@@ -5,8 +5,8 @@ import { toast } from 'sonner'
 
 import type {
   Budget,
-  BudgetFormValues,
   BudgetWithSpending,
+  CreateBudgetFormValues,
   UpdateBudgetFormValues,
 } from '@/app/db/schemas/budget-schema'
 
@@ -131,7 +131,7 @@ export function useCreateBudget() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (data: BudgetFormValues) => {
+    mutationFn: async (data: CreateBudgetFormValues) => {
       const response = await fetch('/api/budgets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

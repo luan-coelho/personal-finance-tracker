@@ -1,10 +1,11 @@
 'use client'
 
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
-import { Budget, BudgetFormValues, insertBudgetSchema } from '@/app/db/schemas/budget-schema'
+import { Budget, CreateBudgetFormValues, createBudgetSchema } from '@/app/db/schemas/budget-schema'
 
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -17,12 +18,12 @@ import { useTransactionCategories } from '@/hooks/use-transactions'
 
 interface BudgetFormProps {
   budget?: Budget
-  defaultMonth?: string
   onSuccess?: () => void
 }
 
-export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps) {
+export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
   const { selectedSpace } = useSelectedSpace()
+  const monthSelector = useMonthSelectorContext()
   const createBudget = useCreateBudget()
   const updateBudget = useUpdateBudget()
   const [customCategory, setCustomCategory] = useState(false)
@@ -32,14 +33,22 @@ export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps)
 
   const isEditing = !!budget
 
-  const form = useForm<BudgetFormValues>({
-    resolver: zodResolver(insertBudgetSchema),
+  // Gerar string do mês atual selecionado no contexto
+  const currentMonthString = `${monthSelector.selectedYear}-${String(monthSelector.selectedMonth + 1).padStart(2, '0')}`
+
+  const form = useForm<CreateBudgetFormValues>({
+    resolver: zodResolver(createBudgetSchema),
     defaultValues: {
       spaceId: selectedSpace?.id || '',
       category: budget?.category || '',
-      amount: budget ? Number(budget.amount) : 0,
-      month: budget?.month || defaultMonth || '',
-      createdById: '', // Será preenchido pela API
+      amount: budget
+        ? Number(budget.amount).toLocaleString('pt-BR', {
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+        : '',
+      month: budget?.month || currentMonthString,
     },
   })
 
@@ -50,10 +59,41 @@ export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps)
     }
   }, [selectedSpace?.id, form])
 
-  function handleSubmit(values: BudgetFormValues) {
+  // Atualizar month quando o mês selecionado mudar (apenas em criação)
+  useEffect(() => {
+    if (!isEditing) {
+      form.setValue('month', currentMonthString)
+    }
+  }, [currentMonthString, isEditing, form])
+
+  // Máscara de real para o campo amount
+  function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value
+    const onlyDigits = raw.replace(/\D/g, '')
+    const number = Number(onlyDigits) / 100
+    form.setValue(
+      'amount',
+      number === 0
+        ? ''
+        : number.toLocaleString('pt-BR', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    )
+  }
+
+  function handleSubmit(values: CreateBudgetFormValues) {
+    // Converter valor formatado para número
+    const numericAmount =
+      typeof values.amount === 'string' ? Number(values.amount.replace(/\./g, '').replace(',', '.')) : values.amount
+
     if (isEditing) {
+      // Para edição, enviar apenas os campos editáveis
+      const updateData = {
+        category: values.category,
+        amount: numericAmount,
+        month: values.month,
+      }
+
       updateBudget.mutate(
-        { id: budget.id, data: values },
+        { id: budget.id, data: updateData },
         {
           onSuccess: () => {
             onSuccess?.()
@@ -61,7 +101,15 @@ export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps)
         },
       )
     } else {
-      createBudget.mutate(values, {
+      // Para criação, enviar todos os campos
+      const createData = {
+        spaceId: values.spaceId,
+        category: values.category,
+        amount: numericAmount,
+        month: values.month,
+      }
+
+      createBudget.mutate(createData, {
         onSuccess: () => {
           form.reset()
           onSuccess?.()
@@ -72,24 +120,25 @@ export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps)
 
   const isLoading = createBudget.isPending || updateBudget.isPending
 
-  // Gerar opções de mês (12 meses para frente e 12 para trás)
-  const monthOptions = Array.from({ length: 25 }, (_, i) => {
-    const currentDate = new Date()
-    const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 12 + i, 1)
-    const year = targetDate.getFullYear()
-    const month = String(targetDate.getMonth() + 1).padStart(2, '0')
-    const value = `${year}-${month}`
-    const label = targetDate.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' })
-    return { value, label }
+  // Formatar o nome do mês para exibição
+  const monthDisplay = new Date(monthSelector.selectedYear, monthSelector.selectedMonth).toLocaleDateString('pt-BR', {
+    year: 'numeric',
+    month: 'long',
   })
-
-  // Remover duplicatas usando Map para garantir chaves únicas
-  const uniqueMonthOptions = Array.from(new Map(monthOptions.map(option => [option.value, option])).values())
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2">
+        {/* Exibir mês selecionado */}
+        {!isEditing && (
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-muted-foreground text-sm">
+              📅 Criando orçamento para <strong className="text-foreground">{monthDisplay}</strong>
+            </p>
+          </div>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-1">
           {/* Categoria */}
           <FormField
             control={form.control}
@@ -99,7 +148,7 @@ export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps)
                 <FormLabel>Categoria</FormLabel>
                 <FormControl>
                   {!customCategory && existingCategories.length > 0 ? (
-                    <div className="space-y-2">
+                    <div>
                       <Select
                         value={field.value}
                         onValueChange={value => {
@@ -110,7 +159,7 @@ export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps)
                             field.onChange(value)
                           }
                         }}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-10 w-full">
                           <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
                         <SelectContent>
@@ -122,19 +171,6 @@ export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps)
                           <SelectItem value="__custom__">+ Nova categoria</SelectItem>
                         </SelectContent>
                       </Select>
-                      {field.value && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setCustomCategory(true)
-                            field.onChange('')
-                          }}
-                          className="h-8 text-xs">
-                          Criar nova categoria
-                        </Button>
-                      )}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -166,16 +202,19 @@ export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps)
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Limite do Orçamento (R$)</FormLabel>
+                <FormLabel>Limite do Orçamento</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    placeholder="0,00"
-                    {...field}
-                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                  />
+                  <div className="relative">
+                    <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 transform">R$</span>
+                    <Input
+                      {...field}
+                      value={field.value}
+                      onChange={handleAmountChange}
+                      placeholder="0,00"
+                      className="pl-10"
+                      disabled={isLoading}
+                    />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -183,31 +222,8 @@ export function BudgetForm({ budget, defaultMonth, onSuccess }: BudgetFormProps)
           />
         </div>
 
-        {/* Mês */}
-        <FormField
-          control={form.control}
-          name="month"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Mês de Referência</FormLabel>
-              <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o mês" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {uniqueMonthOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Campo oculto para month - será preenchido automaticamente */}
+        <input type="hidden" {...form.register('month')} />
 
         {/* Botões */}
         <div className="flex justify-end gap-2">
