@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
-import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transactions'
+import { useCreateTransaction, useTransactionTags, useUpdateTransaction } from '@/hooks/use-transactions'
 
 type TransactionFormValues = Omit<z.infer<typeof insertTransactionSchema>, 'tags'> & { tags?: string[] }
 
@@ -40,6 +40,9 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
   }
 
   const isEditing = !!transaction
+
+  // Buscar tags existentes do espaço
+  const { data: existingTags = [] } = useTransactionTags(selectedSpace.id)
 
   // Formulário react-hook-form
   const form = useForm<TransactionFormValues>({
@@ -270,12 +273,25 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
           render={({ field }) => {
             const [tagInput, setTagInput] = useState('')
             const currentTags = field.value ?? []
+
             const addTag = () => {
               const newTag = tagInput.trim()
               if (!newTag || currentTags.includes(newTag)) return
               field.onChange([...currentTags, newTag])
               setTagInput('')
             }
+
+            const toggleExistingTag = (tag: string) => {
+              if (currentTags.includes(tag)) {
+                field.onChange(currentTags.filter((t: string) => t !== tag))
+              } else {
+                field.onChange([...currentTags, tag])
+              }
+            }
+
+            // Tags disponíveis que ainda não foram selecionadas
+            const availableTags = existingTags.filter(tag => !currentTags.includes(tag))
+
             return (
               <FormItem>
                 <FormLabel>Tags</FormLabel>
@@ -304,23 +320,46 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
                         Adicionar
                       </Button>
                     </div>
-                    {/* Tags selecionadas - sempre abaixo do input */}
+
+                    {/* Tags selecionadas */}
                     {currentTags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {currentTags.map((tag: string) => (
-                          <span
-                            key={tag}
-                            className="bg-secondary inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs">
-                            {tag}
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground text-xs font-medium">Tags selecionadas:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {currentTags.map((tag: string) => (
+                            <span
+                              key={tag}
+                              className="bg-primary text-primary-foreground inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium">
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => field.onChange(currentTags.filter((t: string) => t !== tag))}
+                                className="hover:text-destructive ml-1"
+                                disabled={isLoading}>
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tags disponíveis para selecionar */}
+                    {availableTags.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-muted-foreground text-xs font-medium">Tags disponíveis:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {availableTags.map((tag: string) => (
                             <button
+                              key={tag}
                               type="button"
-                              onClick={() => field.onChange(currentTags.filter((t: string) => t !== tag))}
-                              className="hover:text-destructive"
+                              onClick={() => toggleExistingTag(tag)}
+                              className="bg-secondary hover:bg-secondary/80 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors"
                               disabled={isLoading}>
-                              ×
+                              + {tag}
                             </button>
-                          </span>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

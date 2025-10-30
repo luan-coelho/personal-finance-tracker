@@ -75,7 +75,12 @@ export class TransactionService {
     }
 
     if (filters.tags && filters.tags.length > 0) {
-      conditions.push(sql`${transactionsTable.tags} && ${filters.tags}`)
+      conditions.push(
+        sql`${transactionsTable.tags} && ARRAY[${sql.join(
+          filters.tags.map(tag => sql`${tag}`),
+          sql`, `,
+        )}]::text[]`,
+      )
     }
 
     if (filters.dateFrom) {
