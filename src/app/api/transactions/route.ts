@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { insertTransactionSchema } from '@/app/db/schemas'
 
 import { auth } from '@/lib/auth'
+import { canViewSpace } from '@/lib/space-access'
 
 import { TransactionService } from '@/services/transaction-service'
 
@@ -25,9 +26,20 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
 
+    // Verificar acesso ao espaço se spaceId for fornecido
+    let hasSpaceAccess = false
+    if (spaceId && session.user.email) {
+      hasSpaceAccess = await canViewSpace(session.user.email, spaceId)
+      if (!hasSpaceAccess) {
+        return NextResponse.json({ error: 'Acesso negado ao espaço' }, { status: 403 })
+      }
+    }
+
     const filters = {
       spaceId: spaceId || undefined,
-      userId: userId || session.user.id,
+      // Se tem acesso ao espaço, não filtrar por userId para mostrar todas as transações do espaço
+      // Se não tem spaceId ou não tem acesso, filtrar por userId
+      userId: spaceId && hasSpaceAccess ? undefined : userId || session.user.id,
       type: type || undefined,
       category: category || undefined,
       tags: tags || undefined,

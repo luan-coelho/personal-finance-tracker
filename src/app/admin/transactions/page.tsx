@@ -5,10 +5,12 @@ import { useState } from 'react'
 
 import { Transaction } from '@/app/db/schemas'
 
+import { MonthSelector } from '@/components/month-selector'
 import { TransactionForm } from '@/components/transaction-form'
 import { TransactionSummary } from '@/components/transaction-summary'
 import { TransactionFilters, TransactionsFilters } from '@/components/transactions-filters'
 import { TransactionsTable } from '@/components/transactions-table'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -31,21 +33,53 @@ export default function TransacoesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
-  // Adicionar spaceId aos filtros
+  // Estado para controle de mês/ano
+  const [showAllTransactions, setShowAllTransactions] = useState(false)
+  const [monthStartDate, setMonthStartDate] = useState(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth(), 1)
+  })
+  const [monthEndDate, setMonthEndDate] = useState(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+  })
+
+  // Adicionar spaceId e filtro mensal condicional aos filtros
   const queryFilters = {
     ...filters,
     spaceId: selectedSpace?.id || '',
+    // Só aplicar filtro de data se não estiver em modo "ver todas"
+    dateFrom: showAllTransactions ? undefined : monthStartDate,
+    dateTo: showAllTransactions ? undefined : monthEndDate,
   }
 
   const { data, isLoading } = useTransactions(queryFilters, page, 20)
 
   const handleFiltersChange = (newFilters: TransactionFilters) => {
-    setFilters(newFilters)
+    // Não sobrescrever as datas se estão sendo controladas pelo seletor mensal
+    const { dateFrom, dateTo, ...otherFilters } = newFilters
+    setFilters(otherFilters)
     setPage(1) // Reset para primeira página quando filtros mudam
   }
 
   const handleClearFilters = () => {
     setFilters({})
+    setPage(1)
+  }
+
+  const handleMonthChange = (monthSelectorState: any) => {
+    setMonthStartDate(monthSelectorState.monthStartDate)
+    setMonthEndDate(monthSelectorState.monthEndDate)
+    setPage(1) // Reset página ao mudar mês
+  }
+
+  const handleShowAll = () => {
+    setShowAllTransactions(true)
+    setPage(1)
+  }
+
+  const handleShowMonthly = () => {
+    setShowAllTransactions(false)
     setPage(1)
   }
 
@@ -98,9 +132,36 @@ export default function TransacoesPage() {
         </Dialog>
       </div>
 
+      {/* Seletor de Mês/Ano */}
+      {!showAllTransactions ? (
+        <MonthSelector
+          onMonthChange={handleMonthChange}
+          showAllButton={true}
+          onShowAll={handleShowAll}
+          className="mb-6"
+        />
+      ) : (
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold">Todas as Transações</h2>
+                <Badge variant="outline">Sem filtro de data</Badge>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleShowMonthly} className="h-8">
+                Filtrar por Mês
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Resumo financeiro */}
       <div className="mb-8">
-        <TransactionSummary dateFrom={filters.dateFrom} dateTo={filters.dateTo} />
+        <TransactionSummary
+          dateFrom={showAllTransactions ? undefined : monthStartDate}
+          dateTo={showAllTransactions ? undefined : monthEndDate}
+        />
       </div>
 
       {/* Card principal com filtros, tabela e paginação */}

@@ -44,6 +44,12 @@ export const routes = {
         edit: (id: string) => `/admin/reserves/${validateId(id)}/edit`,
         movements: (id: string) => `/admin/reserves/${validateId(id)}/movements`,
       },
+      budgets: {
+        index: '/admin/budgets',
+        create: '/admin/budgets/new',
+        edit: (id: string) => `/admin/budgets/${validateId(id)}/edit`,
+        bySpace: (spaceId: string) => `/admin/budgets?spaceId=${validateId(spaceId)}`,
+      },
     },
 
     // Autenticação
@@ -67,6 +73,15 @@ export const routes = {
       byId: (id: string) => `/api/reserves/${validateId(id)}`,
       bySpace: (spaceId: string) => `/api/reserves?spaceId=${validateId(spaceId)}`,
       movements: (reserveId: string) => `/api/reserves/${validateId(reserveId)}/movements`,
+    },
+    budgets: {
+      base: '/api/budgets',
+      byId: (id: string) => `/api/budgets/${validateId(id)}`,
+      withSpending: (spaceId: string, month: string) =>
+        `/api/budgets/with-spending?spaceId=${validateId(spaceId)}&month=${month}`,
+      summary: (spaceId: string, month: string) => `/api/budgets/summary?spaceId=${validateId(spaceId)}&month=${month}`,
+      categories: (spaceId: string, month: string) =>
+        `/api/budgets/categories?spaceId=${validateId(spaceId)}&month=${month}`,
     },
   },
 }

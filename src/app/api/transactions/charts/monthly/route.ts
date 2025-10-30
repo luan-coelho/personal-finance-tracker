@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { auth } from '@/lib/auth'
+import { canViewSpace } from '@/lib/space-access'
 
 import { TransactionService } from '@/services/transaction-service'
 
@@ -17,6 +18,14 @@ export async function GET(request: NextRequest) {
 
     if (!spaceId) {
       return NextResponse.json({ error: 'ID do espaço é obrigatório' }, { status: 400 })
+    }
+
+    // Verificar acesso ao espaço
+    if (session.user.email) {
+      const hasAccess = await canViewSpace(session.user.email, spaceId)
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Acesso negado ao espaço' }, { status: 403 })
+      }
     }
 
     if (!year) {
