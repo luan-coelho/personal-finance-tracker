@@ -193,7 +193,11 @@ export default function TransacoesPage() {
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
-                      onClick={() => setPage(Math.max(1, page - 1))}
+                      onClick={e => {
+                        e.preventDefault()
+                        if (page > 1) setPage(page - 1)
+                      }}
+                      aria-disabled={page === 1}
                       className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                     />
                   </PaginationItem>
@@ -203,7 +207,10 @@ export default function TransacoesPage() {
                     return (
                       <PaginationItem key={pageNumber}>
                         <PaginationLink
-                          onClick={() => setPage(pageNumber)}
+                          onClick={e => {
+                            e.preventDefault()
+                            setPage(pageNumber)
+                          }}
                           isActive={pageNumber === page}
                           className="cursor-pointer">
                           {pageNumber}
@@ -214,7 +221,11 @@ export default function TransacoesPage() {
 
                   <PaginationItem>
                     <PaginationNext
-                      onClick={() => setPage(Math.min(totalPages, page + 1))}
+                      onClick={e => {
+                        e.preventDefault()
+                        if (page < totalPages) setPage(page + 1)
+                      }}
+                      aria-disabled={page === totalPages}
                       className={page === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                     />
                   </PaginationItem>

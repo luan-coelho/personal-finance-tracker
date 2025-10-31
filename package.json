@@ -14,7 +14,8 @@
     "db:studio": "drizzle-kit studio",
     "db:setup": "TZ=America/Sao_Paulo tsx scripts/setup-database.ts",
     "db:seed": "TZ=America/Sao_Paulo tsx scripts/seed-db.ts",
-    "db:seed:create-admin-user": "TZ=America/Sao_Paulo tsx scripts/create-admin-user.ts"
+    "db:seed:create-admin-user": "TZ=America/Sao_Paulo tsx scripts/create-admin-user.ts",
+    "db:seed:categories": "TZ=America/Sao_Paulo tsx scripts/seed-categories.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",

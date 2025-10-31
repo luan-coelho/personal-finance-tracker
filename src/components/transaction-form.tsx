@@ -139,7 +139,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-h-[80vh] space-y-6 overflow-y-auto pr-2">
         {/* Tipo de Transação */}
         <FormField
           control={form.control}
