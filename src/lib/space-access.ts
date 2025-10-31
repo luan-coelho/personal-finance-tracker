@@ -90,3 +90,14 @@ export async function canViewSpace(userEmail: string, spaceId: string): Promise<
   const access = await checkSpaceAccess(userEmail, spaceId)
   return access.hasAccess
 }
+
+/**
+ * Verifica se um usuário pode gerenciar um espaço (dono ou editor)
+ * Alias para canEditSpace
+ * @param userEmail Email do usuário
+ * @param spaceId ID do espaço
+ * @returns true se pode gerenciar, false caso contrário
+ */
+export async function canManageSpace(userEmail: string, spaceId: string): Promise<boolean> {
+  return canEditSpace(userEmail, spaceId)
+}

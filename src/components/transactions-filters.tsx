@@ -15,7 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
-import { useTransactionCategories, useTransactionTags } from '@/hooks/use-transactions'
+import { useTags } from '@/hooks/use-tags'
+import { useTransactionCategories } from '@/hooks/use-transactions'
 
 import { cn } from '@/lib/utils'
 
@@ -42,7 +43,8 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
 
   // Queries para categorias e tags
   const { data: categories = [] } = useTransactionCategories(selectedSpace?.id || '')
-  const { data: tags = [] } = useTransactionTags(selectedSpace?.id || '')
+  const { data: tagsData = [] } = useTags(selectedSpace?.id || '')
+  const tags = tagsData.map(tag => tag.name)
 
   const hasActiveFilters = Object.values(filters).some(
     value => value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true),
@@ -174,7 +176,7 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
                 <div className="space-y-2">
                   <Label>Tags</Label>
                   <div className="flex flex-wrap gap-2">
-                    {tags.map(tag => {
+                    {tags.map((tag: string) => {
                       const isSelected = filters.tags?.includes(tag)
                       return (
                         <Button

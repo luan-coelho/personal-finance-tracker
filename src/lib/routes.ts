@@ -31,6 +31,12 @@ export const routes = {
         create: '/admin/transactions/new',
         edit: (id: string) => `/admin/transactions/${validateId(id)}/edit`,
       },
+      categories: {
+        index: '/admin/categories',
+      },
+      tags: {
+        index: '/admin/tags',
+      },
       spaces: {
         index: '/admin/spaces',
         create: '/admin/spaces/new',
