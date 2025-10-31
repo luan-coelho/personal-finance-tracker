@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowDownCircle, ArrowUpCircle, Edit2, Loader2, X } from 'lucide-react'
 import { useSession } from 'next-auth/react'
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -31,9 +31,10 @@ interface TransactionFormProps {
   transaction?: Transaction
   onSuccess?: () => void
   onCancel?: () => void
+  mode?: 'create' | 'edit' | 'copy'
 }
 
-export function TransactionForm({ transaction, onSuccess, onCancel }: TransactionFormProps) {
+export function TransactionForm({ transaction, onSuccess, onCancel, mode }: TransactionFormProps) {
   const { data: session } = useSession()
   const { selectedSpace } = useSelectedSpace()
 
@@ -41,16 +42,16 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
     return null // ou um loader/spinner se preferir
   }
 
-  const isEditing = !!transaction
+  const formMode = mode ?? (transaction ? 'edit' : 'create')
+  const isEditing = formMode === 'edit'
 
   // Buscar tags cadastradas no espaço
   const { data: existingTagsData = [] } = useTags(selectedSpace.id)
   const existingTags = existingTagsData.map(tag => tag.name)
 
   // Formulário react-hook-form
-  const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(insertTransactionSchema),
-    defaultValues: {
+  const computeDefaultValues = useCallback((): TransactionFormValues => {
+    return {
       type: transaction?.type || 'saida',
       amount: transaction?.amount
         ? Number(transaction.amount).toLocaleString('pt-BR', {
@@ -65,8 +66,17 @@ export function TransactionForm({ transaction, onSuccess, onCancel }: Transactio
       tags: Array.isArray(transaction?.tags) ? transaction.tags : [],
       spaceId: selectedSpace.id,
       userId: session.user.id,
-    },
+    }
+  }, [selectedSpace.id, session.user.id, transaction])
+
+  const form = useForm<TransactionFormValues>({
+    resolver: zodResolver(insertTransactionSchema),
+    defaultValues: computeDefaultValues(),
   })
+
+  React.useEffect(() => {
+    form.reset(computeDefaultValues())
+  }, [computeDefaultValues, form])
 
   // Buscar categorias do espaço baseado no tipo selecionado
   const currentType = form.watch('type')

@@ -32,6 +32,7 @@ export default function TransacoesPage() {
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+  const [prefillTransaction, setPrefillTransaction] = useState<Transaction | null>(null)
 
   // Estado para controle de mês/ano
   const [showAllTransactions, setShowAllTransactions] = useState(false)
@@ -89,8 +90,14 @@ export default function TransacoesPage() {
     setEditingTransaction(transaction)
   }
 
+  const handleDuplicate = (transaction: Transaction) => {
+    setPrefillTransaction(transaction)
+    setIsCreateOpen(true)
+  }
+
   const handleCreateSuccess = () => {
     setIsCreateOpen(false)
+    setPrefillTransaction(null)
   }
 
   const handleEditSuccess = () => {
@@ -118,9 +125,20 @@ export default function TransacoesPage() {
           <p className="text-muted-foreground">Gerencie suas transações financeiras em {selectedSpace.name}</p>
         </div>
 
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <Dialog
+          open={isCreateOpen}
+          onOpenChange={open => {
+            setIsCreateOpen(open)
+            if (!open) {
+              setPrefillTransaction(null)
+            }
+          }}>
           <DialogTrigger asChild>
-            <Button className="w-full md:w-auto">
+            <Button
+              className="w-full md:w-auto"
+              onClick={() => {
+                setPrefillTransaction(null)
+              }}>
               <Plus className="mr-2 h-4 w-4" />
               Nova Transação
             </Button>
@@ -129,7 +147,11 @@ export default function TransacoesPage() {
             <DialogHeader>
               <DialogTitle>Nova Transação</DialogTitle>
             </DialogHeader>
-            <TransactionForm onSuccess={handleCreateSuccess} />
+            <TransactionForm
+              transaction={prefillTransaction ?? undefined}
+              mode={prefillTransaction ? 'copy' : 'create'}
+              onSuccess={handleCreateSuccess}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -183,7 +205,12 @@ export default function TransacoesPage() {
 
           {/* Tabela de transações */}
           <div className="mb-6">
-            <TransactionsTable transactions={data?.transactions || []} onEdit={handleEdit} isLoading={isLoading} />
+            <TransactionsTable
+              transactions={data?.transactions || []}
+              onEdit={handleEdit}
+              onDuplicate={handleDuplicate}
+              isLoading={isLoading}
+            />
           </div>
 
           {/* Paginação */}

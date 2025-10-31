@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowDownCircle, ArrowUpCircle, Edit, MoreHorizontal, Trash2 } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Copy, Edit, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { TransactionType, TransactionWithUser } from '@/app/db/schemas'
@@ -18,10 +18,11 @@ import { useDeleteTransaction } from '@/hooks/use-transactions'
 interface TransactionsTableProps {
   transactions: TransactionWithUser[]
   onEdit?: (transaction: TransactionWithUser) => void
+  onDuplicate?: (transaction: TransactionWithUser) => void
   isLoading?: boolean
 }
 
-export function TransactionsTable({ transactions, onEdit, isLoading }: TransactionsTableProps) {
+export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading }: TransactionsTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const deleteMutation = useDeleteTransaction()
 
@@ -147,6 +148,10 @@ export function TransactionsTable({ transactions, onEdit, isLoading }: Transacti
                     <DropdownMenuItem onClick={() => onEdit?.(transaction)}>
                       <Edit className="mr-2 h-4 w-4" />
                       Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDuplicate?.(transaction)}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Duplicar
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => handleDelete(transaction)}
