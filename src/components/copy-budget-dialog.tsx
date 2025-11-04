@@ -80,7 +80,7 @@ export function CopyBudgetDialog({ currentMonth }: CopyBudgetDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" className="w-full md:w-auto">
           <Copy className="mr-2 h-4 w-4" />
           Copiar Mês Anterior
         </Button>
@@ -154,11 +154,14 @@ export function CopyBudgetDialog({ currentMonth }: CopyBudgetDialogProps) {
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isCopying}>
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isCopying} className="w-full sm:w-auto">
             Cancelar
           </Button>
-          <Button onClick={handleCopy} disabled={!sourceMonth || sourceBudgets.length === 0 || isCopying}>
+          <Button
+            onClick={handleCopy}
+            disabled={!sourceMonth || sourceBudgets.length === 0 || isCopying}
+            className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             {isCopying ? 'Copiando...' : `Copiar ${sourceBudgets.length} Orçamento(s)`}
           </Button>

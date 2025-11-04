@@ -34,9 +34,9 @@ export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
   }
 
   const getStatusColor = (percentage: number) => {
-    if (percentage > 100) return 'destructive'
-    if (percentage >= 80) return 'secondary'
-    return 'default'
+    if (percentage > 100) return 'bg-red-100 text-red-800 hover:bg-red-200'
+    if (percentage >= 80) return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+    return 'bg-green-100 text-green-800 hover:bg-green-200'
   }
 
   const getStatusText = (percentage: number) => {
@@ -112,7 +112,7 @@ export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
 
         {/* Status Badge */}
         <div className="flex justify-center">
-          <Badge variant={getStatusColor(budget.percentage)}>{getStatusText(budget.percentage)}</Badge>
+          <Badge className={getStatusColor(budget.percentage)}>{getStatusText(budget.percentage)}</Badge>
         </div>
       </CardContent>
 

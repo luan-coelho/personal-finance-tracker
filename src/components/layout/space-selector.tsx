@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, Check, ChevronsUpDown, Plus } from 'lucide-react'
+import { Check, ChevronsUpDown, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -24,7 +24,6 @@ export function SpaceSelector() {
   if (isLoading) {
     return (
       <div className="flex items-center gap-2">
-        <Building2 className="h-4 w-4" />
         <div className="bg-muted h-4 w-32 animate-pulse rounded" />
       </div>
     )
@@ -32,7 +31,6 @@ export function SpaceSelector() {
 
   return (
     <div className="flex items-center gap-2">
-      <Building2 className="h-4 w-4" />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button

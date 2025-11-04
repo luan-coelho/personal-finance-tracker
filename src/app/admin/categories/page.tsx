@@ -63,7 +63,7 @@ export default function CategoriasPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-center justify-between md:flex-row">
         <div>
           <h1 className="text-3xl font-bold">Categorias</h1>
           <p className="text-muted-foreground">Gerencie as categorias de entradas e saídas</p>
@@ -71,7 +71,7 @@ export default function CategoriasPage() {
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full md:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Nova Categoria
             </Button>

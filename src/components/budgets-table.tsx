@@ -72,7 +72,7 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
     }
     if (percentage >= 80) {
       return (
-        <Badge variant="secondary" className="font-semibold">
+        <Badge variant="default" className="bg-yellow-500 font-semibold text-zinc-900 hover:bg-yellow-600">
           Atenção
         </Badge>
       )

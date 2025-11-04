@@ -138,9 +138,9 @@ export default function OrcamentosPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col items-stretch gap-2 md:w-auto md:flex-row md:items-center">
           <CopyBudgetDialog currentMonth={currentMonthString} />
-          <Button asChild>
+          <Button asChild className="w-full md:w-auto">
             <Link href="/admin/budgets/new">
               <Plus className="mr-2 h-4 w-4" />
               Novo Orçamento
@@ -148,7 +148,7 @@ export default function OrcamentosPage() {
           </Button>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" className="w-full md:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Criar Rápido
               </Button>
@@ -175,18 +175,6 @@ export default function OrcamentosPage() {
       <div className="mb-8">
         <BudgetSummary summary={summary} isLoading={summaryLoading} month={currentMonthString} />
       </div>
-
-      {/* Comparação com Mês Anterior */}
-      {budgets.length > 0 && (
-        <div className="mb-8">
-          <BudgetComparisonCard
-            comparisons={budgetComparisons}
-            currentMonth={currentMonthString}
-            previousMonth={previousMonthString}
-            isLoading={budgetsLoading}
-          />
-        </div>
-      )}
 
       {/* Lista de Orçamentos */}
       <Card>
@@ -234,13 +222,13 @@ export default function OrcamentosPage() {
                       : 'Tente ajustar os filtros ou criar um novo orçamento'}
                   </p>
                   <div className="flex flex-col justify-center gap-2 md:flex-row">
-                    <Button asChild>
+                    <Button asChild className="w-full md:w-auto">
                       <Link href="/admin/budgets/new">
                         <Plus className="mr-2 h-4 w-4" />
                         Criar Primeiro Orçamento
                       </Link>
                     </Button>
-                    <Button variant="outline" onClick={() => setIsCreateOpen(true)}>
+                    <Button variant="outline" onClick={() => setIsCreateOpen(true)} className="w-full md:w-auto">
                       <Plus className="mr-2 h-4 w-4" />
                       Criar Rápido
                     </Button>
@@ -266,6 +254,18 @@ export default function OrcamentosPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Comparação com Mês Anterior */}
+      {budgets.length > 0 && (
+        <div className="mb-8">
+          <BudgetComparisonCard
+            comparisons={budgetComparisons}
+            currentMonth={currentMonthString}
+            previousMonth={previousMonthString}
+            isLoading={budgetsLoading}
+          />
+        </div>
+      )}
 
       {/* Dialog de edição */}
       <Dialog open={!!editingBudget} onOpenChange={() => setEditingBudget(null)}>
