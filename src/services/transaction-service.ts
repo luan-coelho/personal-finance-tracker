@@ -16,6 +16,7 @@ export interface TransactionFilters {
   userId?: string
   type?: TransactionType
   category?: string
+  reserveId?: string
   tags?: string[]
   dateFrom?: Date
   dateTo?: Date
@@ -99,6 +100,10 @@ export class TransactionService {
 
     if (filters.category) {
       conditions.push(eq(transactionsTable.category, filters.category))
+    }
+
+    if (filters.reserveId) {
+      conditions.push(eq(transactionsTable.reserveId, filters.reserveId))
     }
 
     if (filters.tags && filters.tags.length > 0) {

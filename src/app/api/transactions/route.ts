@@ -17,8 +17,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
     const userId = searchParams.get('userId')
-    const type = searchParams.get('type') as 'entrada' | 'saida' | null
+    const type = searchParams.get('type') as 'entrada' | 'saida' | 'reserva' | null
     const category = searchParams.get('category')
+    const reserveId = searchParams.get('reserveId')
     const tags = searchParams.get('tags')?.split(',').filter(Boolean)
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
       userId: spaceId && hasSpaceAccess ? undefined : userId || session.user.id,
       type: type || undefined,
       category: category || undefined,
+      reserveId: reserveId || undefined,
       tags: tags || undefined,
       dateFrom: dateFrom ? new Date(dateFrom) : undefined,
       dateTo: dateTo ? new Date(dateTo) : undefined,

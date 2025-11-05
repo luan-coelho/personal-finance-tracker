@@ -8,6 +8,7 @@ import { useState } from 'react'
 
 import { ReserveMovementForm } from '@/components/reserve-movement-form'
 import { ReserveMovementsTable } from '@/components/reserve-movements-table'
+import { ReserveTransactionsCard } from '@/components/reserve-transactions-card'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -16,6 +17,7 @@ import { Progress } from '@/components/ui/progress'
 import { useReserveMovements } from '@/hooks/use-reserve-movements'
 import { useReserve } from '@/hooks/use-reserves'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
+import { useTransactionsByReserve } from '@/hooks/use-transactions'
 
 import { routes } from '@/lib/routes'
 
@@ -25,6 +27,7 @@ export default function ReserveMovementsPage() {
   const { selectedSpace } = useSelectedSpace()
   const { data: reserve, isLoading: isLoadingReserve } = useReserve(reserveId)
   const { data: movements = [], isLoading: isLoadingMovements } = useReserveMovements(reserveId)
+  const { data: reserveTransactions = [], isLoading: isLoadingTransactions } = useTransactionsByReserve(reserveId)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   if (!selectedSpace) {
@@ -164,6 +167,9 @@ export default function ReserveMovementsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Card de Transações de Reserva */}
+      <ReserveTransactionsCard transactions={reserveTransactions} isLoading={isLoadingTransactions} />
 
       {/* Tabela de Movimentações */}
       <Card>

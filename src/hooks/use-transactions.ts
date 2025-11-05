@@ -11,6 +11,7 @@ import type {
   UpdateTransactionFormValues,
 } from '@/app/db/schemas'
 
+import { reserveQueryKeys } from '@/services/reserve-service'
 import type { TransactionFilters, TransactionSummary } from '@/services/transaction-service'
 
 // Chaves de query para cache
@@ -27,6 +28,7 @@ export const transactionKeys = {
   categoryChart: (spaceId: string, type?: TransactionType) =>
     [...transactionKeys.all, 'categoryChart', spaceId, type] as const,
   monthlyChart: (spaceId: string, year: number) => [...transactionKeys.all, 'monthlyChart', spaceId, year] as const,
+  byReserve: (reserveId: string) => [...transactionKeys.all, 'byReserve', reserveId] as const,
 }
 
 // Hook para listar transações
@@ -93,6 +95,30 @@ export function useTransactionSummary(filters: TransactionFilters = {}) {
 
       return response.json() as Promise<TransactionSummary>
     },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  })
+}
+
+// Hook para buscar transações de uma reserva específica
+export function useTransactionsByReserve(reserveId: string) {
+  return useQuery({
+    queryKey: transactionKeys.byReserve(reserveId),
+    queryFn: async () => {
+      const params = new URLSearchParams()
+      params.append('type', 'reserva')
+      params.append('reserveId', reserveId)
+      params.append('page', '1')
+      params.append('limit', '100')
+
+      const response = await fetch(`/api/transactions?${params}`)
+      if (!response.ok) {
+        throw new Error('Erro ao buscar transações da reserva')
+      }
+
+      const data = (await response.json()) as { transactions: TransactionWithUser[]; total: number }
+      return data.transactions
+    },
+    enabled: !!reserveId,
     staleTime: 5 * 60 * 1000, // 5 minutos
   })
 }
@@ -192,8 +218,9 @@ export function useCreateTransaction() {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transactionKeys.all })
       // Se for transação de reserva, invalidar queries de reservas
-      if (variables.type === 'reserva') {
-        queryClient.invalidateQueries({ queryKey: ['reserves'] })
+      if (variables.type === 'reserva' && variables.spaceId) {
+        queryClient.invalidateQueries({ queryKey: reserveQueryKeys.all })
+        queryClient.invalidateQueries({ queryKey: reserveQueryKeys.list(variables.spaceId) })
       }
       toast.success('Transação criada com sucesso!')
     },
@@ -226,8 +253,9 @@ export function useUpdateTransaction() {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transactionKeys.all })
       // Se for ou era transação de reserva, invalidar queries de reservas
-      if (variables.data.type === 'reserva') {
-        queryClient.invalidateQueries({ queryKey: ['reserves'] })
+      if (variables.data.type === 'reserva' && variables.data.spaceId) {
+        queryClient.invalidateQueries({ queryKey: reserveQueryKeys.all })
+        queryClient.invalidateQueries({ queryKey: reserveQueryKeys.list(variables.data.spaceId) })
       }
       toast.success('Transação atualizada com sucesso!')
     },
@@ -257,8 +285,8 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transactionKeys.all })
-      // Invalidar queries de reservas (caso seja transação de reserva)
-      queryClient.invalidateQueries({ queryKey: ['reserves'] })
+      // Invalidar todas as queries de reservas (não sabemos qual reserva era, então invalidamos todas)
+      queryClient.invalidateQueries({ queryKey: reserveQueryKeys.all })
       toast.success('Transação deletada com sucesso!')
     },
     onError: error => {
