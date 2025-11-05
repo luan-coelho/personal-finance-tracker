@@ -13,8 +13,8 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 import { useCreateBudget, useUpdateBudget } from '@/hooks/use-budgets'
+import { useCategories } from '@/hooks/use-categories'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
-import { useTransactionCategories } from '@/hooks/use-transactions'
 
 interface BudgetFormProps {
   budget?: Budget
@@ -28,8 +28,8 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
   const updateBudget = useUpdateBudget()
   const [customCategory, setCustomCategory] = useState(false)
 
-  // Buscar categorias existentes para sugestões
-  const { data: existingCategories = [] } = useTransactionCategories(selectedSpace?.id || '')
+  // Buscar categorias de saída cadastradas no sistema
+  const { data: categories = [] } = useCategories(selectedSpace?.id || '', 'saida')
 
   const isEditing = !!budget
 
@@ -147,7 +147,7 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
               <FormItem>
                 <FormLabel>Categoria</FormLabel>
                 <FormControl>
-                  {!customCategory && existingCategories.length > 0 ? (
+                  {!customCategory && categories.length > 0 ? (
                     <div>
                       <Select
                         value={field.value}
@@ -163,9 +163,9 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
                           <SelectValue placeholder="Selecione uma categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                          {existingCategories.map(category => (
-                            <SelectItem key={category} value={category}>
-                              {category}
+                          {categories.map(category => (
+                            <SelectItem key={category.id} value={category.name}>
+                              {category.name}
                             </SelectItem>
                           ))}
                           <SelectItem value="__custom__">+ Nova categoria</SelectItem>
@@ -175,7 +175,7 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
                   ) : (
                     <div className="space-y-2">
                       <Input placeholder="Digite o nome da categoria" {...field} maxLength={255} />
-                      {existingCategories.length > 0 && (
+                      {categories.length > 0 && (
                         <Button
                           type="button"
                           variant="ghost"
