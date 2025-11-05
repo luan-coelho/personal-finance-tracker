@@ -109,7 +109,7 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
         <TableHeader>
           <TableRow>
             <TableHead className="w-[50px]">Usuário</TableHead>
-            <TableHead>Tipo</TableHead>
+            {/* <TableHead>Tipo</TableHead> */}
             <TableHead>Descrição</TableHead>
             <TableHead>Categoria</TableHead>
             <TableHead>Tags</TableHead>
@@ -124,11 +124,12 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
               <TableCell>
                 <UserAvatarDisplay user={transaction.user} size="sm" />
               </TableCell>
-              <TableCell>
-                <Badge className={`${getTypeColor(transaction.type)} space-y-10`}>
-                  {getTypeIcon(transaction.type)} {getTypeLabel(transaction.type)}
+              {/* <TableCell>
+                <Badge
+                  className={`${getTypeColor(transaction.type)} flex flex-none items-center justify-center gap-1 py-1 text-sm`}>
+                  {getTypeIcon(transaction.type)} <span>{getTypeLabel(transaction.type)}</span>
                 </Badge>
-              </TableCell>
+              </TableCell> */}
               <TableCell>
                 <div className="font-medium">{transaction.description}</div>
               </TableCell>

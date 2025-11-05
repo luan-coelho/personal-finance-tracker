@@ -30,11 +30,6 @@ export default function NewReservePage() {
   return (
     <div className="container max-w-2xl space-y-6 py-6">
       <div className="flex items-center gap-4">
-        <Link href={routes.frontend.admin.reserves.index}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Nova Reserva</h1>
           <p className="text-muted-foreground">Crie uma nova reserva para organizar seu dinheiro</p>
