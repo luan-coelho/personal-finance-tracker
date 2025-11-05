@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowDownCircle, ArrowUpCircle, Edit2, Loader2, X } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Edit2, Loader2, Wallet, X } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import React, { useCallback, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 
 import { useCategories } from '@/hooks/use-categories'
+import { useReserves } from '@/hooks/use-reserves'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTags } from '@/hooks/use-tags'
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transactions'
@@ -62,7 +63,8 @@ export function TransactionForm({ transaction, onSuccess, onCancel, mode }: Tran
         : '',
       date: transaction?.date ? new Date(transaction.date) : new Date(),
       description: transaction?.description || '',
-      category: transaction?.category || '',
+      category: transaction?.category || undefined,
+      reserveId: transaction?.reserveId || undefined,
       tags: Array.isArray(transaction?.tags) ? transaction.tags : [],
       spaceId: selectedSpace.id,
       userId: session.user.id,
@@ -80,7 +82,14 @@ export function TransactionForm({ transaction, onSuccess, onCancel, mode }: Tran
 
   // Buscar categorias do espaço baseado no tipo selecionado
   const currentType = form.watch('type')
-  const { data: customCategories = [] } = useCategories(selectedSpace.id, currentType)
+  const { data: customCategories = [] } = useCategories(
+    selectedSpace.id,
+    currentType === 'reserva' ? undefined : currentType,
+  )
+
+  // Buscar reservas ativas do espaço
+  const { data: allReserves = [] } = useReserves(selectedSpace.id)
+  const activeReserves = allReserves.filter(r => r.active)
 
   // Mutations
   const createMutation = useCreateTransaction()
@@ -115,7 +124,8 @@ export function TransactionForm({ transaction, onSuccess, onCancel, mode }: Tran
         amount: numericAmount,
         date: values.date,
         description: values.description,
-        category: values.category,
+        category: values.type !== 'reserva' ? values.category : undefined,
+        reserveId: values.type === 'reserva' ? values.reserveId : undefined,
         tags: Array.isArray(values.tags) ? values.tags : [],
         spaceId: selectedSpace.id,
         userId: session.user.id,
@@ -177,6 +187,14 @@ export function TransactionForm({ transaction, onSuccess, onCancel, mode }: Tran
                       htmlFor="saida"
                       className="flex items-center gap-1 text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       <ArrowUpCircle className="h-4 w-4 text-red-600" aria-label="Saída" /> Saída
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="reserva" id="reserva" />
+                    <label
+                      htmlFor="reserva"
+                      className="flex items-center gap-1 text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      <Wallet className="h-4 w-4 text-blue-600" aria-label="Reserva" /> Reserva
                     </label>
                   </div>
                 </RadioGroup>
@@ -259,31 +277,65 @@ export function TransactionForm({ transaction, onSuccess, onCancel, mode }: Tran
           />
         </div>
 
-        {/* Categoria */}
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Categoria</FormLabel>
-              <FormControl>
-                <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableCategories.map((cat: string) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Categoria - apenas para entrada e saída */}
+        {currentType !== 'reserva' && (
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Categoria</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCategories.map((cat: string) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {/* Reserva - apenas para tipo reserva */}
+        {currentType === 'reserva' && (
+          <FormField
+            control={form.control}
+            name="reserveId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Reserva *</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Selecione uma reserva" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeReserves.length === 0 ? (
+                        <div className="text-muted-foreground px-2 py-1.5 text-sm">Nenhuma reserva ativa</div>
+                      ) : (
+                        activeReserves.map(reserve => (
+                          <SelectItem key={reserve.id} value={reserve.id}>
+                            {reserve.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Tags - Seleção apenas das cadastradas */}
         <FormField

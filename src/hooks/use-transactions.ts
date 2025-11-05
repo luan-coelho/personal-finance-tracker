@@ -188,9 +188,13 @@ export function useCreateTransaction() {
 
       return response.json() as Promise<Transaction>
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transactionKeys.all })
+      // Se for transação de reserva, invalidar queries de reservas
+      if (variables.type === 'reserva') {
+        queryClient.invalidateQueries({ queryKey: ['reserves'] })
+      }
       toast.success('Transação criada com sucesso!')
     },
     onError: error => {
@@ -218,9 +222,13 @@ export function useUpdateTransaction() {
 
       return response.json() as Promise<Transaction>
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transactionKeys.all })
+      // Se for ou era transação de reserva, invalidar queries de reservas
+      if (variables.data.type === 'reserva') {
+        queryClient.invalidateQueries({ queryKey: ['reserves'] })
+      }
       toast.success('Transação atualizada com sucesso!')
     },
     onError: error => {
@@ -249,6 +257,8 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transactionKeys.all })
+      // Invalidar queries de reservas (caso seja transação de reserva)
+      queryClient.invalidateQueries({ queryKey: ['reserves'] })
       toast.success('Transação deletada com sucesso!')
     },
     onError: error => {

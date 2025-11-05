@@ -65,7 +65,7 @@ export function UserAvatarDisplay({ user, size = 'default', className, showToolt
         <TooltipContent>
           <div className="text-sm">
             <p className="font-semibold">{user.name}</p>
-            <p className="text-muted-foreground text-xs">{user.email}</p>
+            <p className="text-xs">{user.email}</p>
           </div>
         </TooltipContent>
       </Tooltip>

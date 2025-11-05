@@ -51,7 +51,8 @@ export function TransactionSummary({ dateFrom, dateTo }: TransactionSummaryProps
     return null
   }
 
-  const balance = summary.totalEntradas - summary.totalSaidas
+  // O saldo já vem calculado do backend como: entradas - saídas - reservas
+  const balance = summary.saldo
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

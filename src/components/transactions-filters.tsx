@@ -149,6 +149,7 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
                     <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="entrada">💰 Entradas</SelectItem>
                     <SelectItem value="saida">💸 Saídas</SelectItem>
+                    <SelectItem value="reserva">🏦 Reservas</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -270,7 +271,7 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
         <div className="flex flex-wrap gap-2">
           {filters.type && (
             <Badge variant="secondary">
-              Tipo: {filters.type === 'entrada' ? 'Entradas' : 'Saídas'}
+              Tipo: {filters.type === 'entrada' ? 'Entradas' : filters.type === 'saida' ? 'Saídas' : 'Reservas'}
               <button onClick={() => handleTypeChange('all')} className="hover:text-destructive ml-1">
                 ×
               </button>

@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowDownCircle, ArrowUpCircle, Copy, Edit, MoreHorizontal, Trash2 } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Copy, Edit, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 
 import { TransactionType, TransactionWithUser } from '@/app/db/schemas'
@@ -45,15 +45,42 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
   }
 
   const getTypeColor = (type: TransactionType) => {
-    return type === 'entrada' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+    switch (type) {
+      case 'entrada':
+        return 'bg-green-100 text-green-800 pointer-events-none'
+      case 'saida':
+        return 'bg-red-100 text-red-800 pointer-events-none'
+      case 'reserva':
+        return 'bg-blue-100 text-blue-800 pointer-events-none'
+      default:
+        return 'bg-gray-100 text-gray-800 pointer-events-none'
+    }
   }
 
   const getTypeIcon = (type: TransactionType) => {
-    return type === 'entrada' ? (
-      <ArrowDownCircle className="inline h-4 w-4 text-green-600" aria-label="Entrada" />
-    ) : (
-      <ArrowUpCircle className="inline h-4 w-4 text-red-600" aria-label="Saída" />
-    )
+    switch (type) {
+      case 'entrada':
+        return <ArrowDownCircle className="inline h-4 w-4 text-green-600" aria-label="Entrada" />
+      case 'saida':
+        return <ArrowUpCircle className="inline h-4 w-4 text-red-600" aria-label="Saída" />
+      case 'reserva':
+        return <Wallet className="inline h-4 w-4 text-blue-600" aria-label="Reserva" />
+      default:
+        return null
+    }
+  }
+
+  const getTypeLabel = (type: TransactionType) => {
+    switch (type) {
+      case 'entrada':
+        return 'Entrada'
+      case 'saida':
+        return 'Saída'
+      case 'reserva':
+        return 'Reserva'
+      default:
+        return type
+    }
   }
 
   if (isLoading) {
@@ -99,7 +126,7 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
               </TableCell>
               <TableCell>
                 <Badge className={`${getTypeColor(transaction.type)} space-y-10`}>
-                  {getTypeIcon(transaction.type)} {transaction.type === 'entrada' ? 'Entrada' : 'Saída'}
+                  {getTypeIcon(transaction.type)} {getTypeLabel(transaction.type)}
                 </Badge>
               </TableCell>
               <TableCell>
@@ -132,8 +159,15 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
               </TableCell>
               <TableCell>{format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
               <TableCell className="text-right font-mono">
-                <span className={transaction.type === 'entrada' ? 'text-green-600' : 'text-red-600'}>
-                  {transaction.type === 'entrada' ? '+' : '-'}
+                <span
+                  className={
+                    transaction.type === 'entrada'
+                      ? 'text-green-600'
+                      : transaction.type === 'saida'
+                        ? 'text-red-600'
+                        : 'text-blue-600'
+                  }>
+                  {transaction.type === 'entrada' ? '+' : transaction.type === 'saida' ? '-' : ''}
                   {formatCurrency(transaction.amount)}
                 </span>
               </TableCell>

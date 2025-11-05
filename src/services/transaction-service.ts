@@ -8,6 +8,7 @@ import {
   type TransactionType,
   type TransactionWithUser,
 } from '@/app/db/schemas'
+import { reservesTable } from '@/app/db/schemas/reserve-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
 export interface TransactionFilters {
@@ -31,6 +32,32 @@ export interface TransactionSummary {
 export class TransactionService {
   // Criar nova transação
   static async create(data: TransactionFormValues): Promise<Transaction> {
+    // Se for uma transação de reserva, atualizar o saldo da reserva
+    if (data.type === 'reserva' && data.reserveId) {
+      await db.transaction(async tx => {
+        // Buscar a reserva atual
+        const [reserve] = await tx.select().from(reservesTable).where(eq(reservesTable.id, data.reserveId!)).limit(1)
+
+        if (!reserve) {
+          throw new Error('Reserva não encontrada')
+        }
+
+        // Calcular novo saldo da reserva
+        const currentAmount = Number(reserve.currentAmount)
+        const transactionAmount = Number(data.amount)
+        const newAmount = currentAmount + transactionAmount
+
+        // Atualizar saldo da reserva
+        await tx
+          .update(reservesTable)
+          .set({
+            currentAmount: newAmount.toFixed(2),
+            updatedAt: new Date(),
+          })
+          .where(eq(reservesTable.id, data.reserveId!))
+      })
+    }
+
     const [transaction] = await db
       .insert(transactionsTable)
       .values({
@@ -139,6 +166,61 @@ export class TransactionService {
 
   // Atualizar transação
   static async update(id: string, data: Partial<TransactionFormValues>): Promise<Transaction | null> {
+    // Buscar transação original
+    const originalTransaction = await this.findById(id)
+    if (!originalTransaction) {
+      throw new Error('Transação não encontrada')
+    }
+
+    // Se a transação original era de reserva ou a nova é de reserva, ajustar saldos
+    if (originalTransaction.type === 'reserva' || data.type === 'reserva') {
+      await db.transaction(async tx => {
+        // Reverter saldo da reserva original se era transação de reserva
+        if (originalTransaction.type === 'reserva' && originalTransaction.reserveId) {
+          const [reserve] = await tx
+            .select()
+            .from(reservesTable)
+            .where(eq(reservesTable.id, originalTransaction.reserveId))
+            .limit(1)
+
+          if (reserve) {
+            const currentAmount = Number(reserve.currentAmount)
+            const originalAmount = Number(originalTransaction.amount)
+            const newAmount = currentAmount - originalAmount
+
+            await tx
+              .update(reservesTable)
+              .set({
+                currentAmount: newAmount.toFixed(2),
+                updatedAt: new Date(),
+              })
+              .where(eq(reservesTable.id, originalTransaction.reserveId))
+          }
+        }
+
+        // Adicionar saldo à nova reserva se agora é transação de reserva
+        if (data.type === 'reserva' && data.reserveId) {
+          const [reserve] = await tx.select().from(reservesTable).where(eq(reservesTable.id, data.reserveId)).limit(1)
+
+          if (!reserve) {
+            throw new Error('Reserva não encontrada')
+          }
+
+          const currentAmount = Number(reserve.currentAmount)
+          const transactionAmount = Number(data.amount || originalTransaction.amount)
+          const newAmount = currentAmount + transactionAmount
+
+          await tx
+            .update(reservesTable)
+            .set({
+              currentAmount: newAmount.toFixed(2),
+              updatedAt: new Date(),
+            })
+            .where(eq(reservesTable.id, data.reserveId))
+        }
+      })
+    }
+
     const [transaction] = await db
       .update(transactionsTable)
       .set({
@@ -154,6 +236,37 @@ export class TransactionService {
 
   // Deletar transação
   static async delete(id: string): Promise<boolean> {
+    // Buscar transação para reverter saldo da reserva se necessário
+    const transaction = await this.findById(id)
+    if (!transaction) {
+      return false
+    }
+
+    // Se era transação de reserva, reverter o saldo
+    if (transaction.type === 'reserva' && transaction.reserveId) {
+      await db.transaction(async tx => {
+        const [reserve] = await tx
+          .select()
+          .from(reservesTable)
+          .where(eq(reservesTable.id, transaction.reserveId!))
+          .limit(1)
+
+        if (reserve) {
+          const currentAmount = Number(reserve.currentAmount)
+          const transactionAmount = Number(transaction.amount)
+          const newAmount = currentAmount - transactionAmount
+
+          await tx
+            .update(reservesTable)
+            .set({
+              currentAmount: newAmount.toFixed(2),
+              updatedAt: new Date(),
+            })
+            .where(eq(reservesTable.id, transaction.reserveId!))
+        }
+      })
+    }
+
     const result = await db.delete(transactionsTable).where(eq(transactionsTable.id, id))
 
     return (result.rowCount ?? 0) > 0
@@ -193,6 +306,9 @@ export class TransactionService {
         totalSaidas: sql<number>`
           COALESCE(SUM(CASE WHEN type = 'saida' THEN amount::numeric ELSE 0 END), 0)
         `,
+        totalReservas: sql<number>`
+          COALESCE(SUM(CASE WHEN type = 'reserva' THEN amount::numeric ELSE 0 END), 0)
+        `,
         count: sql<number>`count(*)`,
       })
       .from(transactionsTable)
@@ -200,7 +316,9 @@ export class TransactionService {
 
     const totalEntradas = Number(result.totalEntradas)
     const totalSaidas = Number(result.totalSaidas)
-    const saldo = totalEntradas - totalSaidas
+    const totalReservas = Number(result.totalReservas)
+    // Saldo = entradas - saídas - reservas (reservas subtraem do saldo disponível)
+    const saldo = totalEntradas - totalSaidas - totalReservas
 
     return {
       totalEntradas,
