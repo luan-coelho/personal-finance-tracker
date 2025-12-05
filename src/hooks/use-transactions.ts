@@ -14,15 +14,22 @@ import type {
 import { reserveQueryKeys } from '@/services/reserve-service'
 import type { TransactionFilters, TransactionSummary } from '@/services/transaction-service'
 
+// Helper para serializar filtros com Dates para query keys
+const serializeFilters = (filters: TransactionFilters) => ({
+  ...filters,
+  dateFrom: filters.dateFrom?.toISOString(),
+  dateTo: filters.dateTo?.toISOString(),
+})
+
 // Chaves de query para cache
 export const transactionKeys = {
   all: ['transactions'] as const,
   lists: () => [...transactionKeys.all, 'list'] as const,
   list: (filters: TransactionFilters, page: number, limit: number) =>
-    [...transactionKeys.lists(), { filters, page, limit }] as const,
+    [...transactionKeys.lists(), { filters: serializeFilters(filters), page, limit }] as const,
   details: () => [...transactionKeys.all, 'detail'] as const,
   detail: (id: string) => [...transactionKeys.details(), id] as const,
-  summary: (filters: TransactionFilters) => [...transactionKeys.all, 'summary', filters] as const,
+  summary: (filters: TransactionFilters) => [...transactionKeys.all, 'summary', serializeFilters(filters)] as const,
   categories: (spaceId: string) => [...transactionKeys.all, 'categories', spaceId] as const,
   tags: (spaceId: string) => [...transactionKeys.all, 'tags', spaceId] as const,
   categoryChart: (spaceId: string, type?: TransactionType) =>

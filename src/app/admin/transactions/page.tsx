@@ -1,7 +1,7 @@
 'use client'
 
 import { Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { Transaction } from '@/app/db/schemas'
 
@@ -45,16 +45,29 @@ export default function TransacoesPage() {
     return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
   })
 
-  // Adicionar spaceId e filtro mensal condicional aos filtros
-  const queryFilters = {
-    ...filters,
-    spaceId: selectedSpace?.id || '',
-    // Se o usuário definiu filtros de data manualmente, usar eles; senão usar filtro mensal
-    dateFrom: filters.dateFrom || (showAllTransactions ? undefined : monthStartDate),
-    dateTo: filters.dateTo || (showAllTransactions ? undefined : monthEndDate),
-  }
+  // Adicionar spaceId e filtro mensal condicional aos filtros - memoizado para evitar recriação
+  const queryFilters = useMemo(
+    () => ({
+      ...filters,
+      spaceId: selectedSpace?.id || '',
+      // Se o usuário definiu filtros de data manualmente, usar eles; senão usar filtro mensal
+      dateFrom: filters.dateFrom || (showAllTransactions ? undefined : monthStartDate),
+      dateTo: filters.dateTo || (showAllTransactions ? undefined : monthEndDate),
+    }),
+    [filters, selectedSpace?.id, showAllTransactions, monthStartDate, monthEndDate],
+  )
 
   const { data, isLoading } = useTransactions(queryFilters, page, 20)
+
+  // DEBUG: Remover depois
+  console.log(
+    'Page:',
+    page,
+    'Data transactions count:',
+    data?.transactions?.length,
+    'First item:',
+    data?.transactions?.[0]?.description,
+  )
 
   const handleFiltersChange = (newFilters: TransactionFilters) => {
     setFilters(newFilters)
@@ -70,11 +83,11 @@ export default function TransacoesPage() {
     setPage(1)
   }
 
-  const handleMonthChange = (monthSelectorState: any) => {
+  const handleMonthChange = useCallback((monthSelectorState: any) => {
     setMonthStartDate(monthSelectorState.monthStartDate)
     setMonthEndDate(monthSelectorState.monthEndDate)
     setPage(1) // Reset página ao mudar mês
-  }
+  }, [])
 
   const handleShowAll = () => {
     setShowAllTransactions(true)
