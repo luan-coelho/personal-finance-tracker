@@ -13,8 +13,10 @@ import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
+import { useSpaceMembers } from '@/hooks/use-space-members'
 import { useTags } from '@/hooks/use-tags'
 import { useTransactionCategories } from '@/hooks/use-transactions'
 
@@ -27,6 +29,7 @@ export interface TransactionFilters {
   tags?: string[]
   dateFrom?: Date
   dateTo?: Date
+  userId?: string
 }
 
 interface TransactionsFiltersProps {
@@ -41,9 +44,10 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
   const [dateToOpen, setDateToOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
-  // Queries para categorias e tags
+  // Queries para categorias, tags e membros do espaço
   const { data: categories = [] } = useTransactionCategories(selectedSpace?.id || '')
   const { data: tagsData = [] } = useTags(selectedSpace?.id || '')
+  const { data: spaceMembers = [] } = useSpaceMembers(selectedSpace?.id || '')
   const tags = tagsData.map(tag => tag.name)
 
   const hasActiveFilters = Object.values(filters).some(
@@ -69,6 +73,13 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
     onFiltersChange({
       ...filters,
       category: category === 'all' ? undefined : category,
+    })
+  }
+
+  const handleUserChange = (userId: string) => {
+    onFiltersChange({
+      ...filters,
+      userId: userId === 'all' ? undefined : userId,
     })
   }
 
@@ -123,21 +134,23 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
         {/* Botão de filtros */}
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" className="relative h-10">
-              <Filter className="mr-2 h-6 w-6" />
-              Filtros
+            <Button variant="outline" className="relative gap-2">
+              <Filter className="h-4 w-4" />
+              <span>Filtros</span>
               {activeFiltersCount > 0 && (
-                <Badge className="ml-2 h-5 w-5 rounded-full p-0 text-xs">{activeFiltersCount}</Badge>
+                <Badge className="flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs">
+                  {activeFiltersCount}
+                </Badge>
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent className="p-5">
-            <SheetHeader className="p-0">
+          <SheetContent className="flex flex-col overflow-hidden p-5">
+            <SheetHeader className="flex-shrink-0 p-0">
               <SheetTitle>Filtros</SheetTitle>
               <SheetDescription>Filtre as transações por tipo, categoria, tags e período.</SheetDescription>
             </SheetHeader>
 
-            <div className="mt-6 space-y-6">
+            <div className="mt-6 flex-1 space-y-6 overflow-y-auto">
               {/* Tipo */}
               <div className="space-y-2">
                 <Label>Tipo</Label>
@@ -166,6 +179,27 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
                     {categories.map(category => (
                       <SelectItem key={category} value={category}>
                         {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Usuário */}
+              <div className="space-y-2">
+                <Label>Usuário</Label>
+                <Select value={filters.userId || 'all'} onValueChange={handleUserChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {spaceMembers.map(member => (
+                      <SelectItem key={member.user.id} value={member.user.id}>
+                        <div className="flex items-center gap-2">
+                          <UserAvatarDisplay user={member.user} size="sm" showTooltip={false} />
+                          <span>{member.user.name}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -295,6 +329,15 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
               </button>
             </Badge>
           ))}
+
+          {filters.userId && (
+            <Badge variant="secondary">
+              Usuário: {spaceMembers.find(m => m.user.id === filters.userId)?.user.name || 'Desconhecido'}
+              <button onClick={() => handleUserChange('all')} className="hover:text-destructive ml-1">
+                ×
+              </button>
+            </Badge>
+          )}
 
           {filters.dateFrom && (
             <Badge variant="secondary">

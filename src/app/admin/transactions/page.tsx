@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Hash, Plus, Wallet } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
 import { Transaction } from '@/app/db/schemas'
@@ -82,6 +82,11 @@ export default function TransacoesPage() {
     setFilters({})
     setPage(1)
   }
+
+  // Verificar se há filtros ativos
+  const hasActiveFilters = Object.values(filters).some(
+    value => value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true),
+  )
 
   const handleMonthChange = useCallback((monthSelectorState: any) => {
     setMonthStartDate(monthSelectorState.monthStartDate)
@@ -215,6 +220,88 @@ export default function TransacoesPage() {
               onClearFilters={handleClearFilters}
             />
           </div>
+
+          {/* Resumo das transações filtradas - só aparece quando há filtros aplicados */}
+          {hasActiveFilters && data && data.transactions.length > 0 && (
+            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {/* Entradas */}
+              <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900/30 dark:bg-green-950/20">
+                <ArrowUpCircle className="h-5 w-5 text-green-600 dark:text-green-500" />
+                <div>
+                  <p className="text-xs font-medium text-green-700 dark:text-green-400">Entradas</p>
+                  <p className="text-sm font-bold text-green-600 dark:text-green-500">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      data.transactions.filter(t => t.type === 'entrada').reduce((sum, t) => sum + Number(t.amount), 0),
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Saídas */}
+              <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900/30 dark:bg-red-950/20">
+                <ArrowDownCircle className="h-5 w-5 text-red-600 dark:text-red-500" />
+                <div>
+                  <p className="text-xs font-medium text-red-700 dark:text-red-400">Saídas</p>
+                  <p className="text-sm font-bold text-red-600 dark:text-red-500">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      data.transactions.filter(t => t.type === 'saida').reduce((sum, t) => sum + Number(t.amount), 0),
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Saldo */}
+              {(() => {
+                const entradas = data.transactions
+                  .filter(t => t.type === 'entrada')
+                  .reduce((sum, t) => sum + Number(t.amount), 0)
+                const saidas = data.transactions
+                  .filter(t => t.type === 'saida')
+                  .reduce((sum, t) => sum + Number(t.amount), 0)
+                const saldo = entradas - saidas
+                const isPositive = saldo >= 0
+                return (
+                  <div
+                    className={`flex items-center gap-3 rounded-lg border p-3 ${
+                      isPositive
+                        ? 'border-green-200 bg-green-50 dark:border-green-900/30 dark:bg-green-950/20'
+                        : 'border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-950/20'
+                    }`}>
+                    <Wallet
+                      className={`h-5 w-5 ${
+                        isPositive ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                      }`}
+                    />
+                    <div>
+                      <p
+                        className={`text-xs font-medium ${
+                          isPositive ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+                        }`}>
+                        Saldo
+                      </p>
+                      <p
+                        className={`text-sm font-bold ${
+                          isPositive ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                        }`}>
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(saldo)}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Total de Transações */}
+              <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900/30 dark:bg-blue-950/20">
+                <Hash className="h-5 w-5 text-blue-600 dark:text-blue-500" />
+                <div>
+                  <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Transações</p>
+                  <p className="text-sm font-bold text-blue-600 dark:text-blue-500">
+                    {data.total} {data.total === 1 ? 'registro' : 'registros'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Tabela de transações */}
           <div className="mb-6">

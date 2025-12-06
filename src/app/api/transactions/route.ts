@@ -38,9 +38,10 @@ export async function GET(request: NextRequest) {
 
     const filters = {
       spaceId: spaceId || undefined,
-      // Se tem acesso ao espaço, não filtrar por userId para mostrar todas as transações do espaço
-      // Se não tem spaceId ou não tem acesso, filtrar por userId
-      userId: spaceId && hasSpaceAccess ? undefined : userId || session.user.id,
+      // Se userId foi explicitamente passado nos filtros, respeitar esse valor
+      // Se não, e tem acesso ao espaço, não filtrar por userId para mostrar todas as transações do espaço
+      // Se não tem spaceId ou não tem acesso, filtrar pelo usuário logado
+      userId: userId || (spaceId && hasSpaceAccess ? undefined : session.user.id),
       type: type || undefined,
       category: category || undefined,
       reserveId: reserveId || undefined,

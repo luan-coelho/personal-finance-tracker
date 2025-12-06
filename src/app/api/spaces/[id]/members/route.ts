@@ -63,15 +63,45 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           id: usersTable.id,
           name: usersTable.name,
           email: usersTable.email,
+          image: usersTable.image,
         },
       })
       .from(spaceMembersTable)
       .innerJoin(usersTable, eq(spaceMembersTable.userId, usersTable.id))
       .where(eq(spaceMembersTable.spaceId, spaceId))
 
+    // Buscar o proprietário do espaço
+    const owner = await db.query.usersTable.findFirst({
+      where: eq(usersTable.id, space.ownerId),
+    })
+
+    // Construir a lista completa incluindo o proprietário
+    const allMembers: SpaceMemberWithUser[] = []
+
+    // Adicionar o proprietário primeiro (se não estiver já na lista de membros)
+    if (owner && !members.some(m => m.userId === owner.id)) {
+      allMembers.push({
+        id: `owner-${owner.id}`, // ID virtual para o owner
+        spaceId,
+        userId: owner.id,
+        role: 'owner',
+        createdAt: space.createdAt,
+        updatedAt: space.updatedAt,
+        user: {
+          id: owner.id,
+          name: owner.name,
+          email: owner.email,
+          image: owner.image,
+        },
+      })
+    }
+
+    // Adicionar os demais membros
+    allMembers.push(...(members as SpaceMemberWithUser[]))
+
     return NextResponse.json({
       success: true,
-      data: members as SpaceMemberWithUser[],
+      data: allMembers,
       message: 'Membros listados com sucesso',
     })
   } catch (error) {
