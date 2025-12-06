@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+import { getBrazilCurrentYearMonth, getMonthRangeBrazil } from '@/lib/date-utils'
+
 export interface MonthSelectorState {
   selectedMonth: number
   selectedYear: number
@@ -26,13 +28,17 @@ export interface UseMonthSelectorReturn extends MonthSelectorState, MonthSelecto
 }
 
 export function useMonthSelector(initialDate?: Date): UseMonthSelectorReturn {
-  const initial = initialDate || new Date()
-  const [selectedMonth, setSelectedMonth] = useState(initial.getMonth())
-  const [selectedYear, setSelectedYear] = useState(initial.getFullYear())
+  // Usa o timezone brasileiro para determinar o mês/ano inicial
+  const brazilNow = getBrazilCurrentYearMonth()
+  const initial = initialDate ? { year: initialDate.getFullYear(), month: initialDate.getMonth() } : brazilNow
 
-  // Criar datas de início e fim do mês selecionado
-  const monthStartDate = new Date(selectedYear, selectedMonth, 1)
-  const monthEndDate = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999)
+  const [selectedMonth, setSelectedMonth] = useState(initial.month)
+  const [selectedYear, setSelectedYear] = useState(initial.year)
+
+  // Criar datas de início e fim do mês selecionado usando timezone brasileiro
+  const monthRange = getMonthRangeBrazil(selectedYear, selectedMonth)
+  const monthStartDate = monthRange.start
+  const monthEndDate = monthRange.end
 
   const monthNames = [
     'Janeiro',
@@ -49,12 +55,12 @@ export function useMonthSelector(initialDate?: Date): UseMonthSelectorReturn {
     'Dezembro',
   ]
 
-  const currentDate = new Date()
-  const currentYear = currentDate.getFullYear()
-  const isCurrentMonth = selectedMonth === currentDate.getMonth() && selectedYear === currentDate.getFullYear()
+  // Usa o timezone brasileiro para verificar se é o mês atual
+  const currentBrazil = getBrazilCurrentYearMonth()
+  const isCurrentMonth = selectedMonth === currentBrazil.month && selectedYear === currentBrazil.year
 
   // Opções de anos (5 anos para trás e 5 para frente)
-  const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i)
+  const yearOptions = Array.from({ length: 11 }, (_, i) => currentBrazil.year - 5 + i)
 
   const setMonth = (month: number) => {
     if (month >= 0 && month <= 11) {
@@ -85,9 +91,9 @@ export function useMonthSelector(initialDate?: Date): UseMonthSelectorReturn {
   }
 
   const goToCurrentMonth = () => {
-    const now = new Date()
-    setSelectedMonth(now.getMonth())
-    setSelectedYear(now.getFullYear())
+    const now = getBrazilCurrentYearMonth()
+    setSelectedMonth(now.month)
+    setSelectedYear(now.year)
   }
 
   const goToDate = (date: Date) => {

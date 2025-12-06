@@ -26,6 +26,8 @@ import {
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTransactions } from '@/hooks/use-transactions'
 
+import { getBrazilCurrentYearMonth, getMonthRangeBrazil } from '@/lib/date-utils'
+
 export default function TransacoesPage() {
   const { selectedSpace } = useSelectedSpace()
   const [page, setPage] = useState(1)
@@ -34,15 +36,15 @@ export default function TransacoesPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [prefillTransaction, setPrefillTransaction] = useState<Transaction | null>(null)
 
-  // Estado para controle de mês/ano
+  // Estado para controle de mês/ano - usando timezone brasileiro
   const [showAllTransactions, setShowAllTransactions] = useState(false)
   const [monthStartDate, setMonthStartDate] = useState(() => {
-    const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth(), 1)
+    const { year, month } = getBrazilCurrentYearMonth()
+    return getMonthRangeBrazil(year, month).start
   })
   const [monthEndDate, setMonthEndDate] = useState(() => {
-    const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+    const { year, month } = getBrazilCurrentYearMonth()
+    return getMonthRangeBrazil(year, month).end
   })
 
   // Adicionar spaceId e filtro mensal condicional aos filtros - memoizado para evitar recriação

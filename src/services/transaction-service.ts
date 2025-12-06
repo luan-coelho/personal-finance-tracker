@@ -116,15 +116,15 @@ export class TransactionService {
     }
 
     if (filters.dateFrom) {
-      const dateFrom = new Date(filters.dateFrom)
-      dateFrom.setHours(0, 0, 0, 0)
-      conditions.push(sql`${transactionsTable.date} >= ${dateFrom.toISOString()}`)
+      // As datas já vêm com os timestamps corretos do timezone brasileiro
+      // Não devemos manipular as horas aqui
+      conditions.push(sql`${transactionsTable.date} >= ${filters.dateFrom.toISOString()}`)
     }
 
     if (filters.dateTo) {
-      const dateTo = new Date(filters.dateTo)
-      dateTo.setHours(23, 59, 59, 999)
-      conditions.push(sql`${transactionsTable.date} <= ${dateTo.toISOString()}`)
+      // As datas já vêm com os timestamps corretos do timezone brasileiro
+      // Não devemos manipular as horas aqui
+      conditions.push(sql`${transactionsTable.date} <= ${filters.dateTo.toISOString()}`)
     }
 
     if (filters.search) {
@@ -290,15 +290,13 @@ export class TransactionService {
     }
 
     if (filters.dateFrom) {
-      const dateFrom = new Date(filters.dateFrom)
-      dateFrom.setHours(0, 0, 0, 0)
-      conditions.push(sql`${transactionsTable.date} >= ${dateFrom.toISOString()}`)
+      // As datas já vêm com os timestamps corretos do timezone brasileiro
+      conditions.push(sql`${transactionsTable.date} >= ${filters.dateFrom.toISOString()}`)
     }
 
     if (filters.dateTo) {
-      const dateTo = new Date(filters.dateTo)
-      dateTo.setHours(23, 59, 59, 999)
-      conditions.push(sql`${transactionsTable.date} <= ${dateTo.toISOString()}`)
+      // As datas já vêm com os timestamps corretos do timezone brasileiro
+      conditions.push(sql`${transactionsTable.date} <= ${filters.dateTo.toISOString()}`)
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined
