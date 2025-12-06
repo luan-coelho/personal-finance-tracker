@@ -1,5 +1,6 @@
 'use client'
 
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowDownCircle, ArrowUpCircle, Edit2, Loader2, Wallet, X } from 'lucide-react'
 import { useSession } from 'next-auth/react'
@@ -13,6 +14,7 @@ import { insertTransactionSchema } from '@/app/db/schemas/transaction-schema'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Combobox } from '@/components/ui/combobox'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -33,11 +35,38 @@ interface TransactionFormProps {
   onSuccess?: () => void
   onCancel?: () => void
   mode?: 'create' | 'edit' | 'copy'
+  /** Transações já carregadas na página para cálculo da data padrão */
+  existingTransactions?: Transaction[]
 }
 
-export function TransactionForm({ transaction, onSuccess, onCancel, mode }: TransactionFormProps) {
+export function TransactionForm({
+  transaction,
+  onSuccess,
+  onCancel,
+  mode,
+  existingTransactions = [],
+}: TransactionFormProps) {
   const { data: session } = useSession()
   const { selectedSpace } = useSelectedSpace()
+  const { monthStartDate } = useMonthSelectorContext()
+
+  // Calcular a data padrão: última transação do mês ou primeiro dia do mês
+  const defaultDate = React.useMemo(() => {
+    if (transaction?.date) {
+      return new Date(transaction.date)
+    }
+
+    if (existingTransactions.length > 0) {
+      // Ordenar por data decrescente e pegar a mais recente
+      const sortedTransactions = [...existingTransactions].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      )
+      return new Date(sortedTransactions[0].date)
+    }
+
+    // Se não houver transações, usar o primeiro dia do mês selecionado
+    return monthStartDate
+  }, [transaction?.date, existingTransactions, monthStartDate])
 
   if (!selectedSpace || !session?.user?.id) {
     return null // ou um loader/spinner se preferir
@@ -61,7 +90,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel, mode }: Tran
             maximumFractionDigits: 2,
           })
         : '',
-      date: transaction?.date ? new Date(transaction.date) : new Date(),
+      date: defaultDate,
       description: transaction?.description || '',
       category: transaction?.category || undefined,
       reserveId: transaction?.reserveId || undefined,
@@ -69,7 +98,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel, mode }: Tran
       spaceId: selectedSpace.id,
       userId: session.user.id,
     }
-  }, [selectedSpace.id, session.user.id, transaction])
+  }, [selectedSpace.id, session.user.id, transaction, defaultDate])
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(insertTransactionSchema),
@@ -269,6 +298,7 @@ export function TransactionForm({ transaction, onSuccess, onCancel, mode }: Tran
                     placeholder="Selecione uma data"
                     disabled={isLoading}
                     error={form.formState.errors.date}
+                    defaultMonth={monthStartDate}
                   />
                 </FormControl>
                 <FormMessage />
@@ -286,18 +316,16 @@ export function TransactionForm({ transaction, onSuccess, onCancel, mode }: Tran
               <FormItem>
                 <FormLabel>Categoria</FormLabel>
                 <FormControl>
-                  <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
-                    <SelectTrigger className="h-9 w-full">
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableCategories.map((cat: string) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    options={availableCategories.map((cat: string) => ({ value: cat, label: cat }))}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Selecione uma categoria"
+                    searchPlaceholder="Pesquisar categoria..."
+                    emptyText="Nenhuma categoria encontrada."
+                    className="h-9"
+                    disabled={isLoading}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

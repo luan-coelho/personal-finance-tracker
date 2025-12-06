@@ -142,36 +142,6 @@ export default function TransacoesPage() {
           <h1 className="text-3xl font-bold">Transações</h1>
           <p className="text-muted-foreground">Gerencie suas transações financeiras em {selectedSpace.name}</p>
         </div>
-
-        <Dialog
-          open={isCreateOpen}
-          onOpenChange={open => {
-            setIsCreateOpen(open)
-            if (!open) {
-              setPrefillTransaction(null)
-            }
-          }}>
-          <DialogTrigger asChild>
-            <Button
-              className="w-full md:w-auto"
-              onClick={() => {
-                setPrefillTransaction(null)
-              }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Transação
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md md:min-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Nova Transação</DialogTitle>
-            </DialogHeader>
-            <TransactionForm
-              transaction={prefillTransaction ?? undefined}
-              mode={prefillTransaction ? 'copy' : 'create'}
-              onSuccess={handleCreateSuccess}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Seletor de Mês/Ano */}
@@ -208,8 +178,38 @@ export default function TransacoesPage() {
 
       {/* Card principal com filtros, tabela e paginação */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle>Lista de Transações</CardTitle>
+          <Dialog
+            open={isCreateOpen}
+            onOpenChange={open => {
+              setIsCreateOpen(open)
+              if (!open) {
+                setPrefillTransaction(null)
+              }
+            }}>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setPrefillTransaction(null)
+                }}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Transação
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md md:min-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Nova Transação</DialogTitle>
+              </DialogHeader>
+              <TransactionForm
+                transaction={prefillTransaction ?? undefined}
+                mode={prefillTransaction ? 'copy' : 'create'}
+                onSuccess={handleCreateSuccess}
+                existingTransactions={data?.transactions}
+              />
+            </DialogContent>
+          </Dialog>
         </CardHeader>
         <CardContent>
           {/* Filtros */}
@@ -369,7 +369,13 @@ export default function TransacoesPage() {
           <DialogHeader>
             <DialogTitle>Editar Transação</DialogTitle>
           </DialogHeader>
-          {editingTransaction && <TransactionForm transaction={editingTransaction} onSuccess={handleEditSuccess} />}
+          {editingTransaction && (
+            <TransactionForm
+              transaction={editingTransaction}
+              onSuccess={handleEditSuccess}
+              existingTransactions={data?.transactions}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

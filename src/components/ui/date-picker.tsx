@@ -22,6 +22,7 @@ interface DatePickerProps {
   toDate?: Date
   showValidationIcon?: boolean
   error?: FieldError
+  defaultMonth?: Date
 }
 
 export function DatePicker({
@@ -34,6 +35,7 @@ export function DatePicker({
   toDate,
   showValidationIcon = false,
   error,
+  defaultMonth,
 }: DatePickerProps) {
   const hasError = error !== undefined && error !== null
   const showErrorIcon = showValidationIcon && hasError
@@ -65,6 +67,7 @@ export function DatePicker({
             locale={ptBR}
             fromDate={fromDate}
             toDate={toDate}
+            defaultMonth={defaultMonth ?? date}
             disabled={[...(fromDate ? [{ before: fromDate }] : []), ...(toDate ? [{ after: toDate }] : [])]}
           />
         </PopoverContent>
