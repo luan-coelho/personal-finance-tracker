@@ -18,9 +18,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   env: {
     TZ: 'America/Sao_Paulo',
   },
