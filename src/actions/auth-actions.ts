@@ -1,10 +1,8 @@
 'use server'
 
 import { AuthError } from 'next-auth'
-import { headers } from 'next/headers'
 
 import { auth, signIn, signOut } from '@/lib/auth'
-import { logSignInServer, logSignOutServer } from '@/lib/auth-server-logger'
 import { routes } from '@/lib/routes'
 
 export interface SignInResult {
@@ -39,7 +37,6 @@ export async function handleGoogleSignIn(callbackUrl?: string): Promise<SignInRe
       error.digest.includes('NEXT_REDIRECT')
     ) {
       // Re-throw o erro de redirecionamento para continuar o fluxo
-      // O log será registrado no callback do NextAuth
       throw error
     }
 
@@ -67,48 +64,10 @@ export async function handleGoogleSignIn(callbackUrl?: string): Promise<SignInRe
   }
 }
 
-export async function logSuccessfulSignIn(): Promise<{ success: boolean }> {
-  try {
-    const session = await auth()
-
-    if (session?.user?.id && session?.user?.email) {
-      const headersList = await headers()
-      const requestInfo = {
-        ip: headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown',
-        userAgent: headersList.get('user-agent') || 'unknown',
-      }
-
-      await logSignInServer(session.user.id, session.user.email, requestInfo)
-      return { success: true }
-    }
-
-    return { success: false }
-  } catch (error) {
-    console.error('Erro ao registrar log de login:', error)
-    return { success: false }
-  }
-}
-
 export async function handleSignOut(redirectTo?: string): Promise<SignOutResult> {
   try {
-    // Obter dados da sessão antes do logout para registrar o log
-    const session = await auth()
-
-    if (session?.user?.id && session?.user?.email) {
-      // Registrar log de logout antes de fazer o signOut
-      try {
-        const headersList = await headers()
-        const requestInfo = {
-          ip: headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown',
-          userAgent: headersList.get('user-agent') || 'unknown',
-        }
-
-        await logSignOutServer(session.user.id, session.user.email, requestInfo)
-      } catch (logError) {
-        // Não interromper o fluxo de logout por erro de log
-        console.error('Erro ao registrar log de logout:', logError)
-      }
-    }
+    // Obter dados da sessão antes do logout
+    await auth()
 
     // Default redirect URL se não fornecido
     const redirectUrl = redirectTo || routes.frontend.auth.signIn

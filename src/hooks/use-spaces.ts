@@ -1,10 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 
 import { SpaceFormValues } from '@/app/db/schemas/space-schema'
-
-import { activityLogger } from '@/lib/activity-logger'
 
 import {
   createSpace,
@@ -35,20 +32,14 @@ export function useSpace(id: string) {
 // Hook para criar um novo espaço
 export function useCreateSpace() {
   const queryClient = useQueryClient()
-  const { data: session } = useSession()
 
   return useMutation({
     mutationFn: createSpace,
-    onSuccess: async newSpace => {
+    onSuccess: () => {
       // Invalidar a lista de espaços para refetch
       queryClient.invalidateQueries({
         queryKey: spaceQueryKeys.lists(),
       })
-
-      // Registrar log de atividade
-      if (session?.user?.id) {
-        await activityLogger.logSpaceCreated(session.user.id, newSpace.name)
-      }
 
       toast.success('Espaço criado com sucesso!')
     },
@@ -61,11 +52,10 @@ export function useCreateSpace() {
 // Hook para atualizar um espaço
 export function useUpdateSpace() {
   const queryClient = useQueryClient()
-  const { data: session } = useSession()
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<SpaceFormValues> }) => updateSpace(id, data),
-    onSuccess: async updatedSpace => {
+    onSuccess: updatedSpace => {
       // Invalidar a lista de espaços
       queryClient.invalidateQueries({
         queryKey: spaceQueryKeys.lists(),
@@ -73,11 +63,6 @@ export function useUpdateSpace() {
 
       // Atualizar o cache do espaço específico
       queryClient.setQueryData(spaceQueryKeys.detail(updatedSpace.id), updatedSpace)
-
-      // Registrar log de atividade
-      if (session?.user?.id) {
-        await activityLogger.logSpaceUpdated(session.user.id, updatedSpace.name)
-      }
 
       toast.success('Espaço atualizado com sucesso!')
     },
@@ -90,25 +75,14 @@ export function useUpdateSpace() {
 // Hook para excluir (desativar) um espaço
 export function useDeleteSpace() {
   const queryClient = useQueryClient()
-  const { data: session } = useSession()
 
   return useMutation({
-    mutationFn: async (spaceId: string) => {
-      // Buscar dados do espaço antes de desativar para registrar log
-      const space = await getSpaceById(spaceId)
-      await deleteSpace(spaceId)
-      return space
-    },
-    onSuccess: async deletedSpace => {
+    mutationFn: deleteSpace,
+    onSuccess: () => {
       // Invalidar a lista de espaços
       queryClient.invalidateQueries({
         queryKey: spaceQueryKeys.lists(),
       })
-
-      // Registrar log de atividade
-      if (session?.user?.id) {
-        await activityLogger.logSpaceDeleted(session.user.id, deletedSpace.name)
-      }
 
       toast.success('Espaço excluído com sucesso!')
     },

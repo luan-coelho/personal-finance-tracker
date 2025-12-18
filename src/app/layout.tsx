@@ -7,7 +7,6 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
-import { LoginLogger } from '@/components/auth/login-logger'
 import { Toaster } from '@/components/ui/sonner'
 
 import './globals.css'
@@ -43,7 +42,6 @@ export default function RootLayout({
           storageKey="nextjs-boilerplate-theme">
           <ThemeConfigProvider>
             <SessionProvider>
-              <LoginLogger />
               <QueryProvider>
                 <SpaceProvider>
                   {children}
