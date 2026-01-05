@@ -1,20 +1,15 @@
 'use client'
 
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useState } from 'react'
 
-import { ReserveMovementForm } from '@/components/reserve-movement-form'
-import { ReserveMovementsTable } from '@/components/reserve-movements-table'
-import { ReserveTransactionsCard } from '@/components/reserve-transactions-card'
+import { ReserveTransactionsTable } from '@/components/reserve-transactions-table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 
-import { useReserveMovements } from '@/hooks/use-reserve-movements'
 import { useReserve } from '@/hooks/use-reserves'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTransactionsByReserve } from '@/hooks/use-transactions'
@@ -26,9 +21,10 @@ export default function ReserveMovementsPage() {
   const reserveId = params.id as string
   const { selectedSpace } = useSelectedSpace()
   const { data: reserve, isLoading: isLoadingReserve } = useReserve(reserveId)
-  const { data: movements = [], isLoading: isLoadingMovements } = useReserveMovements(reserveId)
-  const { data: reserveTransactions = [], isLoading: isLoadingTransactions } = useTransactionsByReserve(reserveId)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { data: reserveTransactions = [], isLoading: isLoadingTransactions } = useTransactionsByReserve(
+    reserveId,
+    selectedSpace?.id,
+  )
 
   if (!selectedSpace) {
     return (
@@ -43,7 +39,7 @@ export default function ReserveMovementsPage() {
     )
   }
 
-  if (isLoadingReserve || isLoadingMovements) {
+  if (isLoadingReserve || isLoadingTransactions) {
     return (
       <div className="container space-y-6 py-6">
         <Card>
@@ -98,27 +94,9 @@ export default function ReserveMovementsPage() {
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Movimentações</h1>
-          <p className="text-muted-foreground">Gerencie depósitos e retiradas da reserva</p>
+          <h1 className="text-3xl font-bold tracking-tight">Transações da Reserva</h1>
+          <p className="text-muted-foreground">Histórico de depósitos e retiradas</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Movimentação
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Registrar Movimentação</DialogTitle>
-            </DialogHeader>
-            <ReserveMovementForm
-              reserveId={reserveId}
-              spaceId={selectedSpace.id}
-              onSuccess={() => setIsDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Card da Reserva */}
@@ -168,20 +146,17 @@ export default function ReserveMovementsPage() {
         </CardContent>
       </Card>
 
-      {/* Card de Transações de Reserva */}
-      <ReserveTransactionsCard transactions={reserveTransactions} isLoading={isLoadingTransactions} />
-
-      {/* Tabela de Movimentações */}
+      {/* Tabela de Transações */}
       <Card>
         <CardHeader>
-          <CardTitle>Histórico de Movimentações</CardTitle>
+          <CardTitle>Histórico de Transações</CardTitle>
           <CardDescription>
-            {movements.length} {movements.length === 1 ? 'movimentação' : 'movimentações'} registrada
-            {movements.length === 1 ? '' : 's'}
+            {reserveTransactions.length} {reserveTransactions.length === 1 ? 'transação' : 'transações'} registrada
+            {reserveTransactions.length === 1 ? '' : 's'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ReserveMovementsTable movements={movements} reserveId={reserveId} spaceId={selectedSpace.id} />
+          <ReserveTransactionsTable transactions={reserveTransactions} />
         </CardContent>
       </Card>
     </div>

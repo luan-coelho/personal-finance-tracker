@@ -107,13 +107,14 @@ export function useTransactionSummary(filters: TransactionFilters = {}) {
 }
 
 // Hook para buscar transações de uma reserva específica
-export function useTransactionsByReserve(reserveId: string) {
+export function useTransactionsByReserve(reserveId: string, spaceId?: string) {
   return useQuery({
-    queryKey: transactionKeys.byReserve(reserveId),
+    queryKey: [...transactionKeys.byReserve(reserveId), spaceId],
     queryFn: async () => {
       const params = new URLSearchParams()
       params.append('type', 'reserva')
       params.append('reserveId', reserveId)
+      if (spaceId) params.append('spaceId', spaceId)
       params.append('page', '1')
       params.append('limit', '100')
 
