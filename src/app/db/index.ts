@@ -1,7 +1,7 @@
 import 'dotenv/config'
 
-import { neon } from '@neondatabase/serverless'
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http'
+import { Pool } from '@neondatabase/serverless'
+import { drizzle as drizzleNeonServerless } from 'drizzle-orm/neon-serverless'
 // Imports condicionais baseados no ambiente
 import { drizzle as drizzlePostgres } from 'drizzle-orm/node-postgres'
 
@@ -15,9 +15,10 @@ function createDatabase() {
     // Configuração para desenvolvimento local (PostgreSQL com Docker)
     return drizzlePostgres(process.env.DATABASE_URL!, { schema })
   } else {
-    // Configuração para produção (Neon na Vercel)
-    const sql = neon(process.env.DATABASE_URL!)
-    return drizzleNeon(sql, { schema })
+    // Configuração para produção (Neon na Vercel - usando WebSocket para suportar transações)
+    // O driver neon-http não suporta db.transaction(), então usamos Pool com WebSocket
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
+    return drizzleNeonServerless(pool, { schema })
   }
 }
 
