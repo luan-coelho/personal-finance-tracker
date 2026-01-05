@@ -96,7 +96,7 @@ export function AppSidebar() {
               <Rabbit className="h-4 w-4" />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">Coêlho</span>
+              <span className="truncate font-semibold">Familia Coelho</span>
               <span className="text-muted-foreground truncate text-xs">Gestão Financeira</span>
             </div>
           </div>
