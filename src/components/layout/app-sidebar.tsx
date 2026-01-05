@@ -1,24 +1,10 @@
 'use client'
 
-import {
-  Building2,
-  CreditCard,
-  FileText,
-  FolderTree,
-  PiggyBank,
-  Rabbit,
-  Settings,
-  Tag,
-  Target,
-  Users,
-} from 'lucide-react'
-import { useSession } from 'next-auth/react'
+import { Building2, CreditCard, FolderTree, PiggyBank, Rabbit, Tag, Target, Users } from 'lucide-react'
 
-import { UserAvatar } from '@/components/auth/user-avatar'
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -74,18 +60,7 @@ const userManagementItems = [
   },
 ]
 
-// Menu items de configuração
-const configItems = [
-  {
-    title: 'Configurações',
-    url: routes.frontend.admin.settings,
-    icon: Settings,
-  },
-]
-
 export function AppSidebar() {
-  const { data: session } = useSession()
-
   // Sidebar sempre usa o tema dark
   return (
     <div className="dark">
@@ -126,24 +101,6 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {userManagementItems.map(item => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <a href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {configItems.map(item => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <a href={item.url}>
