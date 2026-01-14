@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Finanças Pessoais',
     short_name: 'Finanças',
     description: 'Aplicativo pessoal de controle financeiro',
-    start_url: '/',
+    start_url: '/admin/transactions',
     display: 'standalone',
     background_color: '#0f172a',
     theme_color: '#10B981',
