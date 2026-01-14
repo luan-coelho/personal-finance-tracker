@@ -21,7 +21,7 @@ export const routes = {
   frontend: {
     home: '/',
     admin: {
-      index: '/admin',
+      index: '/admin/transactions',
       settings: '/admin/settings',
       users: {
         index: '/admin/users',

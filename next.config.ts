@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
       destination: routes.frontend.admin.index,
       permanent: false,
     },
+    {
+      source: '/admin',
+      destination: routes.frontend.admin.transactions.index,
+      permanent: false,
+    },
   ],
   images: {
     remotePatterns: [

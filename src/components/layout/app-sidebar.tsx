@@ -1,6 +1,7 @@
 'use client'
 
 import { Building2, CreditCard, FolderTree, PiggyBank, Rabbit, Tag, Target, Users } from 'lucide-react'
+import Link from 'next/link'
 
 import {
   Sidebar,
@@ -85,10 +86,10 @@ export function AppSidebar() {
                 {items.map(item => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <a href={item.url}>
+                      <Link href={item.url}>
                         <item.icon />
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -103,10 +104,10 @@ export function AppSidebar() {
                 {userManagementItems.map(item => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <a href={item.url}>
+                      <Link href={item.url}>
                         <item.icon />
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
