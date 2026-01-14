@@ -1,18 +1,27 @@
 'use client'
 
-import { CalendarIcon, Filter, Search, X } from 'lucide-react'
-import { useState } from 'react'
+import { CalendarIcon, Check, ChevronsUpDown, Filter, Search, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 import { TransactionType } from '@/app/db/schemas'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
@@ -43,12 +52,32 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
   const [dateFromOpen, setDateFromOpen] = useState(false)
   const [dateToOpen, setDateToOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [categoryOpen, setCategoryOpen] = useState(false)
+  const [userOpen, setUserOpen] = useState(false)
 
   // Queries para categorias, tags e membros do espaço
   const { data: categories = [] } = useTransactionCategories(selectedSpace?.id || '')
   const { data: tagsData = [] } = useTags(selectedSpace?.id || '')
   const { data: spaceMembers = [] } = useSpaceMembers(selectedSpace?.id || '')
   const tags = tagsData.map(tag => tag.name)
+
+  // Opções para os comboboxes
+  const categoryOptions = useMemo(
+    () => [{ value: 'all', label: 'Todas' }, ...categories.map(category => ({ value: category, label: category }))],
+    [categories],
+  )
+
+  const userOptions = useMemo(
+    () => [
+      { value: 'all', label: 'Todos', user: null },
+      ...spaceMembers.map(member => ({
+        value: member.user.id,
+        label: member.user.name || 'Sem nome',
+        user: member.user,
+      })),
+    ],
+    [spaceMembers],
+  )
 
   const hasActiveFilters = Object.values(filters).some(
     value => value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true),
@@ -117,6 +146,9 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
     setDateToOpen(false)
   }
 
+  const selectedCategory = categoryOptions.find(opt => opt.value === (filters.category || 'all'))
+  const selectedUser = userOptions.find(opt => opt.value === (filters.userId || 'all'))
+
   return (
     <div className="space-y-4">
       {/* Barra de busca */}
@@ -144,13 +176,13 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent className="flex flex-col overflow-hidden p-5">
-            <SheetHeader className="flex-shrink-0 p-0">
+          <SheetContent className="flex h-full flex-col overflow-hidden p-0">
+            <SheetHeader className="flex-shrink-0 px-5 pt-5">
               <SheetTitle>Filtros</SheetTitle>
               <SheetDescription>Filtre as transações por tipo, categoria, tags e período.</SheetDescription>
             </SheetHeader>
 
-            <div className="mt-6 flex-1 space-y-6 overflow-y-auto">
+            <div className="flex-1 space-y-6 overflow-y-auto px-5 py-4">
               {/* Tipo */}
               <div className="space-y-2">
                 <Label>Tipo</Label>
@@ -167,43 +199,106 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
                 </Select>
               </div>
 
-              {/* Categoria */}
+              {/* Categoria com pesquisa */}
               <div className="space-y-2">
                 <Label>Categoria</Label>
-                <Select value={filters.category || 'all'} onValueChange={handleCategoryChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    {categories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={categoryOpen}
+                      className="w-full justify-between">
+                      {selectedCategory?.label || 'Todas'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar categoria..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+                        <CommandGroup>
+                          {categoryOptions.map(option => (
+                            <CommandItem
+                              key={option.value}
+                              value={option.label}
+                              onSelect={() => {
+                                handleCategoryChange(option.value)
+                                setCategoryOpen(false)
+                              }}>
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  (filters.category || 'all') === option.value ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              {option.label}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              {/* Usuário */}
+              {/* Usuário com pesquisa */}
               <div className="space-y-2">
                 <Label>Usuário</Label>
-                <Select value={filters.userId || 'all'} onValueChange={handleUserChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {spaceMembers.map(member => (
-                      <SelectItem key={member.user.id} value={member.user.id}>
+                <Popover open={userOpen} onOpenChange={setUserOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={userOpen}
+                      className="w-full justify-between">
+                      {selectedUser?.user ? (
                         <div className="flex items-center gap-2">
-                          <UserAvatarDisplay user={member.user} size="sm" showTooltip={false} />
-                          <span>{member.user.name}</span>
+                          <UserAvatarDisplay user={selectedUser.user} size="sm" showTooltip={false} />
+                          <span>{selectedUser.label}</span>
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      ) : (
+                        selectedUser?.label || 'Todos'
+                      )}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar usuário..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {userOptions.map(option => (
+                            <CommandItem
+                              key={option.value}
+                              value={option.label}
+                              onSelect={() => {
+                                handleUserChange(option.value)
+                                setUserOpen(false)
+                              }}>
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  (filters.userId || 'all') === option.value ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              {option.user ? (
+                                <div className="flex items-center gap-2">
+                                  <UserAvatarDisplay user={option.user} size="sm" showTooltip={false} />
+                                  <span>{option.label}</span>
+                                </div>
+                              ) : (
+                                option.label
+                              )}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Tags */}
@@ -280,15 +375,17 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
                   </Popover>
                 </div>
               </div>
+            </div>
 
-              {/* Botão limpar filtros */}
-              {hasActiveFilters && (
+            {/* Botão limpar filtros fixo no rodapé */}
+            {hasActiveFilters && (
+              <SheetFooter className="flex-shrink-0 border-t px-5 pb-5">
                 <Button variant="outline" onClick={onClearFilters} className="w-full">
                   <X className="mr-2 h-4 w-4" />
                   Limpar Filtros
                 </Button>
-              )}
-            </div>
+              </SheetFooter>
+            )}
           </SheetContent>
         </Sheet>
 
