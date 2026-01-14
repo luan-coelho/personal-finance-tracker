@@ -35,14 +35,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Finanças Pessoais',
   description: 'Aplicativo pessoal de controle financeiro.',
-  manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'Finanças Pessoais',
-  },
-  formatDetection: {
-    telephone: false,
   },
   icons: {
     icon: [
@@ -50,9 +46,6 @@ export const metadata: Metadata = {
       { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
-  },
-  other: {
-    'mobile-web-app-capable': 'yes',
   },
 }
 

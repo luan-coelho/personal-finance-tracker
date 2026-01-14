@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "TZ=America/Sao_Paulo next dev --turbopack",
+    "dev:https": "TZ=America/Sao_Paulo next dev --turbopack --experimental-https",
     "build": "TZ=America/Sao_Paulo next build",
     "start": "TZ=America/Sao_Paulo next start",
     "fix": "prettier --write . && eslint --fix .",

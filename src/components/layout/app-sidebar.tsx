@@ -3,6 +3,7 @@
 import { Building2, CreditCard, FolderTree, PiggyBank, Rabbit, Tag, Target, Users } from 'lucide-react'
 import Link from 'next/link'
 
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 import {
   Sidebar,
   SidebarContent,
@@ -114,6 +115,8 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+
+          <InstallPrompt />
         </SidebarContent>
         <SidebarRail />
       </Sidebar>
