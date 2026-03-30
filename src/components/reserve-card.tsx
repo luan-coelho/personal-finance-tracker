@@ -55,7 +55,7 @@ export function ReserveCard({ reserve, spaceId }: ReserveCardProps) {
   const IconComponent = (LucideIcons as any)[
     iconName
       .split('-')
-      .map((word: string, index: number) => (index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
       .join('')
   ] as React.ComponentType<{ className?: string }> | undefined
 
