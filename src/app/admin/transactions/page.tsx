@@ -200,7 +200,7 @@ export default function TransacoesPage() {
                 Nova Transação
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md md:min-w-3xl">
+            <DialogContent className="sm:max-w-md md:min-w-3xl" onInteractOutside={e => e.preventDefault()}>
               <DialogHeader>
                 <DialogTitle>Nova Transação</DialogTitle>
               </DialogHeader>
