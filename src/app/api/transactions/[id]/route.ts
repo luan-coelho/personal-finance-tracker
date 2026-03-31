@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { updateTransactionSchema } from '@/app/db/schemas'
 
 import { auth } from '@/lib/auth'
+import { checkSpaceAccess } from '@/lib/space-access'
 
 import { TransactionService } from '@/services/transaction-service'
 
@@ -24,8 +25,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
-    // Verificar se o usuário tem acesso à transação
-    if (transaction.userId !== session.user.id) {
+    // Verificar se o usuário tem acesso ao espaço da transação
+    const access = await checkSpaceAccess(session.user.email!, transaction.spaceId)
+    if (!access.hasAccess) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
@@ -57,7 +59,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
-    if (existingTransaction.userId !== session.user.id) {
+    const access = await checkSpaceAccess(session.user.email!, existingTransaction.spaceId)
+    if (!access.hasAccess) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 
@@ -97,7 +100,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
 
-    if (existingTransaction.userId !== session.user.id) {
+    const access = await checkSpaceAccess(session.user.email!, existingTransaction.spaceId)
+    if (!access.hasAccess) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
     }
 

@@ -81,14 +81,9 @@ export function MonthSelector({
           <ChevronRight className="h-4 w-4" />
         </Button>
 
-        {showTodayButton && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleTodayClick}
-            disabled={monthSelector.isCurrentMonth}
-            className="h-8 text-xs">
-            Hoje
+        {showTodayButton && !monthSelector.isCurrentMonth && (
+          <Button variant="ghost" size="sm" onClick={handleTodayClick} className="h-8 text-xs">
+            Mês Atual
           </Button>
         )}
 
@@ -132,14 +127,9 @@ export function MonthSelector({
           </div>
 
           <div className="flex items-center gap-2">
-            {showTodayButton && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleTodayClick}
-                disabled={monthSelector.isCurrentMonth}
-                className="h-7 text-xs">
-                Hoje
+            {showTodayButton && !monthSelector.isCurrentMonth && (
+              <Button variant="ghost" size="sm" onClick={handleTodayClick} className="h-7 text-xs">
+                Mês Atual
               </Button>
             )}
             {showAllButton && (

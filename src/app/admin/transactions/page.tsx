@@ -260,7 +260,10 @@ export default function TransacoesPage() {
                 const saidas = data.transactions
                   .filter(t => t.type === 'saida')
                   .reduce((sum, t) => sum + Number(t.amount), 0)
-                const saldo = entradas - saidas
+                const reservas = data.transactions
+                  .filter(t => t.type === 'reserva')
+                  .reduce((sum, t) => sum + Number(t.amount), 0)
+                const saldo = entradas - saidas - reservas
                 const isPositive = saldo >= 0
                 return (
                   <div
