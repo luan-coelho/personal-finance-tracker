@@ -66,8 +66,24 @@ function CommandInput({ className, ...props }: React.ComponentProps<typeof Comma
 }
 
 function CommandList({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.List>) {
+  const ref = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const handleWheel = (e: WheelEvent) => {
+      e.stopPropagation()
+      el.scrollTop += e.deltaY
+    }
+
+    el.addEventListener('wheel', handleWheel, { passive: true })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [])
+
   return (
     <CommandPrimitive.List
+      ref={ref}
       data-slot="command-list"
       className={cn('max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto', className)}
       {...props}
