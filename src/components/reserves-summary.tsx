@@ -6,6 +6,8 @@ import { Reserve } from '@/app/db/schemas/reserve-schema'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
+import { formatCurrency } from '@/lib/currency'
+
 interface ReservesSummaryProps {
   reserves: Reserve[]
 }
@@ -30,13 +32,6 @@ export function ReservesSummary({ reserves }: ReservesSummaryProps) {
           return sum + (current / target) * 100
         }, 0) / reservesWithTarget.length
       : 0
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value)
-  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

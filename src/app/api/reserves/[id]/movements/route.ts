@@ -10,6 +10,7 @@ import {
 import { reservesTable } from '@/app/db/schemas/reserve-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
+import { addAmounts, subtractAmounts, toNumber } from '@/lib/amount-utils'
 import { auth } from '@/lib/auth'
 import { canEditSpace, canViewSpace } from '@/lib/space-access'
 
@@ -131,28 +132,31 @@ export async function POST(request: NextRequest, context: RouteContext) {
       )
     }
 
-    // Calcular novo valor da reserva
-    const amountValue = parseFloat(validatedData.amount.replace(',', '.'))
-    const currentAmountValue = parseFloat(reserve.currentAmount)
+    // Calcular novo valor da reserva (amount já normalizado pelo Zod schema)
     const newAmount =
-      validatedData.type === 'deposit' ? currentAmountValue + amountValue : currentAmountValue - amountValue
+      validatedData.type === 'deposit'
+        ? addAmounts(reserve.currentAmount, validatedData.amount)
+        : subtractAmounts(reserve.currentAmount, validatedData.amount)
 
     // Verificar se há saldo suficiente para retirada
-    if (validatedData.type === 'withdraw' && newAmount < 0) {
+    if (validatedData.type === 'withdraw' && toNumber(newAmount) < 0) {
       return NextResponse.json({ success: false, message: 'Saldo insuficiente na reserva' }, { status: 400 })
     }
 
-    // Criar movimentação
-    const [newMovement] = await db.insert(reserveMovementsTable).values(validatedData).returning()
+    // Criar movimentação e atualizar saldo atomicamente
+    const [newMovement] = await db.transaction(async tx => {
+      const [movement] = await tx.insert(reserveMovementsTable).values(validatedData).returning()
 
-    // Atualizar valor atual da reserva
-    await db
-      .update(reservesTable)
-      .set({
-        currentAmount: newAmount.toFixed(2),
-        updatedAt: new Date(),
-      })
-      .where(eq(reservesTable.id, reserveId))
+      await tx
+        .update(reservesTable)
+        .set({
+          currentAmount: newAmount,
+          updatedAt: new Date(),
+        })
+        .where(eq(reservesTable.id, reserveId))
+
+      return [movement]
+    })
 
     return NextResponse.json(
       {

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { db } from '@/app/db'
+import { spacesTable } from '@/app/db/schemas/space-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
 import { auth } from '@/lib/auth'
@@ -11,12 +12,11 @@ const toggleStatusSchema = z.object({
   active: z.boolean(),
 })
 
-// PATCH /api/users/[id]/toggle-status - Toggle user active status
+// PATCH /api/users/[id]/toggle-status - Alterar status do usuário
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // Verificar se o usuário está autenticado
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         {
           success: false,
@@ -33,6 +33,36 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // Validate data
     const { active } = toggleStatusSchema.parse(body)
 
+    // Verificar se não está tentando desativar a si mesmo
+    if (session.user.id === id && !active) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Forbidden',
+          message: 'Você não pode desativar sua própria conta',
+        },
+        { status: 403 },
+      )
+    }
+
+    // Verificar se é owner de pelo menos um space (permissão de gerenciar usuários)
+    const ownedSpaces = await db
+      .select({ id: spacesTable.id })
+      .from(spacesTable)
+      .where(eq(spacesTable.ownerId, session.user.id))
+      .limit(1)
+
+    if (ownedSpaces.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Forbidden',
+          message: 'Você não tem permissão para alterar o status de usuários.',
+        },
+        { status: 403 },
+      )
+    }
+
     // Verificar se o usuário existe
     const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1)
 
@@ -44,18 +74,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           message: 'Usuário não encontrado',
         },
         { status: 404 },
-      )
-    }
-
-    // Verificar se não está tentando desativar a si mesmo
-    if (session.user.id === id && !active) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Forbidden',
-          message: 'Você não pode desativar sua própria conta',
-        },
-        { status: 403 },
       )
     }
 

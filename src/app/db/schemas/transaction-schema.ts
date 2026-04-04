@@ -1,6 +1,8 @@
 import { decimal, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 
+import { isPositiveAmount, normalizeBrazilianAmount } from '@/lib/amount-utils'
+
 import { reservesTable } from './reserve-schema'
 import { spacesTable } from './space-schema'
 import { usersTable } from './user-schema'
@@ -36,17 +38,8 @@ export const insertTransactionSchema = z
     }),
     amount: z
       .string()
-      .refine(
-        val => {
-          const normalized = val.replace(/\./g, '').replace(',', '.')
-          const num = Number(normalized)
-          return !isNaN(num) && num > 0
-        },
-        {
-          message: 'Informe um número positivo',
-        },
-      )
-      .transform(val => val),
+      .refine(isPositiveAmount, { message: 'Informe um número positivo' })
+      .transform(normalizeBrazilianAmount),
     date: z.coerce.date({
       required_error: 'Data é obrigatória',
       invalid_type_error: 'Data deve ser uma data válida',
@@ -88,17 +81,8 @@ const baseTransactionSchema = z.object({
   }),
   amount: z
     .string()
-    .refine(
-      val => {
-        const normalized = val.replace(/\./g, '').replace(',', '.')
-        const num = Number(normalized)
-        return !isNaN(num) && num > 0
-      },
-      {
-        message: 'Informe um número positivo',
-      },
-    )
-    .transform(val => val),
+    .refine(isPositiveAmount, { message: 'Informe um número positivo' })
+    .transform(normalizeBrazilianAmount),
   date: z.coerce.date({
     required_error: 'Data é obrigatória',
     invalid_type_error: 'Data deve ser uma data válida',

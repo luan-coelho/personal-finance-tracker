@@ -32,6 +32,8 @@ import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
 import { useDeleteTransaction } from '@/hooks/use-transactions'
 
+import { formatCurrency } from '@/lib/currency'
+
 interface ReserveTransactionsTableProps {
   transactions: TransactionWithUser[]
 }
@@ -49,14 +51,6 @@ export function ReserveTransactionsTable({ transactions }: ReserveTransactionsTa
     } catch (error) {
       console.error('Erro ao excluir transação:', error)
     }
-  }
-
-  const formatCurrency = (value: string) => {
-    // Tratar valor absoluto para formatação, o sinal será controlado visualmente
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(Math.abs(parseFloat(value)))
   }
 
   if (transactions.length === 0) {
@@ -117,7 +111,7 @@ export function ReserveTransactionsTable({ transactions }: ReserveTransactionsTa
                   <TableCell className="text-right font-mono">
                     <span className={isDeposit ? 'text-green-600' : 'text-red-600'}>
                       {isDeposit ? '+' : '-'}
-                      {formatCurrency(transaction.amount)}
+                      {formatCurrency(Math.abs(parseFloat(transaction.amount)))}
                     </span>
                   </TableCell>
                   <TableCell>

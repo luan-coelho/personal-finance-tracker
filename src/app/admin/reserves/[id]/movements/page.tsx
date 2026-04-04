@@ -14,6 +14,7 @@ import { useReserve } from '@/hooks/use-reserves'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTransactionsByReserve } from '@/hooks/use-transactions'
 
+import { formatCurrency } from '@/lib/currency'
 import { routes } from '@/lib/routes'
 
 export default function ReserveMovementsPage() {
@@ -67,13 +68,6 @@ export default function ReserveMovementsPage() {
   const currentAmount = parseFloat(reserve.currentAmount)
   const targetAmount = reserve.targetAmount ? parseFloat(reserve.targetAmount) : null
   const progress = targetAmount ? (currentAmount / targetAmount) * 100 : 0
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value)
-  }
 
   // Obter componente do ícone
   const IconComponent = reserve.icon

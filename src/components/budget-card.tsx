@@ -5,6 +5,16 @@ import { useState } from 'react'
 
 import { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +23,7 @@ import { Progress } from '@/components/ui/progress'
 
 import { useDeleteBudget } from '@/hooks/use-budgets'
 
+import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 interface BudgetCardProps {
@@ -22,13 +33,13 @@ interface BudgetCardProps {
 }
 
 export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const deleteBudget = useDeleteBudget()
 
   const handleDelete = () => {
     deleteBudget.mutate(budget.id, {
       onSuccess: () => {
-        setShowConfirmDelete(false)
+        setShowDeleteDialog(false)
       },
     })
   }
@@ -46,13 +57,6 @@ export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
     return 'Dentro do orçamento'
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value)
-  }
-
   const progressValue = Math.min(100, budget.percentage)
   const isOverBudget = budget.percentage > 100
 
@@ -64,6 +68,7 @@ export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
               <MoreVertical className="h-4 w-4" />
+              <span className="sr-only">Abrir menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -71,7 +76,7 @@ export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
               <Edit2 className="mr-2 h-4 w-4" />
               Editar
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onClick={() => setShowConfirmDelete(true)}>
+            <DropdownMenuItem className="text-destructive" onClick={() => setShowDeleteDialog(true)}>
               <Trash2 className="mr-2 h-4 w-4" />
               Excluir
             </DropdownMenuItem>
@@ -116,23 +121,26 @@ export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
         </div>
       </CardContent>
 
-      {/* Confirmação de Delete */}
-      {showConfirmDelete && (
-        <div className="bg-background/80 absolute inset-0 flex items-center justify-center rounded-lg backdrop-blur-sm">
-          <div className="space-y-3 p-4 text-center">
-            <p className="text-sm font-medium">Excluir orçamento?</p>
-            <p className="text-muted-foreground text-xs">Esta ação não pode ser desfeita.</p>
-            <div className="flex justify-center gap-2">
-              <Button size="sm" variant="outline" onClick={() => setShowConfirmDelete(false)}>
-                Cancelar
-              </Button>
-              <Button size="sm" variant="destructive" onClick={handleDelete} disabled={deleteBudget.isPending}>
-                {deleteBudget.isPending ? 'Excluindo...' : 'Excluir'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. O orçamento da categoria &quot;{budget.category}&quot; será excluído
+              permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground"
+              disabled={deleteBudget.isPending}>
+              {deleteBudget.isPending ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

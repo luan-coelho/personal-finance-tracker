@@ -7,6 +7,18 @@ import { useState } from 'react'
 
 import { TransactionType, TransactionWithUser } from '@/app/db/schemas'
 
+import { formatCurrency } from '@/lib/currency'
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -23,25 +35,19 @@ interface TransactionsTableProps {
 }
 
 export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading }: TransactionsTableProps) {
+  const [transactionToDelete, setTransactionToDelete] = useState<TransactionWithUser | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const deleteMutation = useDeleteTransaction()
 
-  const handleDelete = async (transaction: TransactionWithUser) => {
-    if (confirm(`Tem certeza que deseja excluir a transação "${transaction.description}"?`)) {
-      setDeletingId(transaction.id)
-      try {
-        await deleteMutation.mutateAsync(transaction.id)
-      } finally {
-        setDeletingId(null)
-      }
+  const handleDelete = async () => {
+    if (!transactionToDelete) return
+    setDeletingId(transactionToDelete.id)
+    try {
+      await deleteMutation.mutateAsync(transactionToDelete.id)
+    } finally {
+      setDeletingId(null)
+      setTransactionToDelete(null)
     }
-  }
-
-  const formatCurrency = (value: string) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(Number(value))
   }
 
   const getTypeColor = (type: TransactionType) => {
@@ -177,6 +183,7 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
                       <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Abrir menu</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -189,7 +196,7 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
                       Duplicar
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleDelete(transaction)}
+                      onClick={() => setTransactionToDelete(transaction)}
                       className="text-destructive"
                       disabled={deletingId === transaction.id}>
                       <Trash2 className="mr-2 h-4 w-4" />
@@ -202,6 +209,24 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
           ))}
         </TableBody>
       </Table>
+
+      <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. A transação &quot;{transactionToDelete?.description}&quot; será excluída
+              permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

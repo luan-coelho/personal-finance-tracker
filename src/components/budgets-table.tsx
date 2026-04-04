@@ -6,6 +6,16 @@ import { useState } from 'react'
 
 import { BudgetWithSpendingAndUser } from '@/app/db/schemas/budget-schema'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,6 +31,7 @@ import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
 import { useDeleteBudget } from '@/hooks/use-budgets'
 
+import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 interface BudgetsTableProps {
@@ -31,26 +42,19 @@ interface BudgetsTableProps {
 }
 
 export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTableProps) {
+  const [budgetToDelete, setBudgetToDelete] = useState<BudgetWithSpendingAndUser | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const deleteBudget = useDeleteBudget()
 
-  const handleDelete = async (budget: BudgetWithSpendingAndUser) => {
-    if (confirm(`Tem certeza que deseja excluir o orçamento da categoria "${budget.category}"?`)) {
-      setDeletingId(budget.id)
-      try {
-        await deleteBudget.mutateAsync(budget.id)
-      } finally {
-        setDeletingId(null)
-      }
+  const handleDelete = async () => {
+    if (!budgetToDelete) return
+    setDeletingId(budgetToDelete.id)
+    try {
+      await deleteBudget.mutateAsync(budgetToDelete.id)
+    } finally {
+      setDeletingId(null)
+      setBudgetToDelete(null)
     }
-  }
-
-  const formatCurrency = (value: number | string) => {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(numValue)
   }
 
   const formatMonth = (monthStr: string) => {
@@ -167,6 +171,7 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">
                         <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Abrir menu</span>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -179,7 +184,7 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
                         Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => handleDelete(budget)}
+                        onClick={() => setBudgetToDelete(budget)}
                         className="text-destructive"
                         disabled={deletingId === budget.id}>
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -193,6 +198,24 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
           })}
         </TableBody>
       </Table>
+
+      <AlertDialog open={!!budgetToDelete} onOpenChange={() => setBudgetToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. O orçamento da categoria &quot;{budgetToDelete?.category}&quot; será
+              excluído permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              {deleteBudget.isPending ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

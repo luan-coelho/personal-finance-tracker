@@ -31,6 +31,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 import { useDeleteReserveMovement } from '@/hooks/use-reserve-movements'
 
+import { formatCurrency } from '@/lib/currency'
+
 interface ReserveMovementsTableProps {
   movements: ReserveMovementWithReserve[]
   reserveId: string
@@ -50,13 +52,6 @@ export function ReserveMovementsTable({ movements, reserveId, spaceId }: Reserve
     } catch (error) {
       console.error('Erro ao excluir movimentação:', error)
     }
-  }
-
-  const formatCurrency = (value: string) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(parseFloat(value))
   }
 
   if (movements.length === 0) {

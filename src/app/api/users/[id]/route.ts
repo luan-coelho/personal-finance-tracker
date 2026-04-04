@@ -1,15 +1,39 @@
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/app/db'
+import { spaceMembersTable } from '@/app/db/schemas/space-member-schema'
+import { spacesTable } from '@/app/db/schemas/space-schema'
 import { updateUserSchema, usersTable } from '@/app/db/schemas/user-schema'
 
 import { auth } from '@/lib/auth'
 
-// GET /api/users/[id] - Get user by ID
+/**
+ * Verifica se o usuário logado é owner de pelo menos um space que contém o usuário alvo.
+ */
+async function isOwnerOfSpaceContainingUser(currentUserId: string, targetUserId: string): Promise<boolean> {
+  // Spaces onde o usuário logado é owner
+  const ownedSpaces = await db
+    .select({ id: spacesTable.id })
+    .from(spacesTable)
+    .where(eq(spacesTable.ownerId, currentUserId))
+
+  if (ownedSpaces.length === 0) return false
+
+  const ownedSpaceIds = ownedSpaces.map(s => s.id)
+
+  // Verificar se o target é membro de algum desses spaces
+  const membership = await db.query.spaceMembersTable.findFirst({
+    where: (t, { and, eq, inArray }) =>
+      and(eq(t.userId, targetUserId), inArray(t.spaceId, ownedSpaceIds)),
+  })
+
+  return !!membership
+}
+
+// GET /api/users/[id] - Buscar usuário por ID
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // Verificar se o usuário está autenticado
     const session = await auth()
     if (!session?.user) {
       return NextResponse.json(
@@ -55,12 +79,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// PUT /api/users/[id] - Update user
+// PUT /api/users/[id] - Atualizar usuário (apenas auto-edição ou owner de space do usuário)
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // Verificar se o usuário está autenticado
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         {
           success: false,
@@ -72,6 +95,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { id } = await params
+
+    // Verificar permissão: auto-edição ou owner de space contendo o usuário
+    if (session.user.id !== id) {
+      const hasPermission = await isOwnerOfSpaceContainingUser(session.user.id, id)
+      if (!hasPermission) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Forbidden',
+            message: 'Você não tem permissão para editar este usuário.',
+          },
+          { status: 403 },
+        )
+      }
+    }
+
     const body = await request.json()
 
     // Validate data using Zod schema
@@ -153,12 +192,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-// DELETE /api/users/[id] - Delete (deactivate) user
+// DELETE /api/users/[id] - Desativar usuário (apenas owner de space contendo o usuário)
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // Verificar se o usuário está autenticado
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         {
           success: false,
@@ -171,6 +209,31 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { id } = await params
 
+    // Verificar se não está tentando deletar a si mesmo
+    if (session.user.id === id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Forbidden',
+          message: 'Você não pode desativar sua própria conta',
+        },
+        { status: 403 },
+      )
+    }
+
+    // Verificar se é owner de space contendo o usuário alvo
+    const hasPermission = await isOwnerOfSpaceContainingUser(session.user.id, id)
+    if (!hasPermission) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Forbidden',
+          message: 'Você não tem permissão para desativar este usuário.',
+        },
+        { status: 403 },
+      )
+    }
+
     // Verificar se o usuário existe
     const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1)
 
@@ -182,18 +245,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
           message: 'Usuário não encontrado',
         },
         { status: 404 },
-      )
-    }
-
-    // Verificar se não está tentando deletar a si mesmo
-    if (session.user.id === id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Forbidden',
-          message: 'Você não pode desativar sua própria conta',
-        },
-        { status: 403 },
       )
     }
 

@@ -5,6 +5,7 @@ import { db } from '@/app/db'
 import { reserveMovementsTable } from '@/app/db/schemas/reserve-movement-schema'
 import { reservesTable } from '@/app/db/schemas/reserve-schema'
 
+import { addAmounts, subtractAmounts } from '@/lib/amount-utils'
 import { auth } from '@/lib/auth'
 import { canEditSpace } from '@/lib/space-access'
 
@@ -51,21 +52,23 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     // Reverter valor da movimentação no saldo da reserva
-    const amountValue = parseFloat(movement.amount)
-    const currentAmountValue = parseFloat(reserve.currentAmount)
-    const newAmount = movement.type === 'deposit' ? currentAmountValue - amountValue : currentAmountValue + amountValue
+    const newAmount =
+      movement.type === 'deposit'
+        ? subtractAmounts(reserve.currentAmount, movement.amount)
+        : addAmounts(reserve.currentAmount, movement.amount)
 
-    // Excluir movimentação
-    await db.delete(reserveMovementsTable).where(eq(reserveMovementsTable.id, movementId))
+    // Excluir movimentação e atualizar saldo atomicamente
+    await db.transaction(async tx => {
+      await tx.delete(reserveMovementsTable).where(eq(reserveMovementsTable.id, movementId))
 
-    // Atualizar saldo da reserva
-    await db
-      .update(reservesTable)
-      .set({
-        currentAmount: newAmount.toFixed(2),
-        updatedAt: new Date(),
-      })
-      .where(eq(reservesTable.id, reserveId))
+      await tx
+        .update(reservesTable)
+        .set({
+          currentAmount: newAmount,
+          updatedAt: new Date(),
+        })
+        .where(eq(reservesTable.id, reserveId))
+    })
 
     return NextResponse.json({
       success: true,

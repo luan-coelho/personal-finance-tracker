@@ -1,6 +1,8 @@
 import { decimal, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 
+import { isPositiveAmount, normalizeBrazilianAmount } from '@/lib/amount-utils'
+
 import { reservesTable } from './reserve-schema'
 import { usersTable } from './user-schema'
 
@@ -31,17 +33,8 @@ export const insertReserveMovementSchema = z.object({
   }),
   amount: z
     .string()
-    .refine(
-      val => {
-        const normalized = val.replace(/\./g, '').replace(',', '.')
-        const num = Number(normalized)
-        return !isNaN(num) && num > 0
-      },
-      {
-        message: 'Informe um valor positivo',
-      },
-    )
-    .transform(val => val),
+    .refine(isPositiveAmount, { message: 'Informe um valor positivo' })
+    .transform(normalizeBrazilianAmount),
   date: z.coerce.date({
     required_error: 'Data é obrigatória',
     invalid_type_error: 'Data deve ser uma data válida',

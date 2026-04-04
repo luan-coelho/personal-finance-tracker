@@ -6,6 +6,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { Transaction } from '@/app/db/schemas'
 
 import { MonthSelector } from '@/components/month-selector'
+import { QueryErrorCard } from '@/components/query-error-card'
 import { TransactionForm } from '@/components/transaction-form'
 import { TransactionSummary } from '@/components/transaction-summary'
 import { TransactionFilters, TransactionsFilters } from '@/components/transactions-filters'
@@ -64,18 +65,8 @@ export default function TransacoesPage() {
     value => value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true),
   )
 
-  const { data, isLoading } = useTransactions(queryFilters, page, 20)
+  const { data, isLoading, error, refetch } = useTransactions(queryFilters, page, 20)
   const { data: filteredSummary } = useTransactionSummary(queryFilters)
-
-  // DEBUG: Remover depois
-  console.log(
-    'Page:',
-    page,
-    'Data transactions count:',
-    data?.transactions?.length,
-    'First item:',
-    data?.transactions?.[0]?.description,
-  )
 
   const handleFiltersChange = (newFilters: TransactionFilters) => {
     setFilters(newFilters)
@@ -302,12 +293,16 @@ export default function TransacoesPage() {
 
           {/* Tabela de transações */}
           <div className="mb-6">
-            <TransactionsTable
-              transactions={data?.transactions || []}
-              onEdit={handleEdit}
-              onDuplicate={handleDuplicate}
-              isLoading={isLoading}
-            />
+            {error ? (
+              <QueryErrorCard message="Erro ao carregar transações." onRetry={refetch} />
+            ) : (
+              <TransactionsTable
+                transactions={data?.transactions || []}
+                onEdit={handleEdit}
+                onDuplicate={handleDuplicate}
+                isLoading={isLoading}
+              />
+            )}
           </div>
 
           {/* Paginação */}

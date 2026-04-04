@@ -11,6 +11,8 @@ import {
 import { reservesTable } from '@/app/db/schemas/reserve-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
+import { addAmounts, subtractAmounts } from '@/lib/amount-utils'
+
 export interface TransactionFilters {
   spaceId?: string
   userId?: string
@@ -33,42 +35,38 @@ export interface TransactionSummary {
 export class TransactionService {
   // Criar nova transação
   static async create(data: TransactionFormValues): Promise<Transaction> {
-    // Se for uma transação de reserva, atualizar o saldo da reserva
-    if (data.type === 'reserva' && data.reserveId) {
-      await db.transaction(async tx => {
-        // Buscar a reserva atual
-        const [reserve] = await tx.select().from(reservesTable).where(eq(reservesTable.id, data.reserveId!)).limit(1)
+    // Envolver tudo em db.transaction() para atomicidade
+    return await db.transaction(async tx => {
+      // Se for uma transação de reserva, atualizar o saldo da reserva
+      if (data.type === 'reserva' && data.reserveId) {
+        const [reserve] = await tx.select().from(reservesTable).where(eq(reservesTable.id, data.reserveId)).limit(1)
 
         if (!reserve) {
           throw new Error('Reserva não encontrada')
         }
 
-        // Calcular novo saldo da reserva
-        const currentAmount = Number(reserve.currentAmount)
-        const transactionAmount = Number(data.amount)
-        const newAmount = currentAmount + transactionAmount
+        const newAmount = addAmounts(reserve.currentAmount, data.amount)
 
-        // Atualizar saldo da reserva
         await tx
           .update(reservesTable)
           .set({
-            currentAmount: newAmount.toFixed(2),
+            currentAmount: newAmount,
             updatedAt: new Date(),
           })
-          .where(eq(reservesTable.id, data.reserveId!))
-      })
-    }
+          .where(eq(reservesTable.id, data.reserveId))
+      }
 
-    const [transaction] = await db
-      .insert(transactionsTable)
-      .values({
-        ...data,
-        amount: data.amount.toString(),
-        createdAt: new Date(),
-      })
-      .returning()
+      const [transaction] = await tx
+        .insert(transactionsTable)
+        .values({
+          ...data,
+          amount: data.amount.toString(),
+          createdAt: new Date(),
+        })
+        .returning()
 
-    return transaction
+      return transaction
+    })
   }
 
   // Buscar transação por ID
@@ -177,9 +175,9 @@ export class TransactionService {
       throw new Error('Transação não encontrada')
     }
 
-    // Se a transação original era de reserva ou a nova é de reserva, ajustar saldos
-    if (originalTransaction.type === 'reserva' || data.type === 'reserva') {
-      await db.transaction(async tx => {
+    return await db.transaction(async tx => {
+      // Se a transação original era de reserva ou a nova é de reserva, ajustar saldos
+      if (originalTransaction.type === 'reserva' || data.type === 'reserva') {
         // Reverter saldo da reserva original se era transação de reserva
         if (originalTransaction.type === 'reserva' && originalTransaction.reserveId) {
           const [reserve] = await tx
@@ -189,14 +187,12 @@ export class TransactionService {
             .limit(1)
 
           if (reserve) {
-            const currentAmount = Number(reserve.currentAmount)
-            const originalAmount = Number(originalTransaction.amount)
-            const newAmount = currentAmount - originalAmount
+            const newAmount = subtractAmounts(reserve.currentAmount, originalTransaction.amount)
 
             await tx
               .update(reservesTable)
               .set({
-                currentAmount: newAmount.toFixed(2),
+                currentAmount: newAmount,
                 updatedAt: new Date(),
               })
               .where(eq(reservesTable.id, originalTransaction.reserveId))
@@ -211,32 +207,31 @@ export class TransactionService {
             throw new Error('Reserva não encontrada')
           }
 
-          const currentAmount = Number(reserve.currentAmount)
-          const transactionAmount = Number(data.amount || originalTransaction.amount)
-          const newAmount = currentAmount + transactionAmount
+          const amountToAdd = data.amount || originalTransaction.amount
+          const newAmount = addAmounts(reserve.currentAmount, amountToAdd)
 
           await tx
             .update(reservesTable)
             .set({
-              currentAmount: newAmount.toFixed(2),
+              currentAmount: newAmount,
               updatedAt: new Date(),
             })
             .where(eq(reservesTable.id, data.reserveId))
         }
-      })
-    }
+      }
 
-    const [transaction] = await db
-      .update(transactionsTable)
-      .set({
-        ...data,
-        amount: data.amount ? data.amount.toString() : undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(transactionsTable.id, id))
-      .returning()
+      const [transaction] = await tx
+        .update(transactionsTable)
+        .set({
+          ...data,
+          amount: data.amount ? data.amount.toString() : undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(transactionsTable.id, id))
+        .returning()
 
-    return transaction || null
+      return transaction || null
+    })
   }
 
   // Deletar transação
@@ -247,34 +242,32 @@ export class TransactionService {
       return false
     }
 
-    // Se era transação de reserva, reverter o saldo
-    if (transaction.type === 'reserva' && transaction.reserveId) {
-      await db.transaction(async tx => {
+    return await db.transaction(async tx => {
+      // Se era transação de reserva, reverter o saldo
+      if (transaction.type === 'reserva' && transaction.reserveId) {
         const [reserve] = await tx
           .select()
           .from(reservesTable)
-          .where(eq(reservesTable.id, transaction.reserveId!))
+          .where(eq(reservesTable.id, transaction.reserveId))
           .limit(1)
 
         if (reserve) {
-          const currentAmount = Number(reserve.currentAmount)
-          const transactionAmount = Number(transaction.amount)
-          const newAmount = currentAmount - transactionAmount
+          const newAmount = subtractAmounts(reserve.currentAmount, transaction.amount)
 
           await tx
             .update(reservesTable)
             .set({
-              currentAmount: newAmount.toFixed(2),
+              currentAmount: newAmount,
               updatedAt: new Date(),
             })
-            .where(eq(reservesTable.id, transaction.reserveId!))
+            .where(eq(reservesTable.id, transaction.reserveId))
         }
-      })
-    }
+      }
 
-    const result = await db.delete(transactionsTable).where(eq(transactionsTable.id, id))
+      const result = await tx.delete(transactionsTable).where(eq(transactionsTable.id, id))
 
-    return (result.rowCount ?? 0) > 0
+      return (result.rowCount ?? 0) > 0
+    })
   }
 
   // Obter resumo financeiro

@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBudget, useBudgetsWithSpending, useDeleteBudget } from '@/hooks/use-budgets'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 
+import { formatCurrency } from '@/lib/currency'
+
 interface BudgetDetailPageProps {
   params: Promise<{ id: string }>
 }
@@ -55,14 +57,6 @@ export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
         setShowDeleteConfirm(false)
       },
     })
-  }
-
-  const formatCurrency = (value: number | string) => {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(numValue)
   }
 
   const formatMonth = (monthStr: string) => {

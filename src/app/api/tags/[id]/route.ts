@@ -1,6 +1,9 @@
+import { and, eq, sql } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
 
+import { db } from '@/app/db'
 import { updateTagSchema } from '@/app/db/schemas/tag-schema'
+import { transactionsTable } from '@/app/db/schemas/transaction-schema'
 
 import { auth } from '@/lib/auth'
 import { canManageSpace } from '@/lib/space-access'
@@ -107,6 +110,26 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       if (!hasAccess) {
         return NextResponse.json({ error: 'Acesso negado ao espaço' }, { status: 403 })
       }
+    }
+
+    // Verificar se há transações usando esta tag
+    const [usage] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(transactionsTable)
+      .where(
+        and(
+          sql`${transactionsTable.tags} @> ARRAY[${existingTag.name}]::text[]`,
+          eq(transactionsTable.spaceId, existingTag.spaceId),
+        ),
+      )
+
+    if (Number(usage.count) > 0) {
+      return NextResponse.json(
+        {
+          error: `Não é possível excluir a tag "${existingTag.name}" pois ela é usada em ${usage.count} transação(ões).`,
+        },
+        { status: 409 },
+      )
     }
 
     await TagService.delete(id)

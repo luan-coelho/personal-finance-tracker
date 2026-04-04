@@ -5,6 +5,7 @@ import { TrendingDown, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 
+import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 interface BudgetComparison {
@@ -30,13 +31,6 @@ export function BudgetComparisonCard({
   previousMonth,
   isLoading,
 }: BudgetComparisonCardProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value)
-  }
-
   const formatMonth = (monthStr: string) => {
     const [year, month] = monthStr.split('-')
     const date = new Date(parseInt(year), parseInt(month) - 1)

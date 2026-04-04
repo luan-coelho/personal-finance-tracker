@@ -6,6 +6,8 @@ import { Calendar, User, Wallet } from 'lucide-react'
 
 import { TransactionWithUser } from '@/app/db/schemas'
 
+import { formatCurrency } from '@/lib/currency'
+
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,13 +19,6 @@ interface ReserveTransactionsCardProps {
 }
 
 export function ReserveTransactionsCard({ transactions, isLoading }: ReserveTransactionsCardProps) {
-  const formatCurrency = (value: string) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(Number(value))
-  }
-
   const totalAmount = transactions.reduce((acc, t) => acc + Number(t.amount), 0)
 
   if (isLoading) {

@@ -11,6 +11,8 @@ import {
 import { transactionsTable } from '@/app/db/schemas/transaction-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
+import { getMonthRangeBrazil } from '@/lib/date-utils'
+
 export interface BudgetFilters {
   spaceId?: string
   category?: string
@@ -86,10 +88,9 @@ export class BudgetService {
       return []
     }
 
-    // Calcular primeiro e último dia do mês
+    // Calcular primeiro e último dia do mês (ajustado para timezone brasileiro)
     const [year, monthNum] = month.split('-').map(Number)
-    const startDate = new Date(year, monthNum - 1, 1)
-    const endDate = new Date(year, monthNum, 0, 23, 59, 59, 999)
+    const { start: startDate, end: endDate } = getMonthRangeBrazil(year, monthNum - 1)
 
     // Buscar gastos por categoria no período
     const spentByCategory = await db

@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTransactionSummary } from '@/hooks/use-transactions'
 
+import { formatCurrency } from '@/lib/currency'
+
 interface TransactionSummaryProps {
   dateFrom?: Date
   dateTo?: Date
@@ -20,13 +22,6 @@ export function TransactionSummary({ dateFrom, dateTo }: TransactionSummaryProps
     dateFrom,
     dateTo,
   })
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value)
-  }
 
   if (isLoading) {
     return (

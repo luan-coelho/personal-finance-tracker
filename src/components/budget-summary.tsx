@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress'
 
 import { BudgetSummary as BudgetSummaryType } from '@/hooks/use-budgets'
 
+import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 interface BudgetSummaryProps {
@@ -17,13 +18,6 @@ interface BudgetSummaryProps {
 }
 
 export function BudgetSummary({ summary, isLoading, month }: BudgetSummaryProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value)
-  }
-
   const formatMonth = (monthStr: string) => {
     const [year, month] = monthStr.split('-')
     const date = new Date(parseInt(year), parseInt(month) - 1)

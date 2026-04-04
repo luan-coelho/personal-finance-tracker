@@ -1,6 +1,8 @@
 import { boolean, decimal, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 
+import { isNonNegativeAmount, normalizeBrazilianAmount } from '@/lib/amount-utils'
+
 import { spacesTable } from './space-schema'
 
 export const reservesTable = pgTable('reserves', {
@@ -29,27 +31,16 @@ export const insertReserveSchema = z.object({
     .refine(
       val => {
         if (!val) return true
-        const normalized = val.replace(/\./g, '').replace(',', '.')
-        const num = Number(normalized)
-        return !isNaN(num) && num >= 0
+        return isNonNegativeAmount(val)
       },
-      {
-        message: 'Meta deve ser um número válido',
-      },
-    ),
+      { message: 'Meta deve ser um número válido' },
+    )
+    .transform(val => (val ? normalizeBrazilianAmount(val) : undefined)),
   currentAmount: z
     .string()
     .default('0')
-    .refine(
-      val => {
-        const normalized = val.replace(/\./g, '').replace(',', '.')
-        const num = Number(normalized)
-        return !isNaN(num) && num >= 0
-      },
-      {
-        message: 'Valor atual deve ser um número válido',
-      },
-    ),
+    .refine(isNonNegativeAmount, { message: 'Valor atual deve ser um número válido' })
+    .transform(normalizeBrazilianAmount),
   color: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, 'Cor deve ser um código hexadecimal válido')
