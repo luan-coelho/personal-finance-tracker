@@ -147,10 +147,10 @@ export function TransactionForm({
   async function onSubmit(values: TransactionFormValues) {
     if (!selectedSpace || !session?.user?.id) return
     try {
-      const numericAmount = values.amount ? String(Number(values.amount.replace(/\./g, '').replace(',', '.'))) : ''
+      // O valor já foi normalizado pelo Zod transform (ex: "8,88" → "8.88")
       const formData = {
         type: values.type,
-        amount: numericAmount,
+        amount: values.amount || '',
         date: values.date,
         description: values.description,
         category: values.type !== 'reserva' ? values.category : undefined,
