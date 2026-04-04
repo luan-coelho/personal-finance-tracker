@@ -299,6 +299,7 @@ export function TransactionForm({
                     disabled={isLoading}
                     error={form.formState.errors.date}
                     defaultMonth={monthStartDate}
+                    showNavigation
                   />
                 </FormControl>
                 <FormMessage />

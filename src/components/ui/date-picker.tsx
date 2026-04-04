@@ -1,8 +1,8 @@
 'use client'
 
-import { format } from 'date-fns'
+import { addDays, format, subDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { AlertCircle, Calendar as CalendarIcon } from 'lucide-react'
+import { AlertCircle, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import * as React from 'react'
 import { FieldError } from 'react-hook-form'
 
@@ -23,6 +23,7 @@ interface DatePickerProps {
   showValidationIcon?: boolean
   error?: FieldError
   defaultMonth?: Date
+  showNavigation?: boolean
 }
 
 export function DatePicker({
@@ -36,12 +37,42 @@ export function DatePicker({
   showValidationIcon = false,
   error,
   defaultMonth,
+  showNavigation = false,
 }: DatePickerProps) {
   const hasError = error !== undefined && error !== null
   const showErrorIcon = showValidationIcon && hasError
 
+  const handlePreviousDay = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!onSelect) return
+    const baseDate = date ?? new Date()
+    const newDate = subDays(baseDate, 1)
+    if (fromDate && newDate < fromDate) return
+    onSelect(newDate)
+  }
+
+  const handleNextDay = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!onSelect) return
+    const baseDate = date ?? new Date()
+    const newDate = addDays(baseDate, 1)
+    if (toDate && newDate > toDate) return
+    onSelect(newDate)
+  }
+
   return (
-    <div className="relative">
+    <div className="relative flex items-center gap-1">
+      {showNavigation && (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-9 shrink-0 border-zinc-300"
+          disabled={disabled || (fromDate && date ? subDays(date, 1) < fromDate : false)}
+          onClick={handlePreviousDay}>
+          <ChevronLeft className="size-4" />
+        </Button>
+      )}
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -51,6 +82,7 @@ export function DatePicker({
               !date && 'text-muted-foreground',
               hasError ? 'border-destructive' : 'border-zinc-300',
               showErrorIcon ? 'pr-10' : '',
+              showNavigation && 'flex-1 w-auto',
               className,
             )}
             disabled={disabled}>
@@ -72,6 +104,17 @@ export function DatePicker({
           />
         </PopoverContent>
       </Popover>
+      {showNavigation && (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-9 shrink-0 border-zinc-300"
+          disabled={disabled || (toDate && date ? addDays(date, 1) > toDate : false)}
+          onClick={handleNextDay}>
+          <ChevronRight className="size-4" />
+        </Button>
+      )}
       {showErrorIcon && (
         <div className="absolute inset-y-0 right-3 flex items-center">
           <AlertCircle className="text-destructive size-4" />
