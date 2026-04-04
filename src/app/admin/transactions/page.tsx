@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/pagination'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
-import { useTransactions } from '@/hooks/use-transactions'
+import { useTransactions, useTransactionSummary } from '@/hooks/use-transactions'
 
 import { getBrazilCurrentYearMonth, getMonthRangeBrazil } from '@/lib/date-utils'
 
@@ -59,7 +59,13 @@ export default function TransacoesPage() {
     [filters, selectedSpace?.id, showAllTransactions, monthStartDate, monthEndDate],
   )
 
+  // Verificar se há filtros ativos
+  const hasActiveFilters = Object.values(filters).some(
+    value => value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true),
+  )
+
   const { data, isLoading } = useTransactions(queryFilters, page, 20)
+  const { data: filteredSummary } = useTransactionSummary(queryFilters)
 
   // DEBUG: Remover depois
   console.log(
@@ -84,11 +90,6 @@ export default function TransacoesPage() {
     setFilters({})
     setPage(1)
   }
-
-  // Verificar se há filtros ativos
-  const hasActiveFilters = Object.values(filters).some(
-    value => value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true),
-  )
 
   const handleMonthChange = useCallback((monthSelectorState: any) => {
     setMonthStartDate(monthSelectorState.monthStartDate)
@@ -224,7 +225,7 @@ export default function TransacoesPage() {
           </div>
 
           {/* Resumo das transações filtradas - só aparece quando há filtros aplicados */}
-          {hasActiveFilters && data && data.transactions.length > 0 && (
+          {hasActiveFilters && filteredSummary && filteredSummary.count > 0 && (
             <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
               {/* Entradas */}
               <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900/30 dark:bg-green-950/20">
@@ -233,7 +234,7 @@ export default function TransacoesPage() {
                   <p className="text-xs font-medium text-green-700 dark:text-green-400">Entradas</p>
                   <p className="text-sm font-bold text-green-600 dark:text-green-500">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      data.transactions.filter(t => t.type === 'entrada').reduce((sum, t) => sum + Number(t.amount), 0),
+                      filteredSummary.totalEntradas,
                     )}
                   </p>
                 </div>
@@ -246,7 +247,7 @@ export default function TransacoesPage() {
                   <p className="text-xs font-medium text-red-700 dark:text-red-400">Saídas</p>
                   <p className="text-sm font-bold text-red-600 dark:text-red-500">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      data.transactions.filter(t => t.type === 'saida').reduce((sum, t) => sum + Number(t.amount), 0),
+                      filteredSummary.totalSaidas,
                     )}
                   </p>
                 </div>
@@ -254,16 +255,7 @@ export default function TransacoesPage() {
 
               {/* Saldo */}
               {(() => {
-                const entradas = data.transactions
-                  .filter(t => t.type === 'entrada')
-                  .reduce((sum, t) => sum + Number(t.amount), 0)
-                const saidas = data.transactions
-                  .filter(t => t.type === 'saida')
-                  .reduce((sum, t) => sum + Number(t.amount), 0)
-                const reservas = data.transactions
-                  .filter(t => t.type === 'reserva')
-                  .reduce((sum, t) => sum + Number(t.amount), 0)
-                const saldo = entradas - saidas - reservas
+                const saldo = filteredSummary.saldo
                 const isPositive = saldo >= 0
                 return (
                   <div
@@ -301,7 +293,7 @@ export default function TransacoesPage() {
                 <div>
                   <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Transações</p>
                   <p className="text-sm font-bold text-blue-600 dark:text-blue-500">
-                    {data.total} {data.total === 1 ? 'registro' : 'registros'}
+                    {filteredSummary.count} {filteredSummary.count === 1 ? 'registro' : 'registros'}
                   </p>
                 </div>
               </div>

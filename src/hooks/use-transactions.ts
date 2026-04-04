@@ -92,8 +92,13 @@ export function useTransactionSummary(filters: TransactionFilters = {}) {
 
       if (filters.spaceId) params.append('spaceId', filters.spaceId)
       if (filters.userId) params.append('userId', filters.userId)
+      if (filters.type) params.append('type', filters.type)
+      if (filters.category) params.append('category', filters.category)
+      if (filters.reserveId) params.append('reserveId', filters.reserveId)
+      if (filters.tags) params.append('tags', filters.tags.join(','))
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom.toISOString())
       if (filters.dateTo) params.append('dateTo', filters.dateTo.toISOString())
+      if (filters.search) params.append('search', filters.search)
 
       const response = await fetch(`/api/transactions/summary?${params}`)
       if (!response.ok) {

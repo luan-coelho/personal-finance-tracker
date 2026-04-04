@@ -289,14 +289,37 @@ export class TransactionService {
       conditions.push(eq(transactionsTable.userId, filters.userId))
     }
 
+    if (filters.type) {
+      conditions.push(eq(transactionsTable.type, filters.type))
+    }
+
+    if (filters.category) {
+      conditions.push(eq(transactionsTable.category, filters.category))
+    }
+
+    if (filters.reserveId) {
+      conditions.push(eq(transactionsTable.reserveId, filters.reserveId))
+    }
+
+    if (filters.tags && filters.tags.length > 0) {
+      conditions.push(
+        sql`${transactionsTable.tags} && ARRAY[${sql.join(
+          filters.tags.map(tag => sql`${tag}`),
+          sql`, `,
+        )}]::text[]`,
+      )
+    }
+
     if (filters.dateFrom) {
-      // As datas já vêm com os timestamps corretos do timezone brasileiro
       conditions.push(sql`${transactionsTable.date} >= ${filters.dateFrom.toISOString()}`)
     }
 
     if (filters.dateTo) {
-      // As datas já vêm com os timestamps corretos do timezone brasileiro
       conditions.push(sql`${transactionsTable.date} <= ${filters.dateTo.toISOString()}`)
+    }
+
+    if (filters.search) {
+      conditions.push(ilike(transactionsTable.description, `%${filters.search}%`))
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined

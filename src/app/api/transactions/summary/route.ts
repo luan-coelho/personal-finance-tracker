@@ -15,8 +15,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
     const userId = searchParams.get('userId')
+    const type = searchParams.get('type')
+    const category = searchParams.get('category')
+    const reserveId = searchParams.get('reserveId')
+    const tags = searchParams.get('tags')
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
+    const search = searchParams.get('search')
 
     // Verificar acesso ao espaço se spaceId for fornecido
     let hasSpaceAccess = false
@@ -29,11 +34,14 @@ export async function GET(request: NextRequest) {
 
     const filters = {
       spaceId: spaceId || undefined,
-      // Se tem acesso ao espaço, não filtrar por userId para mostrar todas as transações do espaço
-      // Se não tem spaceId ou não tem acesso, filtrar por userId
       userId: spaceId && hasSpaceAccess ? undefined : userId || session.user.id,
+      type: (type as any) || undefined,
+      category: category || undefined,
+      reserveId: reserveId || undefined,
+      tags: tags ? tags.split(',') : undefined,
       dateFrom: dateFrom ? new Date(dateFrom) : undefined,
       dateTo: dateTo ? new Date(dateTo) : undefined,
+      search: search || undefined,
     }
 
     const summary = await TransactionService.getSummary(filters)
