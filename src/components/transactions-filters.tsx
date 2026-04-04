@@ -1,6 +1,7 @@
 'use client'
 
-import { CalendarIcon, Check, ChevronsUpDown, Filter, Search, X } from 'lucide-react'
+import { CalendarIcon, Check, ChevronsUpDown, Filter, Search, User, X } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 import { useMemo, useState } from 'react'
 
 import { TransactionType } from '@/app/db/schemas'
@@ -49,6 +50,7 @@ interface TransactionsFiltersProps {
 
 export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }: TransactionsFiltersProps) {
   const { selectedSpace } = useSelectedSpace()
+  const { data: session } = useSession()
   const [dateFromOpen, setDateFromOpen] = useState(false)
   const [dateToOpen, setDateToOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -162,6 +164,23 @@ export function TransactionsFilters({ filters, onFiltersChange, onClearFilters }
             className="pl-10"
           />
         </div>
+
+        {/* Botão "Eu" - atalho para filtrar pelo usuário logado */}
+        {session?.user?.id && (
+          <Button
+            variant={filters.userId === session.user.id ? 'default' : 'outline'}
+            className="gap-2"
+            onClick={() => {
+              const isActive = filters.userId === session.user.id
+              onFiltersChange({
+                ...filters,
+                userId: isActive ? undefined : session.user.id,
+              })
+            }}>
+            <User className="h-4 w-4" />
+            <span>Eu</span>
+          </Button>
+        )}
 
         {/* Botão de filtros */}
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
