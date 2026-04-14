@@ -37,10 +37,7 @@ export async function GET(request: NextRequest) {
       .from(spaceMembersTable)
       .where(eq(spaceMembersTable.userId, currentUserId))
 
-    const allSpaceIds = [
-      ...ownedSpaces.map(s => s.id),
-      ...memberSpaces.map(s => s.spaceId),
-    ]
+    const allSpaceIds = [...ownedSpaces.map(s => s.id), ...memberSpaces.map(s => s.spaceId)]
 
     if (allSpaceIds.length === 0) {
       // Usuário não tem spaces — retornar apenas ele mesmo

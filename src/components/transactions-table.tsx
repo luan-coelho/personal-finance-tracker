@@ -7,8 +7,6 @@ import { useState } from 'react'
 
 import { TransactionType, TransactionWithUser } from '@/app/db/schemas'
 
-import { formatCurrency } from '@/lib/currency'
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +24,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
 import { useDeleteTransaction } from '@/hooks/use-transactions'
+
+import { formatCurrency } from '@/lib/currency'
 
 interface TransactionsTableProps {
   transactions: TransactionWithUser[]
@@ -110,7 +110,7 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
   }
 
   return (
-    <div className="rounded-md border">
+    <div>
       <Table>
         <TableHeader>
           <TableRow>

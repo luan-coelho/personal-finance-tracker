@@ -6,12 +6,12 @@ import { Calendar, User, Wallet } from 'lucide-react'
 
 import { TransactionWithUser } from '@/app/db/schemas'
 
-import { formatCurrency } from '@/lib/currency'
-
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { UserAvatarDisplay } from '@/components/user-avatar-display'
+
+import { formatCurrency } from '@/lib/currency'
 
 interface ReserveTransactionsCardProps {
   transactions: TransactionWithUser[]

@@ -22,7 +22,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     return (
       <div className="relative">
-        <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm">R$</span>
+        <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 text-sm">R$</span>
         <Input
           ref={ref}
           type="text"

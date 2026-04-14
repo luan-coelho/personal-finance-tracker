@@ -82,7 +82,7 @@ export function DatePicker({
               !date && 'text-muted-foreground',
               hasError ? 'border-destructive' : 'border-zinc-300',
               showErrorIcon ? 'pr-10' : '',
-              showNavigation && 'flex-1 w-auto',
+              showNavigation && 'w-auto flex-1',
               className,
             )}
             disabled={disabled}>

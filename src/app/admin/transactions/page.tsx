@@ -25,12 +25,14 @@ import {
 } from '@/components/ui/pagination'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
+import { useSpaceMembers } from '@/hooks/use-space-members'
 import { useTransactions, useTransactionSummary } from '@/hooks/use-transactions'
 
 import { getBrazilCurrentYearMonth, getMonthRangeBrazil } from '@/lib/date-utils'
 
 export default function TransacoesPage() {
   const { selectedSpace } = useSelectedSpace()
+  const { data: spaceMembers = [] } = useSpaceMembers(selectedSpace?.id || '')
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -172,52 +174,119 @@ export default function TransacoesPage() {
 
       {/* Card principal com filtros, tabela e paginação */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>Lista de Transações</CardTitle>
-          <Dialog
-            open={isCreateOpen}
-            onOpenChange={open => {
-              setIsCreateOpen(open)
-              if (!open) {
-                setPrefillTransaction(null)
-              }
-            }}>
-            <DialogTrigger asChild>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setPrefillTransaction(null)
-                }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Transação
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md md:min-w-3xl" onInteractOutside={e => e.preventDefault()}>
-              <DialogHeader>
-                <DialogTitle>Nova Transação</DialogTitle>
-              </DialogHeader>
-              <TransactionForm
-                transaction={prefillTransaction ?? undefined}
-                mode={prefillTransaction ? 'copy' : 'create'}
-                onSuccess={handleCreateSuccess}
-                existingTransactions={data?.transactions}
-              />
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent>
-          {/* Filtros */}
-          <div className="mb-6">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+          <CardTitle className="shrink-0">Lista de Transações</CardTitle>
+          <div className="flex items-center gap-2">
             <TransactionsFilters
               filters={filters}
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
+              hideBadges
             />
+            <Dialog
+              open={isCreateOpen}
+              onOpenChange={open => {
+                setIsCreateOpen(open)
+                if (!open) {
+                  setPrefillTransaction(null)
+                }
+              }}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => {
+                    setPrefillTransaction(null)
+                  }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Transação
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md md:min-w-3xl" onInteractOutside={e => e.preventDefault()}>
+                <DialogHeader>
+                  <DialogTitle>Nova Transação</DialogTitle>
+                </DialogHeader>
+                <TransactionForm
+                  transaction={prefillTransaction ?? undefined}
+                  mode={prefillTransaction ? 'copy' : 'create'}
+                  onSuccess={handleCreateSuccess}
+                  existingTransactions={data?.transactions}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {/* Badges de filtros ativos */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap gap-2 border-b px-6 py-3">
+              {filters.type && (
+                <Badge variant="secondary">
+                  Tipo: {filters.type === 'entrada' ? 'Entradas' : filters.type === 'saida' ? 'Saídas' : 'Reservas'}
+                  <button
+                    onClick={() => handleFiltersChange({ ...filters, type: undefined })}
+                    className="hover:text-destructive ml-1">
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {filters.category && (
+                <Badge variant="secondary">
+                  Categoria: {filters.category}
+                  <button
+                    onClick={() => handleFiltersChange({ ...filters, category: undefined })}
+                    className="hover:text-destructive ml-1">
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {filters.tags?.map(tag => (
+                <Badge key={tag} variant="secondary">
+                  Tag: {tag}
+                  <button
+                    onClick={() => {
+                      const newTags = filters.tags!.filter(t => t !== tag)
+                      handleFiltersChange({ ...filters, tags: newTags.length > 0 ? newTags : undefined })
+                    }}
+                    className="hover:text-destructive ml-1">
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              {filters.userId && (
+                <Badge variant="secondary">
+                  Usuário: {spaceMembers.find(m => m.user.id === filters.userId)?.user.name || 'Desconhecido'}
+                  <button
+                    onClick={() => handleFiltersChange({ ...filters, userId: undefined })}
+                    className="hover:text-destructive ml-1">
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {filters.dateFrom && (
+                <Badge variant="secondary">
+                  De: {filters.dateFrom.toLocaleDateString('pt-BR')}
+                  <button
+                    onClick={() => handleFiltersChange({ ...filters, dateFrom: undefined })}
+                    className="hover:text-destructive ml-1">
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {filters.dateTo && (
+                <Badge variant="secondary">
+                  Até: {filters.dateTo.toLocaleDateString('pt-BR')}
+                  <button
+                    onClick={() => handleFiltersChange({ ...filters, dateTo: undefined })}
+                    className="hover:text-destructive ml-1">
+                    ×
+                  </button>
+                </Badge>
+              )}
+            </div>
+          )}
 
           {/* Resumo das transações filtradas - só aparece quando há filtros aplicados */}
           {hasActiveFilters && filteredSummary && filteredSummary.count > 0 && (
-            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 px-6 py-4 md:grid-cols-4">
               {/* Entradas */}
               <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900/30 dark:bg-green-950/20">
                 <ArrowUpCircle className="h-5 w-5 text-green-600 dark:text-green-500" />
@@ -292,22 +361,22 @@ export default function TransacoesPage() {
           )}
 
           {/* Tabela de transações */}
-          <div className="mb-6">
-            {error ? (
+          {error ? (
+            <div className="px-6 py-4">
               <QueryErrorCard message="Erro ao carregar transações." onRetry={refetch} />
-            ) : (
-              <TransactionsTable
-                transactions={data?.transactions || []}
-                onEdit={handleEdit}
-                onDuplicate={handleDuplicate}
-                isLoading={isLoading}
-              />
-            )}
-          </div>
+            </div>
+          ) : (
+            <TransactionsTable
+              transactions={data?.transactions || []}
+              onEdit={handleEdit}
+              onDuplicate={handleDuplicate}
+              isLoading={isLoading}
+            />
+          )}
 
           {/* Paginação */}
           {totalPages > 1 && (
-            <div className="flex justify-center">
+            <div className="flex justify-center py-4">
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>

@@ -24,8 +24,7 @@ async function isOwnerOfSpaceContainingUser(currentUserId: string, targetUserId:
 
   // Verificar se o target é membro de algum desses spaces
   const membership = await db.query.spaceMembersTable.findFirst({
-    where: (t, { and, eq, inArray }) =>
-      and(eq(t.userId, targetUserId), inArray(t.spaceId, ownedSpaceIds)),
+    where: (t, { and, eq, inArray }) => and(eq(t.userId, targetUserId), inArray(t.spaceId, ownedSpaceIds)),
   })
 
   return !!membership

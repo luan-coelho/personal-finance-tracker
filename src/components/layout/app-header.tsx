@@ -10,7 +10,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar'
 
 export function AppHeader() {
   return (
-    <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
+    <header className="bg-background sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
 
       <div className="flex flex-1 items-center justify-between">

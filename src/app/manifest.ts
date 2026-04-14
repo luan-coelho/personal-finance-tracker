@@ -2,10 +2,10 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: '/',
     name: 'Finanças Pessoais',
     short_name: 'Finanças',
     description: 'Aplicativo pessoal de controle financeiro',
-    id: '/admin/transactions',
     start_url: '/admin/transactions',
     scope: '/',
     display: 'standalone',

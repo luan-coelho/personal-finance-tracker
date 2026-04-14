@@ -10,10 +10,7 @@ interface QueryErrorCardProps {
   onRetry?: () => void
 }
 
-export function QueryErrorCard({
-  message = 'Ocorreu um erro ao carregar os dados.',
-  onRetry,
-}: QueryErrorCardProps) {
+export function QueryErrorCard({ message = 'Ocorreu um erro ao carregar os dados.', onRetry }: QueryErrorCardProps) {
   return (
     <Card className="border-destructive/50">
       <CardContent className="flex flex-col items-center justify-center gap-3 py-8">
