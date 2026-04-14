@@ -7,6 +7,8 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
+import { InstallPromptCapture } from '@/components/pwa/install-prompt-capture'
+import { ServiceWorkerRegister } from '@/components/pwa/sw-register'
 import { Toaster } from '@/components/ui/sonner'
 
 import './globals.css'
@@ -57,16 +59,8 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.addEventListener('beforeinstallprompt', function(e) {
-                e.preventDefault();
-                window.deferredPrompt = e;
-              });
-            `,
-          }}
-        />
+        <InstallPromptCapture />
+        <ServiceWorkerRegister />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
