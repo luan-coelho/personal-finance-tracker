@@ -31,13 +31,6 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     shortcuts: [
       {
-        name: 'Nova transação',
-        short_name: 'Nova',
-        description: 'Registrar uma nova transação',
-        url: '/admin/transactions/new',
-        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
-      },
-      {
         name: 'Transações',
         url: '/admin/transactions',
         icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
@@ -50,6 +43,11 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: 'Categorias',
         url: '/admin/categories',
+        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
+      },
+      {
+        name: 'Reservas',
+        url: '/admin/reserves',
         icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
       },
     ],
