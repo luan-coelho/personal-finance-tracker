@@ -1,6 +1,15 @@
+import withSerwistInit from '@serwist/next'
 import type { NextConfig } from 'next'
 
 import { routes } from '@/lib/routes'
+
+const withSerwist = withSerwistInit({
+  swSrc: 'src/app/sw.ts',
+  swDest: 'public/sw.js',
+  cacheOnNavigation: true,
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === 'development',
+})
 
 const nextConfig: NextConfig = {
   redirects: async () => [
@@ -28,4 +37,4 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withSerwist(nextConfig)

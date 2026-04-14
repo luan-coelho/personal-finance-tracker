@@ -5,20 +5,52 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Finanças Pessoais',
     short_name: 'Finanças',
     description: 'Aplicativo pessoal de controle financeiro',
+    id: '/admin/transactions',
     start_url: '/admin/transactions',
+    scope: '/',
     display: 'standalone',
+    orientation: 'portrait',
     background_color: '#0f172a',
     theme_color: '#10B981',
+    lang: 'pt-BR',
+    dir: 'ltr',
+    categories: ['finance', 'productivity'],
     icons: [
       {
         src: '/icon-192x192.png',
         sizes: '192x192',
         type: 'image/png',
+        purpose: 'any',
       },
       {
         src: '/icon-512x512.png',
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'any',
+      },
+    ],
+    shortcuts: [
+      {
+        name: 'Nova transação',
+        short_name: 'Nova',
+        description: 'Registrar uma nova transação',
+        url: '/admin/transactions/new',
+        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
+      },
+      {
+        name: 'Transações',
+        url: '/admin/transactions',
+        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
+      },
+      {
+        name: 'Orçamentos',
+        url: '/admin/budgets',
+        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
+      },
+      {
+        name: 'Categorias',
+        url: '/admin/categories',
+        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
       },
     ],
   }

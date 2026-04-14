@@ -5,20 +5,18 @@ import { ThemeConfigProvider } from '@/providers/theme-config-provider'
 import { ThemeProvider } from '@/providers/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Outfit } from 'next/font/google'
 
+import { InstallPromptCapture } from '@/components/pwa/install-prompt-capture'
+import { ServiceWorkerRegister } from '@/components/pwa/sw-register'
 import { Toaster } from '@/components/ui/sonner'
 
 import './globals.css'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const outfit = Outfit({
+  variable: '--font-outfit',
   subsets: ['latin'],
-})
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  display: 'swap',
 })
 
 export const viewport: Viewport = {
@@ -56,17 +54,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.addEventListener('beforeinstallprompt', function(e) {
-                e.preventDefault();
-                window.deferredPrompt = e;
-              });
-            `,
-          }}
-        />
+      <body className={`${outfit.variable} antialiased`}>
+        <InstallPromptCapture />
+        <ServiceWorkerRegister />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
