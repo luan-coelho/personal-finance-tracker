@@ -149,7 +149,7 @@ export default function ReserveMovementsPage() {
             {reserveTransactions.length === 1 ? '' : 's'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <ReserveTransactionsTable transactions={reserveTransactions} />
         </CardContent>
       </Card>

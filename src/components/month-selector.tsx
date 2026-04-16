@@ -99,34 +99,44 @@ export function MonthSelector({
   return (
     <Card className={className}>
       <CardContent className="pt-6">
-        <div className="flex flex-col items-center justify-between md:flex-row">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:gap-3">
+          {/* Navegação - esquerda no desktop, meio no mobile */}
+          <div className="order-2 flex items-center gap-2 md:order-1 md:flex-1 md:justify-start">
             <Button variant="outline" size="sm" onClick={handlePreviousMonth} className="h-8 w-8 p-0">
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <div className="flex flex-col items-center gap-2 md:flex-row">
-              <h2 className="text-xl font-semibold">{monthSelector.monthName}</h2>
-              <Select value={monthSelector.selectedYear.toString()} onValueChange={handleYearChange}>
-                <SelectTrigger className="w-30">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {monthSelector.yearOptions.map(year => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={monthSelector.selectedYear.toString()} onValueChange={handleYearChange}>
+              <SelectTrigger className="w-30">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {monthSelector.yearOptions.map(year => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <Button variant="outline" size="sm" onClick={handleNextMonth} className="h-8 w-8 p-0">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Mês e data - centro */}
+          <div className="order-1 flex flex-col items-center gap-1 md:order-2 md:flex-1">
+            <h2 className="text-xl font-semibold">{monthSelector.monthName}</h2>
+            {showDateRange && (
+              <div className="text-muted-foreground text-sm">
+                {monthSelector.monthStartDate.toLocaleDateString('pt-BR')} -{' '}
+                {monthSelector.monthEndDate.toLocaleDateString('pt-BR')}
+              </div>
+            )}
+          </div>
+
+          {/* Botões de ação - direita no desktop, abaixo no mobile */}
+          <div className="order-3 flex flex-wrap items-center justify-center gap-2 md:flex-1 md:justify-end">
             {showTodayButton && !monthSelector.isCurrentMonth && (
               <Button variant="ghost" size="sm" onClick={handleTodayClick} className="h-7 text-xs">
                 Mês Atual
@@ -136,12 +146,6 @@ export function MonthSelector({
               <Button variant="ghost" size="sm" onClick={onShowAll} className="h-7 text-xs">
                 Ver Todas
               </Button>
-            )}
-            {showDateRange && (
-              <div className="text-muted-foreground text-sm">
-                {monthSelector.monthStartDate.toLocaleDateString('pt-BR')} -{' '}
-                {monthSelector.monthEndDate.toLocaleDateString('pt-BR')}
-              </div>
             )}
           </div>
         </div>

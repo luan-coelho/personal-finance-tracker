@@ -1,7 +1,7 @@
 'use client'
 
 import { handleGoogleSignIn } from '@/actions/auth-actions'
-import { Loader2 } from 'lucide-react'
+import { Lightbulb, Loader2 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useActionState } from 'react'
 import { toast } from 'sonner'
@@ -84,9 +84,10 @@ export function SignInForm() {
         {/* Callback URL Notice */}
         {callbackUrl !== routes.frontend.admin.index && (
           <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-            <p className="text-center text-sm text-blue-700">
-              <span className="font-medium">💡 Redirecionamento:</span> Você será direcionado para a página solicitada
-              após o login
+            <p className="flex items-center justify-center gap-1 text-center text-sm text-blue-700">
+              <Lightbulb className="h-4 w-4" />
+              <span className="font-medium">Redirecionamento:</span> Você será direcionado para a página solicitada após
+              o login
             </p>
           </div>
         )}

@@ -61,7 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.id = dbUser.id
           }
         } catch (error) {
-          console.error('❌ Erro ao buscar ID do usuário:', error)
+          console.error('Erro ao buscar ID do usuário:', error)
         }
       }
 

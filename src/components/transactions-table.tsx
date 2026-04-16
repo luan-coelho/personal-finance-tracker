@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowDownCircle, ArrowUpCircle, Copy, Edit, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, BarChart3, Copy, Edit, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 
 import { TransactionType, TransactionWithUser } from '@/app/db/schemas'
@@ -102,7 +102,7 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
   if (transactions.length === 0) {
     return (
       <div className="py-12 text-center">
-        <div className="mb-4 text-4xl">📊</div>
+        <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
         <h3 className="mb-2 text-lg font-semibold">Nenhuma transação encontrada</h3>
         <p className="text-muted-foreground">Comece criando sua primeira transação para acompanhar suas finanças.</p>
       </div>

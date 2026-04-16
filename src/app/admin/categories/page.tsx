@@ -1,6 +1,6 @@
 'use client'
 
-import { Filter, Plus, Search, X } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Plus, Search } from 'lucide-react'
 import { useState } from 'react'
 
 import { Category, CategoryType } from '@/app/db/schemas/category-schema'
@@ -11,8 +11,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { useCategories } from '@/hooks/use-categories'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
@@ -24,16 +22,17 @@ export default function CategoriasPage() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<CategoryType | 'all'>('all')
 
-  // Buscar categorias
+  // Buscar todas as categorias (filtro aplicado client-side para contadores)
   const { data: allCategories = [], isLoading } = useCategories(
     selectedSpace?.id || '',
-    typeFilter === 'all' ? undefined : typeFilter,
+    undefined,
     search || undefined,
   )
 
-  // Separar categorias por tipo
-  const entradaCategories = allCategories.filter(c => c.type === 'entrada')
-  const saidaCategories = allCategories.filter(c => c.type === 'saida')
+  const entradaCount = allCategories.filter(c => c.type === 'entrada').length
+  const saidaCount = allCategories.filter(c => c.type === 'saida').length
+  const filteredCategories =
+    typeFilter === 'all' ? allCategories : allCategories.filter(c => c.type === typeFilter)
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category)
@@ -62,35 +61,45 @@ export default function CategoriasPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col items-center justify-between md:flex-row">
-        <div>
-          <h1 className="text-3xl font-bold">Categorias</h1>
-          <p className="text-muted-foreground">Gerencie as categorias de entradas e saídas</p>
-        </div>
-
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full md:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Categoria
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nova Categoria</DialogTitle>
-            </DialogHeader>
-            <CategoryForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateOpen(false)} />
-          </DialogContent>
-        </Dialog>
+      {/* Header da página */}
+      <div>
+        <h1 className="text-3xl font-bold">Categorias</h1>
+        <p className="text-muted-foreground">Gerencie as categorias de entradas e saídas</p>
       </div>
 
-      {/* Filtros */}
+      {/* Card único com filtros no header e tabela no body */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 sm:flex-row">
-            {/* Busca */}
-            <div className="relative flex-1">
+        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
+          {/* Filtros estilo tabs */}
+          <div className="flex items-center gap-1 rounded-lg border p-1">
+            <Button
+              variant={typeFilter === 'all' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setTypeFilter('all')}
+              className="h-8">
+              Todas ({allCategories.length})
+            </Button>
+            <Button
+              variant={typeFilter === 'entrada' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setTypeFilter('entrada')}
+              className="h-8 gap-1">
+              <ArrowUpCircle className="h-4 w-4 text-green-600 dark:text-green-500" />
+              Entradas ({entradaCount})
+            </Button>
+            <Button
+              variant={typeFilter === 'saida' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setTypeFilter('saida')}
+              className="h-8 gap-1">
+              <ArrowDownCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
+              Saídas ({saidaCount})
+            </Button>
+          </div>
+
+          {/* Busca + botão de criar */}
+          <div className="flex w-full min-w-0 items-center gap-2 md:w-auto">
+            <div className="relative min-w-0 flex-1 md:w-72 md:flex-none">
               <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 placeholder="Buscar categorias..."
@@ -98,77 +107,28 @@ export default function CategoriasPage() {
                 onChange={e => setSearch(e.target.value)}
                 className="pl-10"
               />
-              {search && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
-                  onClick={() => setSearch('')}>
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
             </div>
 
-            {/* Filtro de tipo */}
-            <Select value={typeFilter} onValueChange={value => setTypeFilter(value as CategoryType | 'all')}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                <SelectItem value="entrada">💰 Entradas</SelectItem>
-                <SelectItem value="saida">💸 Saídas</SelectItem>
-              </SelectContent>
-            </Select>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="h-10 shrink-0">
+                  <Plus className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Nova Categoria</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nova Categoria</DialogTitle>
+                </DialogHeader>
+                <CategoryForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateOpen(false)} />
+              </DialogContent>
+            </Dialog>
           </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <CategoriesTable categories={filteredCategories} isLoading={isLoading} onEdit={handleEdit} />
         </CardContent>
       </Card>
-
-      {/* Tabs com categorias */}
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">Todas ({allCategories.length})</TabsTrigger>
-          <TabsTrigger value="entrada">💰 Entradas ({entradaCategories.length})</TabsTrigger>
-          <TabsTrigger value="saida">💸 Saídas ({saidaCategories.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Todas as Categorias</CardTitle>
-              <CardDescription>Lista completa de categorias cadastradas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CategoriesTable categories={allCategories} isLoading={isLoading} onEdit={handleEdit} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="entrada" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Categorias de Entrada</CardTitle>
-              <CardDescription>Categorias para receitas e ganhos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CategoriesTable categories={entradaCategories} isLoading={isLoading} onEdit={handleEdit} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="saida" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Categorias de Saída</CardTitle>
-              <CardDescription>Categorias para despesas e gastos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CategoriesTable categories={saidaCategories} isLoading={isLoading} onEdit={handleEdit} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
 
       {/* Dialog de edição */}
       <Dialog open={!!editingCategory} onOpenChange={() => setEditingCategory(null)}>

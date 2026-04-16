@@ -174,15 +174,28 @@ export default function TransacoesPage() {
 
       {/* Card principal com filtros, tabela e paginação */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-          <CardTitle className="shrink-0">Lista de Transações</CardTitle>
-          <div className="flex items-center gap-2">
-            <TransactionsFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onClearFilters={handleClearFilters}
-              hideBadges
-            />
+        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="shrink-0">Lista de Transações</CardTitle>
+            <Button
+              size="icon"
+              className="h-10 w-10 shrink-0 md:hidden"
+              onClick={() => {
+                setPrefillTransaction(null)
+                setIsCreateOpen(true)
+              }}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex w-full min-w-0 items-center gap-2 md:w-auto">
+            <div className="min-w-0 flex-1 md:flex-none">
+              <TransactionsFilters
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                onClearFilters={handleClearFilters}
+                hideBadges
+              />
+            </div>
             <Dialog
               open={isCreateOpen}
               onOpenChange={open => {
@@ -193,6 +206,7 @@ export default function TransacoesPage() {
               }}>
               <DialogTrigger asChild>
                 <Button
+                  className="hidden h-10 shrink-0 md:inline-flex"
                   onClick={() => {
                     setPrefillTransaction(null)
                   }}>

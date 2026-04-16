@@ -65,7 +65,7 @@ export function ReserveMovementsTable({ movements, reserveId, spaceId }: Reserve
 
   return (
     <>
-      <div className="rounded-md border">
+      <div>
         <Table>
           <TableHeader>
             <TableRow>

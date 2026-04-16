@@ -2,7 +2,6 @@
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { Grid3X3, Plus, Table2 } from 'lucide-react'
-import Link from 'next/link'
 import { useState } from 'react'
 
 import { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
@@ -130,46 +129,16 @@ export default function OrcamentosPage() {
 
   return (
     <div className="container mx-auto">
-      <div className="mb-8 flex flex-col items-center justify-between gap-3 md:flex-row md:gap-0">
-        <div>
-          <h1 className="text-3xl font-bold">Orçamentos</h1>
-          {!isMobile && (
-            <p className="text-muted-foreground">Gerencie os limites de gastos por categoria em {selectedSpace.name}</p>
-          )}
-        </div>
-
-        <div className="flex w-full flex-col items-stretch gap-2 md:w-auto md:flex-row md:items-center">
-          <CopyBudgetDialog currentMonth={currentMonthString} />
-          <Button asChild className="w-full md:w-auto">
-            <Link href="/admin/budgets/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Orçamento
-            </Link>
-          </Button>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Rápido
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Criar Novo Orçamento</DialogTitle>
-              </DialogHeader>
-              <BudgetForm onSuccess={handleCreateSuccess} />
-            </DialogContent>
-          </Dialog>
-        </div>
+      {/* Header da página */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Orçamentos</h1>
+        {!isMobile && (
+          <p className="text-muted-foreground">Gerencie os limites de gastos por categoria em {selectedSpace.name}</p>
+        )}
       </div>
 
       {/* Seletor de Mês/Ano */}
       <MonthSelector onMonthChange={handleMonthChange} className="mb-6" />
-
-      {/* Filtros */}
-      <div className="mb-6">
-        <BudgetFilters filters={filters} onFiltersChange={setFilters} onClearFilters={handleClearFilters} />
-      </div>
 
       {/* Resumo dos Orçamentos */}
       <div className="mb-8">
@@ -178,10 +147,16 @@ export default function OrcamentosPage() {
 
       {/* Lista de Orçamentos */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>Orçamentos por Categoria</CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center rounded-lg border p-1">
+        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
+          <CardTitle className="shrink-0">Orçamentos por Categoria</CardTitle>
+
+          <div className="flex w-full min-w-0 items-center gap-2 md:w-auto">
+            <div className="min-w-0 flex-1 md:flex-none">
+              <BudgetFilters filters={filters} onFiltersChange={setFilters} onClearFilters={handleClearFilters} />
+            </div>
+
+            {/* Toggle de visualização */}
+            <div className="hidden h-10 shrink-0 items-center rounded-lg border p-1 md:flex">
               <Button
                 variant={viewMode === 'cards' ? 'default' : 'ghost'}
                 size="sm"
@@ -197,11 +172,28 @@ export default function OrcamentosPage() {
                 <Table2 className="h-4 w-4" />
               </Button>
             </div>
+
+            <CopyBudgetDialog currentMonth={currentMonthString} />
+
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="h-10 shrink-0">
+                  <Plus className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Novo Orçamento</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Criar Novo Orçamento</DialogTitle>
+                </DialogHeader>
+                <BudgetForm onSuccess={handleCreateSuccess} />
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <Tabs value={viewMode} onValueChange={value => setViewMode(value as 'cards' | 'table')}>
-            <TabsContent value="cards" className="mt-0">
+            <TabsContent value="cards" className="mt-0 p-4 md:p-6">
               {budgetsLoading ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, i) => (
@@ -221,16 +213,10 @@ export default function OrcamentosPage() {
                       ? 'Crie seu primeiro orçamento para começar a controlar os gastos por categoria'
                       : 'Tente ajustar os filtros ou criar um novo orçamento'}
                   </p>
-                  <div className="flex flex-col justify-center gap-2 md:flex-row">
-                    <Button asChild className="w-full md:w-auto">
-                      <Link href="/admin/budgets/new">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Criar Primeiro Orçamento
-                      </Link>
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsCreateOpen(true)} className="w-full md:w-auto">
+                  <div className="flex justify-center">
+                    <Button onClick={() => setIsCreateOpen(true)} className="w-full md:w-auto">
                       <Plus className="mr-2 h-4 w-4" />
-                      Criar Rápido
+                      Criar Primeiro Orçamento
                     </Button>
                   </div>
                 </div>

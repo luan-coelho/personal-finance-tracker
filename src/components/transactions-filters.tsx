@@ -1,6 +1,17 @@
 'use client'
 
-import { CalendarIcon, Check, ChevronsUpDown, Filter, Search, User, X } from 'lucide-react'
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  CalendarIcon,
+  Check,
+  ChevronsUpDown,
+  Filter,
+  PiggyBank,
+  Search,
+  User,
+  X,
+} from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useMemo, useState } from 'react'
 
@@ -158,10 +169,10 @@ export function TransactionsFilters({
   const selectedUser = userOptions.find(opt => opt.value === (filters.userId || 'all'))
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       {/* Barra de busca */}
       <div className="flex gap-2">
-        <div className="relative w-72">
+        <div className="relative min-w-0 flex-1 md:w-72 md:flex-none">
           <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
           <Input
             placeholder="Buscar transações..."
@@ -175,7 +186,7 @@ export function TransactionsFilters({
         {session?.user?.id && (
           <Button
             variant={filters.userId === session.user.id ? 'default' : 'outline'}
-            className="gap-2"
+            className="h-10 shrink-0 gap-2"
             onClick={() => {
               const isActive = filters.userId === session.user.id
               onFiltersChange({
@@ -184,16 +195,16 @@ export function TransactionsFilters({
               })
             }}>
             <User className="h-4 w-4" />
-            <span>Eu</span>
+            <span className="hidden sm:inline">Eu</span>
           </Button>
         )}
 
         {/* Botão de filtros */}
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" className="relative gap-2">
+            <Button variant="outline" className="relative h-10 shrink-0 gap-2">
               <Filter className="h-4 w-4" />
-              <span>Filtros</span>
+              <span className="hidden sm:inline">Filtros</span>
               {activeFiltersCount > 0 && (
                 <Badge className="flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs">
                   {activeFiltersCount}
@@ -217,9 +228,24 @@ export function TransactionsFilters({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="entrada">💰 Entradas</SelectItem>
-                    <SelectItem value="saida">💸 Saídas</SelectItem>
-                    <SelectItem value="reserva">🏦 Reservas</SelectItem>
+                    <SelectItem value="entrada">
+                      <div className="flex items-center gap-2">
+                        <ArrowUpCircle className="h-4 w-4 text-green-600 dark:text-green-500" />
+                        Entradas
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="saida">
+                      <div className="flex items-center gap-2">
+                        <ArrowDownCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
+                        Saídas
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="reserva">
+                      <div className="flex items-center gap-2">
+                        <PiggyBank className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                        Reservas
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -416,7 +442,7 @@ export function TransactionsFilters({
 
         {/* Botão limpar filtros (visível quando há filtros ativos) */}
         {hasActiveFilters && (
-          <Button variant="outline" onClick={onClearFilters}>
+          <Button variant="outline" className="h-10 shrink-0" onClick={onClearFilters}>
             <X className="h-4 w-4" />
           </Button>
         )}

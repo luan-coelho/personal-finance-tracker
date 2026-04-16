@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarIcon, Filter, Search, X } from 'lucide-react'
+import { AlertTriangle, CalendarIcon, CheckCircle2, Filter, Search, X, XCircle } from 'lucide-react'
 import { useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -87,10 +87,10 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
   }
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       {/* Barra de busca */}
       <div className="flex gap-2">
-        <div className="relative flex-1">
+        <div className="relative min-w-0 flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
           <Input
             placeholder="Buscar orçamentos por categoria..."
@@ -103,11 +103,13 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
         {/* Botão de filtros */}
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" className="relative h-10">
-              <Filter className="mr-2 h-6 w-6" />
-              Filtros
+            <Button variant="outline" className="relative h-10 shrink-0 gap-2">
+              <Filter className="h-4 w-4" />
+              <span className="hidden sm:inline">Filtros</span>
               {activeFiltersCount > 0 && (
-                <Badge className="ml-2 h-5 w-5 rounded-full p-0 text-xs">{activeFiltersCount}</Badge>
+                <Badge className="flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs">
+                  {activeFiltersCount}
+                </Badge>
               )}
             </Button>
           </SheetTrigger>
@@ -145,9 +147,24 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="within">✅ Dentro do orçamento</SelectItem>
-                    <SelectItem value="near">⚠️ Próximo do limite</SelectItem>
-                    <SelectItem value="exceeded">🔴 Excedido</SelectItem>
+                    <SelectItem value="within">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
+                        Dentro do orçamento
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="near">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                        Próximo do limite
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="exceeded">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
+                        Excedido
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -250,7 +267,7 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
 
         {/* Botão limpar filtros (visível quando há filtros ativos) */}
         {hasActiveFilters && (
-          <Button variant="outline" onClick={onClearFilters}>
+          <Button variant="outline" className="h-10 shrink-0" onClick={onClearFilters}>
             <X className="h-4 w-4" />
           </Button>
         )}

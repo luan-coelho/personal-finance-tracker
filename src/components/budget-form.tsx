@@ -2,6 +2,7 @@
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Calendar } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
@@ -132,8 +133,9 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
         {/* Exibir mês selecionado */}
         {!isEditing && (
           <div className="bg-muted rounded-lg p-4">
-            <p className="text-muted-foreground text-sm">
-              📅 Criando orçamento para <strong className="text-foreground">{monthDisplay}</strong>
+            <p className="text-muted-foreground flex items-center gap-2 text-sm">
+              <Calendar className="h-4 w-4" />
+              Criando orçamento para <strong className="text-foreground">{monthDisplay}</strong>
             </p>
           </div>
         )}

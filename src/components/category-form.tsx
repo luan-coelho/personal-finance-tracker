@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -95,14 +95,20 @@ export function CategoryForm({ category, onSuccess, onCancel }: CategoryFormProp
                   disabled={isLoading || isEditing}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="entrada" id="type-entrada" />
-                    <label htmlFor="type-entrada" className="cursor-pointer text-sm leading-none font-medium">
-                      💰 Entrada
+                    <label
+                      htmlFor="type-entrada"
+                      className="flex cursor-pointer items-center gap-1 text-sm leading-none font-medium">
+                      <ArrowUpCircle className="h-4 w-4 text-green-600 dark:text-green-500" />
+                      Entrada
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="saida" id="type-saida" />
-                    <label htmlFor="type-saida" className="cursor-pointer text-sm leading-none font-medium">
-                      💸 Saída
+                    <label
+                      htmlFor="type-saida"
+                      className="flex cursor-pointer items-center gap-1 text-sm leading-none font-medium">
+                      <ArrowDownCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
+                      Saída
                     </label>
                   </div>
                 </RadioGroup>

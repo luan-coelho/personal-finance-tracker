@@ -61,7 +61,7 @@ export function TagsTable({ tags, isLoading, onEdit }: TagsTableProps) {
 
   return (
     <>
-      <div className="rounded-md border">
+      <div>
         <Table>
           <TableHeader>
             <TableRow>

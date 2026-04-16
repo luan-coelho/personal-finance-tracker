@@ -64,7 +64,7 @@ export function ReserveTransactionsTable({ transactions }: ReserveTransactionsTa
 
   return (
     <>
-      <div className="rounded-md border">
+      <div>
         <Table>
           <TableHeader>
             <TableRow>

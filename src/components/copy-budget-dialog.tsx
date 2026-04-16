@@ -80,9 +80,9 @@ export function CopyBudgetDialog({ currentMonth }: CopyBudgetDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full md:w-auto">
-          <Copy className="mr-2 h-4 w-4" />
-          Copiar Mês Anterior
+        <Button variant="outline" className="h-10 shrink-0">
+          <Copy className="h-4 w-4 md:mr-2" />
+          <span className="hidden md:inline">Copiar Mês Anterior</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">

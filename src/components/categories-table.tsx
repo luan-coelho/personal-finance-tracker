@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit, Loader2, MoreVertical, Trash2 } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Edit, Loader2, MoreVertical, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { Category } from '@/app/db/schemas/category-schema'
@@ -61,7 +61,7 @@ export function CategoriesTable({ categories, isLoading, onEdit }: CategoriesTab
 
   return (
     <>
-      <div className="rounded-md border">
+      <div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -76,8 +76,18 @@ export function CategoriesTable({ categories, isLoading, onEdit }: CategoriesTab
               <TableRow key={category.id}>
                 <TableCell className="font-medium">{category.name}</TableCell>
                 <TableCell>
-                  <Badge variant={category.type === 'entrada' ? 'default' : 'secondary'}>
-                    {category.type === 'entrada' ? '💰 Entrada' : '💸 Saída'}
+                  <Badge variant={category.type === 'entrada' ? 'default' : 'secondary'} className="gap-1">
+                    {category.type === 'entrada' ? (
+                      <>
+                        <ArrowUpCircle className="h-3 w-3" />
+                        Entrada
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownCircle className="h-3 w-3" />
+                        Saída
+                      </>
+                    )}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">

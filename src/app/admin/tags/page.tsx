@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Search, X } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useState } from 'react'
 
 import { Tag } from '@/app/db/schemas/tag-schema'
@@ -51,62 +51,47 @@ export default function TagsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Tags</h1>
-          <p className="text-muted-foreground">Gerencie as tags para suas transações</p>
-        </div>
-
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Tag
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nova Tag</DialogTitle>
-            </DialogHeader>
-            <TagForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateOpen(false)} />
-          </DialogContent>
-        </Dialog>
+      {/* Header da página */}
+      <div>
+        <h1 className="text-3xl font-bold">Tags</h1>
+        <p className="text-muted-foreground">Gerencie as tags para suas transações</p>
       </div>
 
-      {/* Filtros */}
+      {/* Card único com busca e criar no header, tabela no body */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="relative flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              placeholder="Buscar tags..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-10"
-            />
-            {search && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
-                onClick={() => setSearch('')}>
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
+          <CardTitle className="shrink-0">
+            Tags Cadastradas ({tags.length})
+          </CardTitle>
 
-      {/* Tabela de tags */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tags Cadastradas</CardTitle>
-          <CardDescription>
-            Total de {tags.length} {tags.length === 1 ? 'tag' : 'tags'}
-          </CardDescription>
+          <div className="flex w-full min-w-0 items-center gap-2 md:w-auto">
+            <div className="relative min-w-0 flex-1 md:w-72 md:flex-none">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Input
+                placeholder="Buscar tags..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="h-10 shrink-0">
+                  <Plus className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Nova Tag</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nova Tag</DialogTitle>
+                </DialogHeader>
+                <TagForm onSuccess={handleCreateSuccess} onCancel={() => setIsCreateOpen(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <TagsTable tags={tags} isLoading={isLoading} onEdit={handleEdit} />
         </CardContent>
       </Card>

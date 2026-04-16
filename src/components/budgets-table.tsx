@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit2, MoreHorizontal, Trash2 } from 'lucide-react'
+import { Edit2, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -101,7 +101,7 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
   if (budgets.length === 0) {
     return (
       <div className="py-12 text-center">
-        <div className="mb-4 text-4xl">💰</div>
+        <Wallet className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
         <h3 className="mb-2 text-lg font-semibold">Nenhum orçamento encontrado</h3>
         <p className="text-muted-foreground">Comece criando seu primeiro orçamento para controlar seus gastos.</p>
       </div>
@@ -109,7 +109,7 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
   }
 
   return (
-    <div className="rounded-md border">
+    <div>
       <Table>
         <TableHeader>
           <TableRow>
