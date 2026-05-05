@@ -232,11 +232,16 @@ export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-muted-foreground text-sm font-medium">Saldo Restante</label>
+                    <label className="text-muted-foreground text-sm font-medium">
+                      {budgetWithSpending.exceededAmount > 0 ? 'Valor Excedido' : 'Saldo Restante'}
+                    </label>
                     <p
                       className={`text-2xl font-bold ${budgetWithSpending.exceededAmount > 0 ? 'text-destructive' : 'text-green-600'}`}>
-                      {budgetWithSpending.exceededAmount > 0 ? '−' : ''}
-                      {formatCurrency(Math.abs(budgetWithSpending.remaining))}
+                      {formatCurrency(
+                        budgetWithSpending.exceededAmount > 0
+                          ? budgetWithSpending.exceededAmount
+                          : budgetWithSpending.remaining,
+                      )}
                     </p>
                     <p className="text-muted-foreground text-sm">
                       {budgetWithSpending.exceededAmount > 0

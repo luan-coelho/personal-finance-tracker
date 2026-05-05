@@ -113,15 +113,14 @@ export function BudgetSummary({ summary, isLoading, month }: BudgetSummaryProps)
           </CardContent>
         </Card>
 
-        {/* Restante */}
+        {/* Saldo */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Restante</CardTitle>
+            <CardTitle className="text-sm font-medium">{isOverBudget ? 'Excedido' : 'Restante'}</CardTitle>
             <TrendingUp className={cn('h-4 w-4', isOverBudget ? 'text-destructive' : 'text-green-600')} />
           </CardHeader>
           <CardContent>
             <div className={cn('text-2xl font-bold', isOverBudget ? 'text-destructive' : 'text-green-600')}>
-              {isOverBudget ? '−' : ''}
               {formatCurrency(Math.abs(summary.totalRemaining))}
             </div>
             <p className="text-muted-foreground text-xs">
