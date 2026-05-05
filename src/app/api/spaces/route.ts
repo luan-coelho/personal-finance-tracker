@@ -6,12 +6,12 @@ import { spaceMembersTable } from '@/app/db/schemas/space-member-schema'
 import { insertSpaceSchema, spacesTable } from '@/app/db/schemas/space-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 
 // GET /api/spaces - Listar espaços do usuário atual (próprios e compartilhados)
 export async function GET() {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
 
     if (!session?.user?.email) {
       return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 })
@@ -72,7 +72,7 @@ export async function GET() {
 // POST /api/spaces - Criar novo espaço
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
 
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 })

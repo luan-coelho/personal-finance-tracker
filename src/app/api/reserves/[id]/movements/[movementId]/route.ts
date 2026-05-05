@@ -6,7 +6,7 @@ import { reserveMovementsTable } from '@/app/db/schemas/reserve-movement-schema'
 import { reservesTable } from '@/app/db/schemas/reserve-schema'
 
 import { addAmounts, subtractAmounts } from '@/lib/amount-utils'
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { canEditSpace } from '@/lib/space-access'
 
 interface RouteContext {
@@ -16,7 +16,7 @@ interface RouteContext {
 // DELETE /api/reserves/[id]/movements/[movementId] - Excluir movimentação
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id: reserveId, movementId } = await context.params
 
     if (!session?.user?.email) {

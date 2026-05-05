@@ -11,7 +11,7 @@ import { reservesTable } from '@/app/db/schemas/reserve-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
 import { addAmounts, subtractAmounts, toNumber } from '@/lib/amount-utils'
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { canEditSpace, canViewSpace } from '@/lib/space-access'
 
 interface RouteContext {
@@ -21,7 +21,7 @@ interface RouteContext {
 // GET /api/reserves/[id]/movements - Listar movimentações de uma reserva
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id: reserveId } = await context.params
 
     if (!session?.user?.email) {
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // POST /api/reserves/[id]/movements - Criar nova movimentação
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id: reserveId } = await context.params
 
     if (!session?.user?.email) {

@@ -1,8 +1,8 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+
+import { useSession } from '@/lib/auth-client'
 
 import { SignOutButton } from './sign-out-button'
 import { UserAvatar } from './user-avatar'

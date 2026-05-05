@@ -6,7 +6,7 @@ import { spaceMembersTable } from '@/app/db/schemas/space-member-schema'
 import { spacesTable } from '@/app/db/schemas/space-schema'
 import { updateUserSchema, usersTable } from '@/app/db/schemas/user-schema'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 
 /**
  * Verifica se o usuário logado é owner de pelo menos um space que contém o usuário alvo.
@@ -33,7 +33,7 @@ async function isOwnerOfSpaceContainingUser(currentUserId: string, targetUserId:
 // GET /api/users/[id] - Buscar usuário por ID
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user) {
       return NextResponse.json(
         {
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 // PUT /api/users/[id] - Atualizar usuário (apenas auto-edição ou owner de space do usuário)
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.id) {
       return NextResponse.json(
         {
@@ -194,7 +194,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 // DELETE /api/users/[id] - Desativar usuário (apenas owner de space contendo o usuário)
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.id) {
       return NextResponse.json(
         {

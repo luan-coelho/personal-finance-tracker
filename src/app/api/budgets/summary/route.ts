@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { canViewSpace } from '@/lib/space-access'
 
 import { BudgetService } from '@/services/budget-service'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }

@@ -3,9 +3,8 @@
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowDownCircle, ArrowUpCircle, Edit2, Loader2, Wallet, X } from 'lucide-react'
-import { useSession } from 'next-auth/react'
 import React, { useCallback, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -28,6 +27,8 @@ import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTags } from '@/hooks/use-tags'
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transactions'
 
+import { useSession } from '@/lib/auth-client'
+
 type TransactionFormValues = Omit<z.infer<typeof insertTransactionSchema>, 'tags'> & { tags?: string[] }
 
 interface TransactionFormProps {
@@ -49,6 +50,8 @@ export function TransactionForm({
   const { data: session } = useSession()
   const { selectedSpace } = useSelectedSpace()
   const { monthStartDate } = useMonthSelectorContext()
+  const selectedSpaceId = selectedSpace?.id || ''
+  const userId = session?.user?.id || ''
 
   // Calcular a data padrão: última transação do mês ou primeiro dia do mês
   const defaultDate = React.useMemo(() => {
@@ -68,15 +71,11 @@ export function TransactionForm({
     return monthStartDate
   }, [transaction?.date, existingTransactions, monthStartDate])
 
-  if (!selectedSpace || !session?.user?.id) {
-    return null // ou um loader/spinner se preferir
-  }
-
   const formMode = mode ?? (transaction ? 'edit' : 'create')
   const isEditing = formMode === 'edit'
 
   // Buscar tags cadastradas no espaço
-  const { data: existingTagsData = [] } = useTags(selectedSpace.id)
+  const { data: existingTagsData = [] } = useTags(selectedSpaceId)
   const existingTags = existingTagsData.map(tag => tag.name)
 
   // Formulário react-hook-form
@@ -95,13 +94,13 @@ export function TransactionForm({
       category: transaction?.category || undefined,
       reserveId: transaction?.reserveId || undefined,
       tags: Array.isArray(transaction?.tags) ? transaction.tags : [],
-      spaceId: selectedSpace.id,
-      userId: session.user.id,
+      spaceId: selectedSpaceId,
+      userId,
     }
-  }, [selectedSpace.id, session.user.id, transaction, defaultDate])
+  }, [selectedSpaceId, userId, transaction, defaultDate])
 
   const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(insertTransactionSchema),
+    resolver: zodResolver(insertTransactionSchema) as Resolver<TransactionFormValues>,
     defaultValues: computeDefaultValues(),
   })
 
@@ -112,12 +111,12 @@ export function TransactionForm({
   // Buscar categorias do espaço baseado no tipo selecionado
   const currentType = form.watch('type')
   const { data: customCategories = [] } = useCategories(
-    selectedSpace.id,
+    selectedSpaceId,
     currentType === 'reserva' ? undefined : currentType,
   )
 
   // Buscar reservas ativas do espaço
-  const { data: allReserves = [] } = useReserves(selectedSpace.id)
+  const { data: allReserves = [] } = useReserves(selectedSpaceId)
   const activeReserves = allReserves.filter(r => r.active)
 
   // Mutations
@@ -173,6 +172,10 @@ export function TransactionForm({
       toast.error('Erro ao salvar transação')
       console.error('Erro ao salvar transação:', error)
     }
+  }
+
+  if (!selectedSpace || !session?.user?.id) {
+    return null // ou um loader/spinner se preferir
   }
 
   if (!selectedSpace) {

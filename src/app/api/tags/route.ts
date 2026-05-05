@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { insertTagSchema } from '@/app/db/schemas/tag-schema'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { canManageSpace } from '@/lib/space-access'
 
 import { TagService } from '@/services/tag-service'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }

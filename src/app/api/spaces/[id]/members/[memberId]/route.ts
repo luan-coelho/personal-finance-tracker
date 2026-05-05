@@ -6,12 +6,12 @@ import { spaceMembersTable, updateSpaceMemberSchema } from '@/app/db/schemas/spa
 import { spacesTable } from '@/app/db/schemas/space-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 
 // PUT /api/spaces/[id]/members/[memberId] - Atualizar papel do membro
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string; memberId: string }> }) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.email) {
       return NextResponse.json({ success: false, message: 'Não autenticado' }, { status: 401 })
     }
@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 // DELETE /api/spaces/[id]/members/[memberId] - Remover membro do espaço
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string; memberId: string }> }) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.email) {
       return NextResponse.json({ success: false, message: 'Não autenticado' }, { status: 401 })
     }

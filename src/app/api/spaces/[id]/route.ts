@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/app/db'
 import { spacesTable, updateSpaceSchema } from '@/app/db/schemas/space-schema'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { checkSpaceAccess } from '@/lib/space-access'
 
 interface RouteContext {
@@ -14,7 +14,7 @@ interface RouteContext {
 // GET /api/spaces/[id] - Buscar espaço por ID
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id } = await context.params
 
     if (!session?.user?.email) {
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // PUT /api/spaces/[id] - Atualizar espaço
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id } = await context.params
 
     if (!session?.user?.email) {
@@ -97,7 +97,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 // DELETE /api/spaces/[id] - Excluir espaço (desativar)
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id } = await context.params
 
     if (!session?.user?.email) {

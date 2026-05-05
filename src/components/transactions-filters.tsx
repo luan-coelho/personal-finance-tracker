@@ -12,7 +12,6 @@ import {
   User,
   X,
 } from 'lucide-react'
-import { useSession } from 'next-auth/react'
 import { useMemo, useState } from 'react'
 
 import { TransactionType } from '@/app/db/schemas'
@@ -41,6 +40,7 @@ import { useSpaceMembers } from '@/hooks/use-space-members'
 import { useTags } from '@/hooks/use-tags'
 import { useTransactionCategories } from '@/hooks/use-transactions'
 
+import { useSession } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 
 export interface TransactionFilters {

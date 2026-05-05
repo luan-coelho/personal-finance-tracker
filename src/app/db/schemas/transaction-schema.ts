@@ -33,17 +33,13 @@ export const transactionsTable = pgTable('transactions', {
 export const insertTransactionSchema = z
   .object({
     type: z.enum(['entrada', 'saida', 'reserva'], {
-      required_error: 'Tipo de transação é obrigatório',
-      invalid_type_error: 'Tipo deve ser "entrada", "saida" ou "reserva"',
+      message: 'Tipo deve ser "entrada", "saida" ou "reserva"',
     }),
     amount: z
       .string()
       .refine(isPositiveAmount, { message: 'Informe um número positivo' })
       .transform(normalizeBrazilianAmount),
-    date: z.coerce.date({
-      required_error: 'Data é obrigatória',
-      invalid_type_error: 'Data deve ser uma data válida',
-    }),
+    date: z.coerce.date({ message: 'Data deve ser uma data válida' }),
     description: z
       .string()
       .trim()
@@ -76,17 +72,13 @@ export const insertTransactionSchema = z
 // Schema base sem validação refinada para uso no update
 const baseTransactionSchema = z.object({
   type: z.enum(['entrada', 'saida', 'reserva'], {
-    required_error: 'Tipo de transação é obrigatório',
-    invalid_type_error: 'Tipo deve ser "entrada", "saida" ou "reserva"',
+    message: 'Tipo deve ser "entrada", "saida" ou "reserva"',
   }),
   amount: z
     .string()
     .refine(isPositiveAmount, { message: 'Informe um número positivo' })
     .transform(normalizeBrazilianAmount),
-  date: z.coerce.date({
-    required_error: 'Data é obrigatória',
-    invalid_type_error: 'Data deve ser uma data válida',
-  }),
+  date: z.coerce.date({ message: 'Data deve ser uma data válida' }),
   description: z
     .string()
     .trim()

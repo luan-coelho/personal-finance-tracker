@@ -1,7 +1,6 @@
 'use client'
 
 import { Loader2, MoreHorizontal, Pencil, Plus, Search, UserCheck, UserX, X } from 'lucide-react'
-import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 
 import { User } from '@/app/db/schemas/user-schema'
@@ -35,6 +34,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { UserForm } from '@/components/user-form'
 
 import { useDeleteUser, useToggleUserStatus, useUsers } from '@/hooks/use-users'
+
+import { useSession } from '@/lib/auth-client'
 
 export default function UsuariosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)

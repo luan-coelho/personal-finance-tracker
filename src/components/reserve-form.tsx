@@ -86,6 +86,7 @@ export function ReserveForm({ spaceId, reserve, mode }: ReserveFormProps) {
     try {
       const payload: ReserveFormValues = {
         ...data,
+        targetAmount: data.targetAmount || undefined,
         currentAmount: reserve?.currentAmount || '0',
         active: reserve?.active ?? true,
         spaceId: spaceId,

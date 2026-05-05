@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/app/db'
 import { reservesTable, updateReserveSchema } from '@/app/db/schemas/reserve-schema'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { canEditSpace, canViewSpace } from '@/lib/space-access'
 
 interface RouteContext {
@@ -14,7 +14,7 @@ interface RouteContext {
 // GET /api/reserves/[id] - Buscar reserva por ID
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id } = await context.params
 
     if (!session?.user?.email) {
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // PUT /api/reserves/[id] - Atualizar reserva
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id } = await context.params
 
     if (!session?.user?.email) {
@@ -107,7 +107,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 // DELETE /api/reserves/[id] - Excluir reserva
 export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id } = await context.params
 
     if (!session?.user?.email) {
@@ -146,7 +146,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 // PATCH /api/reserves/[id]/toggle - Alternar status ativo/inativo
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     const { id } = await context.params
 
     if (!session?.user?.email) {

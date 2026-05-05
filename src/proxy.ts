@@ -1,17 +1,18 @@
-import NextAuth from 'next-auth'
+import { getSessionCookie } from 'better-auth/cookies'
+import { NextResponse, type NextRequest } from 'next/server'
 
-import authConfig from '@/lib/auth.config'
 import { routes } from '@/lib/routes'
 
-// Usar configuração básica sem adapter para compatibilidade com Edge Runtime
-const { auth: proxy } = NextAuth(authConfig)
+export function proxy(req: NextRequest) {
+  const sessionCookie = getSessionCookie(req)
 
-export default proxy(req => {
-  if (!req.auth && req.nextUrl.pathname !== routes.frontend.auth.signIn) {
-    const newUrl = new URL(routes.frontend.auth.signIn, req.nextUrl.origin)
-    return Response.redirect(newUrl)
+  if (!sessionCookie && req.nextUrl.pathname !== routes.frontend.auth.signIn) {
+    const newUrl = new URL(routes.frontend.auth.signIn, req.url)
+    return NextResponse.redirect(newUrl)
   }
-})
+
+  return NextResponse.next()
+}
 
 export const config = {
   matcher: [

@@ -5,13 +5,13 @@ import { db } from '@/app/db'
 import { insertReserveSchema, reservesTable } from '@/app/db/schemas/reserve-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { canEditSpace } from '@/lib/space-access'
 
 // GET /api/reserves - Listar reservas (por espaço)
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.email) {
       return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 })
     }
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 // POST /api/reserves - Criar nova reserva
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.email) {
       return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 })
     }

@@ -1,9 +1,10 @@
 'use client'
 
 import { User } from 'lucide-react'
-import { useSession } from 'next-auth/react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+
+import { useSession } from '@/lib/auth-client'
 
 interface UserAvatarProps {
   className?: string

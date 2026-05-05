@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { insertTransactionSchema } from '@/app/db/schemas'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { canViewSpace } from '@/lib/space-access'
 
 import { TransactionService } from '@/services/transaction-service'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }

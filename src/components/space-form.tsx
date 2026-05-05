@@ -2,7 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
-import { useSession } from 'next-auth/react'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -16,6 +15,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 import { useCreateSpace, useUpdateSpace } from '@/hooks/use-spaces'
+
+import { useSession } from '@/lib/auth-client'
 
 // Schema específico para o formulário (sem ownerId)
 const spaceFormSchema = z.object({

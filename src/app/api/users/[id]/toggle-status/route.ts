@@ -6,7 +6,7 @@ import { db } from '@/app/db'
 import { spacesTable } from '@/app/db/schemas/space-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 
 const toggleStatusSchema = z.object({
   active: z.boolean(),
@@ -15,7 +15,7 @@ const toggleStatusSchema = z.object({
 // PATCH /api/users/[id]/toggle-status - Alterar status do usuário
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.id) {
       return NextResponse.json(
         {

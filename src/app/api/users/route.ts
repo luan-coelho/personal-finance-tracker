@@ -6,12 +6,12 @@ import { spaceMembersTable } from '@/app/db/schemas/space-member-schema'
 import { spacesTable } from '@/app/db/schemas/space-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 
 // GET /api/users - Listar usuários que compartilham pelo menos um space com o usuário logado
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await getCurrentSession()
     if (!session?.user?.id) {
       return NextResponse.json(
         {

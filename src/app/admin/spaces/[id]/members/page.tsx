@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
-import { auth } from '@/lib/auth'
+import { getCurrentSession } from '@/lib/auth'
 import { routes } from '@/lib/routes'
 
 interface SpaceMembersPageProps {
@@ -23,7 +23,7 @@ interface SpaceMembersPageProps {
 }
 
 async function SpaceMembersContent({ spaceId }: { spaceId: string }) {
-  const session = await auth()
+  const session = await getCurrentSession()
 
   if (!session?.user?.email) {
     redirect(routes.frontend.auth.signIn)

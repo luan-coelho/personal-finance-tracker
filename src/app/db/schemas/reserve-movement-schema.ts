@@ -27,18 +27,12 @@ export const reserveMovementsTable = pgTable('reserve_movements', {
 
 // Zod schemas for validation
 export const insertReserveMovementSchema = z.object({
-  type: z.enum(['deposit', 'withdraw'], {
-    required_error: 'Tipo de movimentação é obrigatório',
-    invalid_type_error: 'Tipo deve ser "deposit" ou "withdraw"',
-  }),
+  type: z.enum(['deposit', 'withdraw'], { message: 'Tipo deve ser "deposit" ou "withdraw"' }),
   amount: z
     .string()
     .refine(isPositiveAmount, { message: 'Informe um valor positivo' })
     .transform(normalizeBrazilianAmount),
-  date: z.coerce.date({
-    required_error: 'Data é obrigatória',
-    invalid_type_error: 'Data deve ser uma data válida',
-  }),
+  date: z.coerce.date({ message: 'Data deve ser uma data válida' }),
   description: z.string().max(500, 'Descrição deve ter no máximo 500 caracteres').optional(),
   reserveId: z.string().uuid('ID da reserva deve ser um UUID válido'),
   userId: z.string().uuid('ID do usuário deve ser um UUID válido'),

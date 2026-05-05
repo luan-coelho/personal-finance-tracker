@@ -20,10 +20,7 @@ export const categoriesTable = pgTable('categories', {
 // Zod schemas for validation
 export const insertCategorySchema = z.object({
   name: z.string().trim().min(1, 'Nome é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),
-  type: z.enum(['entrada', 'saida'], {
-    required_error: 'Tipo é obrigatório',
-    invalid_type_error: 'Tipo deve ser "entrada" ou "saida"',
-  }),
+  type: z.enum(['entrada', 'saida'], { message: 'Tipo deve ser "entrada" ou "saida"' }),
   spaceId: z.string().uuid('ID do espaço deve ser um UUID válido'),
 })
 

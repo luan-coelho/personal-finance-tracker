@@ -1,7 +1,6 @@
 'use client'
 
 import { Settings, User } from 'lucide-react'
-import { useSession } from 'next-auth/react'
 
 import {
   DropdownMenu,
@@ -11,6 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+
+import { useSession } from '@/lib/auth-client'
 
 import { SignOutButton } from './sign-out-button'
 import { UserAvatar } from './user-avatar'

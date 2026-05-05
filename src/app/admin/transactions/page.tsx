@@ -23,6 +23,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
+import { Skeleton } from '@/components/ui/skeleton'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useSpaceMembers } from '@/hooks/use-space-members'
@@ -30,8 +31,68 @@ import { useTransactions, useTransactionSummary } from '@/hooks/use-transactions
 
 import { getBrazilCurrentYearMonth, getMonthRangeBrazil } from '@/lib/date-utils'
 
+function TransactionsPageSkeleton() {
+  return (
+    <div className="container mx-auto">
+      <div className="mb-8">
+        <Skeleton className="mb-3 h-9 w-48" />
+        <Skeleton className="h-5 w-80 max-w-full" />
+      </div>
+
+      <Card className="mb-6">
+        <CardContent className="grid min-h-24 grid-cols-1 items-center gap-4 p-6 md:grid-cols-[1fr_auto_1fr]">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-10" />
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <Skeleton className="h-6 w-20" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <div className="flex justify-start md:justify-end">
+            <Skeleton className="h-8 w-20" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, index) => (
+          <Card key={index}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-4 rounded-full" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="mb-2 h-8 w-28" />
+              <Skeleton className="h-3 w-20" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
+          <Skeleton className="h-6 w-40" />
+          <div className="flex w-full items-center gap-2 md:w-auto">
+            <Skeleton className="h-10 flex-1 md:w-72 md:flex-none" />
+            <Skeleton className="h-10 w-16" />
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="hidden h-10 w-40 md:block" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3 border-t p-0">
+          {[...Array(5)].map((_, index) => (
+            <Skeleton key={index} className="mx-0 h-16 rounded-none" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 export default function TransacoesPage() {
-  const { selectedSpace } = useSelectedSpace()
+  const { selectedSpace, isLoading: isSpaceLoading } = useSelectedSpace()
   const { data: spaceMembers = [] } = useSpaceMembers(selectedSpace?.id || '')
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<TransactionFilters>({})
@@ -119,6 +180,10 @@ export default function TransacoesPage() {
   }
 
   const totalPages = data ? Math.ceil(data.total / 20) : 0
+
+  if (isSpaceLoading && !selectedSpace) {
+    return <TransactionsPageSkeleton />
+  }
 
   if (!selectedSpace) {
     return (

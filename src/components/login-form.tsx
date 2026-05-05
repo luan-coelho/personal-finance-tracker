@@ -1,7 +1,6 @@
 'use client'
 
 import { Lightbulb, Loader2 } from 'lucide-react'
-import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -9,6 +8,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
+import { authClient } from '@/lib/auth-client'
 import { routes } from '@/lib/routes'
 import { cn } from '@/lib/utils'
 
@@ -44,15 +44,17 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
     try {
       setIsLoading(true)
 
-      const result = await signIn('google', {
-        callbackUrl,
-        redirect: false,
+      const { data, error } = await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: callbackUrl,
+        errorCallbackURL: routes.frontend.auth.signIn,
+        disableRedirect: true,
       })
 
-      if (result?.error) {
+      if (error) {
         toast.error('Erro ao fazer login. Tente novamente.')
-      } else if (result?.url) {
-        router.push(result.url)
+      } else if (data?.url) {
+        router.push(data.url)
       }
     } catch (error) {
       console.error('Sign in error:', error)

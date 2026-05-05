@@ -11,28 +11,69 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 
 import { useCategories } from '@/hooks/use-categories'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 
+function CategoriesPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <Skeleton className="mb-3 h-9 w-44" />
+        <Skeleton className="h-5 w-80 max-w-full" />
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
+          <div className="flex w-full items-center gap-1 overflow-hidden rounded-lg border p-1 md:w-auto">
+            <Skeleton className="h-8 w-24 shrink-0" />
+            <Skeleton className="h-8 w-32 shrink-0" />
+            <Skeleton className="h-8 w-28 shrink-0" />
+          </div>
+
+          <div className="flex w-full min-w-0 items-center gap-2 md:w-auto">
+            <Skeleton className="h-10 flex-1 md:w-72 md:flex-none" />
+            <Skeleton className="h-10 w-10 shrink-0 md:w-40" />
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          <div className="border-t">
+            <div className="grid grid-cols-[1.5fr_1fr_1fr_70px] gap-4 border-b px-6 py-3">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-8 justify-self-end" />
+            </div>
+            {[...Array(5)].map((_, index) => (
+              <div key={index} className="grid grid-cols-[1.5fr_1fr_1fr_70px] gap-4 border-b px-6 py-4 last:border-b-0">
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-9 w-9 justify-self-end" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 export default function CategoriasPage() {
-  const { selectedSpace } = useSelectedSpace()
+  const { selectedSpace, isLoading: isSpaceLoading } = useSelectedSpace()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<CategoryType | 'all'>('all')
 
   // Buscar todas as categorias (filtro aplicado client-side para contadores)
-  const { data: allCategories = [], isLoading } = useCategories(
-    selectedSpace?.id || '',
-    undefined,
-    search || undefined,
-  )
+  const { data: allCategories = [], isLoading } = useCategories(selectedSpace?.id || '', undefined, search || undefined)
 
   const entradaCount = allCategories.filter(c => c.type === 'entrada').length
   const saidaCount = allCategories.filter(c => c.type === 'saida').length
-  const filteredCategories =
-    typeFilter === 'all' ? allCategories : allCategories.filter(c => c.type === typeFilter)
+  const filteredCategories = typeFilter === 'all' ? allCategories : allCategories.filter(c => c.type === typeFilter)
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category)
@@ -44,6 +85,10 @@ export default function CategoriasPage() {
 
   const handleEditSuccess = () => {
     setEditingCategory(null)
+  }
+
+  if (isSpaceLoading && !selectedSpace) {
+    return <CategoriesPageSkeleton />
   }
 
   if (!selectedSpace) {
