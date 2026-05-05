@@ -207,6 +207,7 @@ export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
                       ...budget,
                       spent: 0,
                       remaining: Number(budget.amount),
+                      exceededAmount: 0,
                       percentage: 0,
                     }
                   }
@@ -233,13 +234,13 @@ export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
                   <div className="space-y-2">
                     <label className="text-muted-foreground text-sm font-medium">Saldo Restante</label>
                     <p
-                      className={`text-2xl font-bold ${budgetWithSpending.remaining <= 0 ? 'text-destructive' : 'text-green-600'}`}>
-                      {budgetWithSpending.remaining <= 0 ? '−' : ''}
+                      className={`text-2xl font-bold ${budgetWithSpending.exceededAmount > 0 ? 'text-destructive' : 'text-green-600'}`}>
+                      {budgetWithSpending.exceededAmount > 0 ? '−' : ''}
                       {formatCurrency(Math.abs(budgetWithSpending.remaining))}
                     </p>
                     <p className="text-muted-foreground text-sm">
-                      {budgetWithSpending.remaining <= 0
-                        ? `Excedido em ${formatCurrency(Math.abs(budgetWithSpending.remaining))}`
+                      {budgetWithSpending.exceededAmount > 0
+                        ? `Excedido em ${formatCurrency(budgetWithSpending.exceededAmount)}`
                         : 'Disponível para gastar'}
                     </p>
                   </div>

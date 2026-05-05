@@ -119,6 +119,7 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
             <TableHead className="text-right">Orçamento</TableHead>
             <TableHead className="text-right">Gasto</TableHead>
             <TableHead className="text-right">Restante</TableHead>
+            <TableHead className="text-right">Excedido</TableHead>
             <TableHead>Progresso</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[50px]"></TableHead>
@@ -149,10 +150,18 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
                   </span>
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  <span className={cn('font-semibold', budget.remaining <= 0 ? 'text-destructive' : 'text-green-600')}>
-                    {budget.remaining <= 0 ? '−' : ''}
+                  <span
+                    className={cn('font-semibold', budget.exceededAmount > 0 ? 'text-destructive' : 'text-green-600')}>
+                    {budget.exceededAmount > 0 ? '−' : ''}
                     {formatCurrency(Math.abs(budget.remaining))}
                   </span>
+                </TableCell>
+                <TableCell className="text-right font-mono">
+                  {budget.exceededAmount > 0 ? (
+                    <span className="text-destructive font-semibold">{formatCurrency(budget.exceededAmount)}</span>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">

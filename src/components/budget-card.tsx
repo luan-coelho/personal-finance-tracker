@@ -99,11 +99,17 @@ export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Restante:</span>
-            <span className={cn('font-medium', budget.remaining <= 0 ? 'text-destructive' : 'text-green-600')}>
-              {budget.remaining <= 0 ? '−' : ''}
+            <span className={cn('font-medium', budget.exceededAmount > 0 ? 'text-destructive' : 'text-green-600')}>
+              {budget.exceededAmount > 0 ? '−' : ''}
               {formatCurrency(Math.abs(budget.remaining))}
             </span>
           </div>
+          {budget.exceededAmount > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Excedido:</span>
+              <span className="text-destructive font-semibold">{formatCurrency(budget.exceededAmount)}</span>
+            </div>
+          )}
         </div>
 
         {/* Barra de Progresso */}

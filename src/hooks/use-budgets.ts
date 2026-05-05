@@ -15,6 +15,7 @@ export interface BudgetSummary {
   totalBudget: number
   totalSpent: number
   totalRemaining: number
+  totalExceeded: number
   averagePercentage: number
   categoriesCount: number
   categoriesOverBudget: number

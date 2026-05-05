@@ -117,18 +117,15 @@ export function BudgetSummary({ summary, isLoading, month }: BudgetSummaryProps)
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Restante</CardTitle>
-            <TrendingUp
-              className={cn('h-4 w-4', summary.totalRemaining <= 0 ? 'text-destructive' : 'text-green-600')}
-            />
+            <TrendingUp className={cn('h-4 w-4', isOverBudget ? 'text-destructive' : 'text-green-600')} />
           </CardHeader>
           <CardContent>
-            <div
-              className={cn('text-2xl font-bold', summary.totalRemaining <= 0 ? 'text-destructive' : 'text-green-600')}>
-              {summary.totalRemaining <= 0 ? '−' : ''}
+            <div className={cn('text-2xl font-bold', isOverBudget ? 'text-destructive' : 'text-green-600')}>
+              {isOverBudget ? '−' : ''}
               {formatCurrency(Math.abs(summary.totalRemaining))}
             </div>
             <p className="text-muted-foreground text-xs">
-              {summary.totalRemaining <= 0 ? 'Orçamento excedido' : 'Disponível para gastos'}
+              {isOverBudget ? 'Orçamento excedido' : 'Disponível para gastos'}
             </p>
           </CardContent>
         </Card>
@@ -151,6 +148,19 @@ export function BudgetSummary({ summary, isLoading, month }: BudgetSummaryProps)
         </Card>
       </div>
 
+      {summary.totalExceeded > 0 && (
+        <Card className="border-destructive/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valor Excedido</CardTitle>
+            <AlertTriangle className="text-destructive h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-destructive text-2xl font-bold">{formatCurrency(summary.totalExceeded)}</div>
+            <p className="text-muted-foreground text-xs">Soma excedida nas categorias acima do orçamento</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Barra de Progresso Geral */}
       <Card>
         <CardHeader>
@@ -168,7 +178,7 @@ export function BudgetSummary({ summary, isLoading, month }: BudgetSummaryProps)
           <div className="text-center">
             <Badge variant={isOverBudget ? 'destructive' : isNearLimit ? 'secondary' : 'default'}>
               {isOverBudget
-                ? `${(overallPercentage - 100).toFixed(1)}% acima do orçamento`
+                ? `${(overallPercentage - 100).toFixed(1)}% acima do orçamento (${formatCurrency(summary.totalExceeded)} excedido)`
                 : `${(100 - overallPercentage).toFixed(1)}% restante`}
             </Badge>
           </div>

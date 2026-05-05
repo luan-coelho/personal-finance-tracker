@@ -61,6 +61,7 @@ export type UpdateBudgetFormValues = z.infer<typeof updateBudgetSchema>
 export type BudgetWithSpending = Budget & {
   spent: number
   remaining: number
+  exceededAmount: number
   percentage: number
 }
 

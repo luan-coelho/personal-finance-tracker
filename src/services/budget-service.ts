@@ -121,13 +121,15 @@ export class BudgetService {
     return budgetsWithCreator.map(({ budget, createdBy }) => {
       const budgetAmount = Number(budget.amount)
       const spent = spentMap.get(budget.category) || 0
-      const remaining = Math.max(0, budgetAmount - spent)
+      const remaining = budgetAmount - spent
+      const exceededAmount = Math.max(0, spent - budgetAmount)
       const percentage = budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0
 
       return {
         ...budget,
         spent,
         remaining,
+        exceededAmount,
         percentage,
         createdBy: createdBy || undefined,
       }
@@ -174,6 +176,7 @@ export class BudgetService {
     const totalBudget = budgetsWithSpending.reduce((sum, b) => sum + Number(b.amount), 0)
     const totalSpent = budgetsWithSpending.reduce((sum, b) => sum + b.spent, 0)
     const totalRemaining = budgetsWithSpending.reduce((sum, b) => sum + b.remaining, 0)
+    const totalExceeded = budgetsWithSpending.reduce((sum, b) => sum + b.exceededAmount, 0)
     const averagePercentage =
       budgetsWithSpending.length > 0
         ? budgetsWithSpending.reduce((sum, b) => sum + b.percentage, 0) / budgetsWithSpending.length
@@ -186,6 +189,7 @@ export class BudgetService {
       totalBudget,
       totalSpent,
       totalRemaining,
+      totalExceeded,
       averagePercentage,
       categoriesCount: budgetsWithSpending.length,
       categoriesOverBudget,
