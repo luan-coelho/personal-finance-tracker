@@ -46,6 +46,14 @@ export function MonthSelector({
     monthSelector.goToNextMonth()
   }
 
+  const handlePreviousYear = () => {
+    monthSelector.goToPreviousYear()
+  }
+
+  const handleNextYear = () => {
+    monthSelector.goToNextYear()
+  }
+
   const handleYearChange = (year: string) => {
     monthSelector.setYear(parseInt(year))
   }
@@ -57,12 +65,16 @@ export function MonthSelector({
   if (compact) {
     return (
       <div className={cn('flex items-center gap-2', className)}>
-        <Button variant="outline" size="sm" onClick={handlePreviousMonth} className="h-8 w-30 p-0">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handlePreviousYear}
+          className="h-8 w-8 p-0"
+          aria-label="Ano anterior">
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
         <div className="flex items-center gap-2">
-          <span className="font-medium">{monthSelector.monthName}</span>
           <Select value={monthSelector.selectedYear.toString()} onValueChange={handleYearChange}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -77,9 +89,29 @@ export function MonthSelector({
           </Select>
         </div>
 
-        <Button variant="outline" size="sm" onClick={handleNextMonth} className="h-8 w-8 p-0">
+        <Button variant="outline" size="sm" onClick={handleNextYear} className="h-8 w-8 p-0" aria-label="Próximo ano">
           <ChevronRight className="h-4 w-4" />
         </Button>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreviousMonth}
+            className="h-8 w-8 p-0"
+            aria-label="Mês anterior">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="min-w-24 text-center font-medium">{monthSelector.monthName}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextMonth}
+            className="h-8 w-8 p-0"
+            aria-label="Próximo mês">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
 
         {showTodayButton && !monthSelector.isCurrentMonth && (
           <Button variant="ghost" size="sm" onClick={handleTodayClick} className="h-8 text-xs">
@@ -102,7 +134,12 @@ export function MonthSelector({
         <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:gap-3">
           {/* Navegação - esquerda no desktop, meio no mobile */}
           <div className="order-2 flex items-center gap-2 md:order-1 md:flex-1 md:justify-start">
-            <Button variant="outline" size="sm" onClick={handlePreviousMonth} className="h-8 w-8 p-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousYear}
+              className="h-8 w-8 p-0"
+              aria-label="Ano anterior">
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
@@ -119,14 +156,37 @@ export function MonthSelector({
               </SelectContent>
             </Select>
 
-            <Button variant="outline" size="sm" onClick={handleNextMonth} className="h-8 w-8 p-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextYear}
+              className="h-8 w-8 p-0"
+              aria-label="Próximo ano">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Mês e data - centro */}
           <div className="order-1 flex flex-col items-center gap-1 md:order-2 md:flex-1">
-            <h2 className="text-xl font-semibold">{monthSelector.monthName}</h2>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousMonth}
+                className="h-8 w-8 p-0"
+                aria-label="Mês anterior">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <h2 className="min-w-32 text-center text-xl font-semibold">{monthSelector.monthName}</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextMonth}
+                className="h-8 w-8 p-0"
+                aria-label="Próximo mês">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
             {showDateRange && (
               <div className="text-muted-foreground text-sm">
                 {monthSelector.monthStartDate.toLocaleDateString('pt-BR')} -{' '}

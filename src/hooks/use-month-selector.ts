@@ -16,6 +16,8 @@ export interface MonthSelectorActions {
   setYear: (year: number) => void
   goToPreviousMonth: () => void
   goToNextMonth: () => void
+  goToPreviousYear: () => void
+  goToNextYear: () => void
   goToCurrentMonth: () => void
   goToDate: (date: Date) => void
 }
@@ -59,8 +61,10 @@ export function useMonthSelector(initialDate?: Date): UseMonthSelectorReturn {
   const currentBrazil = getBrazilCurrentYearMonth()
   const isCurrentMonth = selectedMonth === currentBrazil.month && selectedYear === currentBrazil.year
 
-  // Opções de anos (5 anos para trás e 5 para frente)
-  const yearOptions = Array.from({ length: 11 }, (_, i) => currentBrazil.year - 5 + i)
+  // Opções de anos (5 anos para trás e 5 para frente, incluindo o ano selecionado)
+  const firstYearOption = Math.min(currentBrazil.year - 5, selectedYear)
+  const lastYearOption = Math.max(currentBrazil.year + 5, selectedYear)
+  const yearOptions = Array.from({ length: lastYearOption - firstYearOption + 1 }, (_, i) => firstYearOption + i)
 
   const setMonth = (month: number) => {
     if (month >= 0 && month <= 11) {
@@ -88,6 +92,14 @@ export function useMonthSelector(initialDate?: Date): UseMonthSelectorReturn {
     } else {
       setSelectedMonth(selectedMonth + 1)
     }
+  }
+
+  const goToPreviousYear = () => {
+    setSelectedYear(year => year - 1)
+  }
+
+  const goToNextYear = () => {
+    setSelectedYear(year => year + 1)
   }
 
   const goToCurrentMonth = () => {
@@ -119,6 +131,8 @@ export function useMonthSelector(initialDate?: Date): UseMonthSelectorReturn {
     setYear,
     goToPreviousMonth,
     goToNextMonth,
+    goToPreviousYear,
+    goToNextYear,
     goToCurrentMonth,
     goToDate,
   }
