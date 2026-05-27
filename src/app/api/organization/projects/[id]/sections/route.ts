@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ZodError } from 'zod'
 
+import { parseUuid, validationErrorResponse } from '@/app/api/organization/_utils'
 import { insertOrganizationProjectSectionSchema } from '@/app/db/schemas/organization-project-section-schema'
 
 import { getCurrentSession } from '@/lib/auth'
@@ -26,18 +26,6 @@ async function getSessionUser() {
   }
 }
 
-function validationErrorResponse(error: unknown) {
-  if (error instanceof ZodError) {
-    return NextResponse.json({ error: error.issues[0]?.message || 'Dados invalidos' }, { status: 400 })
-  }
-
-  if (error instanceof SyntaxError) {
-    return NextResponse.json({ error: 'JSON invalido' }, { status: 400 })
-  }
-
-  return null
-}
-
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const sessionUser = await getSessionUser()
@@ -46,7 +34,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params
-    const project = await OrganizationProjectService.findById(id)
+    const parsedId = parseUuid(id, 'id')
+    const project = await OrganizationProjectService.findById(parsedId)
     if (!project) {
       return NextResponse.json({ error: 'Projeto nao encontrado' }, { status: 404 })
     }
@@ -63,7 +52,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json()
-    const validatedData = insertOrganizationProjectSectionSchema.parse({ ...body, projectId: id })
+    const validatedData = insertOrganizationProjectSectionSchema.parse({ ...body, projectId: parsedId })
     const section = await OrganizationProjectService.createSection(validatedData)
 
     return NextResponse.json(section, { status: 201 })

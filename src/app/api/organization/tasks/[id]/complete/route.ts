@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { parseUuid, validationErrorResponse } from '@/app/api/organization/_utils'
 import { getCurrentSession } from '@/lib/auth'
 import { canWriteOrganizationItem } from '@/lib/organization-access'
 import { canManageSpace, canViewSpace } from '@/lib/space-access'
@@ -31,7 +32,8 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params
-    const existingTask = await OrganizationTaskService.findById(id)
+    const parsedId = parseUuid(id, 'id')
+    const existingTask = await OrganizationTaskService.findById(parsedId)
     if (!existingTask) {
       return NextResponse.json({ error: 'Tarefa nao encontrada' }, { status: 404 })
     }
@@ -47,7 +49,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Sem permissao para editar este item' }, { status: 403 })
     }
 
-    const task = await OrganizationTaskService.complete(id)
+    const task = await OrganizationTaskService.complete(parsedId)
     if (!task) {
       return NextResponse.json({ error: 'Tarefa nao encontrada' }, { status: 404 })
     }
@@ -55,6 +57,12 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(task)
   } catch (error) {
     console.error('Erro ao concluir tarefa de organizacao:', error)
+
+    const validationResponse = validationErrorResponse(error)
+    if (validationResponse) {
+      return validationResponse
+    }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ZodError } from 'zod'
 
+import {
+  parseOptionalUuid,
+  parseUuid,
+  uuidValidationMessages,
+  validationErrorResponse,
+} from '@/app/api/organization/_utils'
 import { insertOrganizationNoteSchema } from '@/app/db/schemas/organization-note-schema'
 
 import { getCurrentSession } from '@/lib/auth'
@@ -9,6 +14,7 @@ import { canManageSpace, canViewSpace } from '@/lib/space-access'
 import { OrganizationNoteService } from '@/services/organization-note-service'
 
 const VALIDATION_MESSAGES = new Set([
+  ...uuidValidationMessages,
   'Projeto invalido para este espaco',
   'Tarefa invalida para este espaco',
   'Tarefa invalida para este projeto',
@@ -27,22 +33,6 @@ async function getSessionUser() {
   }
 }
 
-function validationErrorResponse(error: unknown) {
-  if (error instanceof ZodError) {
-    return NextResponse.json({ error: error.issues[0]?.message || 'Dados invalidos' }, { status: 400 })
-  }
-
-  if (error instanceof SyntaxError) {
-    return NextResponse.json({ error: 'JSON invalido' }, { status: 400 })
-  }
-
-  if (error instanceof Error && VALIDATION_MESSAGES.has(error.message)) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
-  }
-
-  return null
-}
-
 export async function GET(request: NextRequest) {
   try {
     const sessionUser = await getSessionUser()
@@ -57,22 +47,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'spaceId e obrigatorio' }, { status: 400 })
     }
 
-    const hasAccess = await canViewSpace(sessionUser.email, spaceId)
+    const parsedSpaceId = parseUuid(spaceId, 'spaceId')
+    const hasAccess = await canViewSpace(sessionUser.email, parsedSpaceId)
     if (!hasAccess) {
       return NextResponse.json({ error: 'Acesso negado ao espaco' }, { status: 403 })
     }
 
     const notes = await OrganizationNoteService.findMany({
-      spaceId,
+      spaceId: parsedSpaceId,
       userId: sessionUser.id,
-      projectId: searchParams.get('projectId') || undefined,
-      taskId: searchParams.get('taskId') || undefined,
+      projectId: parseOptionalUuid(searchParams.get('projectId'), 'projectId'),
+      taskId: parseOptionalUuid(searchParams.get('taskId'), 'taskId'),
       search: searchParams.get('search') || undefined,
     })
 
     return NextResponse.json(notes)
   } catch (error) {
     console.error('Erro ao buscar notas de organizacao:', error)
+
+    const validationResponse = validationErrorResponse(error, VALIDATION_MESSAGES)
+    if (validationResponse) {
+      return validationResponse
+    }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
@@ -108,7 +105,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erro ao criar nota de organizacao:', error)
 
-    const validationResponse = validationErrorResponse(error)
+    const validationResponse = validationErrorResponse(error, VALIDATION_MESSAGES)
     if (validationResponse) {
       return validationResponse
     }

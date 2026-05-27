@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ZodError } from 'zod'
 
+import {
+  parseOptionalUuid,
+  parseUuid,
+  uuidValidationMessages,
+  validationErrorResponse,
+} from '@/app/api/organization/_utils'
 import type { OrganizationVisibility } from '@/app/db/schemas/organization-project-schema'
 import {
   insertOrganizationTaskSchema,
@@ -15,6 +20,7 @@ import { OrganizationTaskService } from '@/services/organization-task-service'
 const TASK_STATUSES: OrganizationTaskStatus[] = ['pending', 'completed', 'archived']
 const VISIBILITIES: OrganizationVisibility[] = ['shared', 'personal']
 const VALIDATION_MESSAGES = new Set([
+  ...uuidValidationMessages,
   'status invalido',
   'visibility invalida',
   'dateFrom invalida',
@@ -60,22 +66,6 @@ function parseDateParam(value: string | null, name: 'dateFrom' | 'dateTo'): Date
   return date
 }
 
-function validationErrorResponse(error: unknown) {
-  if (error instanceof ZodError) {
-    return NextResponse.json({ error: error.issues[0]?.message || 'Dados invalidos' }, { status: 400 })
-  }
-
-  if (error instanceof SyntaxError) {
-    return NextResponse.json({ error: 'JSON invalido' }, { status: 400 })
-  }
-
-  if (error instanceof Error && VALIDATION_MESSAGES.has(error.message)) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
-  }
-
-  return null
-}
-
 export async function GET(request: NextRequest) {
   try {
     const sessionUser = await getSessionUser()
@@ -90,19 +80,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'spaceId e obrigatorio' }, { status: 400 })
     }
 
-    const hasAccess = await canViewSpace(sessionUser.email, spaceId)
+    const parsedSpaceId = parseUuid(spaceId, 'spaceId')
+    const hasAccess = await canViewSpace(sessionUser.email, parsedSpaceId)
     if (!hasAccess) {
       return NextResponse.json({ error: 'Acesso negado ao espaco' }, { status: 403 })
     }
 
     const tasks = await OrganizationTaskService.findMany({
-      spaceId,
+      spaceId: parsedSpaceId,
       userId: sessionUser.id,
       status: parseStatus(searchParams.get('status')),
-      projectId: searchParams.get('projectId') || undefined,
-      sectionId: searchParams.get('sectionId') || undefined,
-      assigneeId: searchParams.get('assigneeId') || undefined,
-      labelId: searchParams.get('labelId') || undefined,
+      projectId: parseOptionalUuid(searchParams.get('projectId'), 'projectId'),
+      sectionId: parseOptionalUuid(searchParams.get('sectionId'), 'sectionId'),
+      assigneeId: parseOptionalUuid(searchParams.get('assigneeId'), 'assigneeId'),
+      labelId: parseOptionalUuid(searchParams.get('labelId'), 'labelId'),
       visibility: parseVisibility(searchParams.get('visibility')),
       dateFrom: parseDateParam(searchParams.get('dateFrom'), 'dateFrom'),
       dateTo: parseDateParam(searchParams.get('dateTo'), 'dateTo'),
@@ -113,7 +104,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Erro ao buscar tarefas de organizacao:', error)
 
-    const validationResponse = validationErrorResponse(error)
+    const validationResponse = validationErrorResponse(error, VALIDATION_MESSAGES)
     if (validationResponse) {
       return validationResponse
     }
@@ -153,7 +144,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erro ao criar tarefa de organizacao:', error)
 
-    const validationResponse = validationErrorResponse(error)
+    const validationResponse = validationErrorResponse(error, VALIDATION_MESSAGES)
     if (validationResponse) {
       return validationResponse
     }

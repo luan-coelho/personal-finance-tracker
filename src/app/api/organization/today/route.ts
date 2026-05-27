@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { parseUuid, validationErrorResponse } from '@/app/api/organization/_utils'
 import { getCurrentSession } from '@/lib/auth'
 import { canViewSpace } from '@/lib/space-access'
 
@@ -32,16 +33,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'spaceId e obrigatorio' }, { status: 400 })
     }
 
-    const hasAccess = await canViewSpace(sessionUser.email, spaceId)
+    const parsedSpaceId = parseUuid(spaceId, 'spaceId')
+    const hasAccess = await canViewSpace(sessionUser.email, parsedSpaceId)
     if (!hasAccess) {
       return NextResponse.json({ error: 'Acesso negado ao espaco' }, { status: 403 })
     }
 
-    const today = await OrganizationTaskService.findToday(spaceId, sessionUser.id)
+    const today = await OrganizationTaskService.findToday(parsedSpaceId, sessionUser.id)
 
     return NextResponse.json(today)
   } catch (error) {
     console.error('Erro ao buscar resumo de hoje da organizacao:', error)
+
+    const validationResponse = validationErrorResponse(error)
+    if (validationResponse) {
+      return validationResponse
+    }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

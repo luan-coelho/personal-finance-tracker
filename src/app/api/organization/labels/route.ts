@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ZodError } from 'zod'
 
+import { parseUuid, validationErrorResponse } from '@/app/api/organization/_utils'
 import { insertOrganizationLabelSchema } from '@/app/db/schemas/organization-label-schema'
 
 import { getCurrentSession } from '@/lib/auth'
@@ -21,18 +21,6 @@ async function getSessionUser() {
   }
 }
 
-function validationErrorResponse(error: unknown) {
-  if (error instanceof ZodError) {
-    return NextResponse.json({ error: error.issues[0]?.message || 'Dados invalidos' }, { status: 400 })
-  }
-
-  if (error instanceof SyntaxError) {
-    return NextResponse.json({ error: 'JSON invalido' }, { status: 400 })
-  }
-
-  return null
-}
-
 export async function GET(request: NextRequest) {
   try {
     const sessionUser = await getSessionUser()
@@ -48,19 +36,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'spaceId e obrigatorio' }, { status: 400 })
     }
 
-    const hasAccess = await canViewSpace(sessionUser.email, spaceId)
+    const parsedSpaceId = parseUuid(spaceId, 'spaceId')
+    const hasAccess = await canViewSpace(sessionUser.email, parsedSpaceId)
     if (!hasAccess) {
       return NextResponse.json({ error: 'Acesso negado ao espaco' }, { status: 403 })
     }
 
     const labels = await OrganizationLabelService.findMany({
-      spaceId,
+      spaceId: parsedSpaceId,
       search,
     })
 
     return NextResponse.json(labels)
   } catch (error) {
     console.error('Erro ao buscar etiquetas de organizacao:', error)
+
+    const validationResponse = validationErrorResponse(error)
+    if (validationResponse) {
+      return validationResponse
+    }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

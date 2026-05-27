@@ -1,7 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm'
 import { NextRequest, NextResponse } from 'next/server'
-import { ZodError } from 'zod'
 
+import { parseUuid, sanitizeUpdateData, validationErrorResponse } from '@/app/api/organization/_utils'
 import { db } from '@/app/db'
 import {
   organizationProjectSectionsTable,
@@ -47,18 +47,6 @@ async function sectionExistsInProject(sectionId: string, projectId: string) {
   return !!section
 }
 
-function validationErrorResponse(error: unknown) {
-  if (error instanceof ZodError) {
-    return NextResponse.json({ error: error.issues[0]?.message || 'Dados invalidos' }, { status: 400 })
-  }
-
-  if (error instanceof SyntaxError) {
-    return NextResponse.json({ error: 'JSON invalido' }, { status: 400 })
-  }
-
-  return null
-}
-
 async function ensureWritableProject(projectId: string, sessionUser: { id: string; email: string }) {
   const project = await OrganizationProjectService.findById(projectId)
   if (!project) {
@@ -87,19 +75,26 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id, sectionId } = await params
-    const writableProject = await ensureWritableProject(id, sessionUser)
+    const parsedId = parseUuid(id, 'id')
+    const parsedSectionId = parseUuid(sectionId, 'sectionId')
+    const writableProject = await ensureWritableProject(parsedId, sessionUser)
     if ('response' in writableProject) {
       return writableProject.response
     }
 
-    const belongsToProject = await sectionExistsInProject(sectionId, id)
+    const belongsToProject = await sectionExistsInProject(parsedSectionId, parsedId)
     if (!belongsToProject) {
       return NextResponse.json({ error: 'Secao nao encontrada' }, { status: 404 })
     }
 
     const body = await request.json()
-    const validatedData = updateOrganizationProjectSectionSchema.parse({ ...body, id: sectionId, projectId: id })
-    const section = await OrganizationProjectService.updateSection(sectionId, validatedData)
+    const validatedData = updateOrganizationProjectSectionSchema.parse({
+      ...body,
+      id: parsedSectionId,
+      projectId: parsedId,
+    })
+    const updateData = sanitizeUpdateData(validatedData, body, ['id', 'projectId'])
+    const section = await OrganizationProjectService.updateSection(parsedSectionId, updateData)
 
     if (!section) {
       return NextResponse.json({ error: 'Secao nao encontrada' }, { status: 404 })
@@ -126,21 +121,29 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     }
 
     const { id, sectionId } = await params
-    const writableProject = await ensureWritableProject(id, sessionUser)
+    const parsedId = parseUuid(id, 'id')
+    const parsedSectionId = parseUuid(sectionId, 'sectionId')
+    const writableProject = await ensureWritableProject(parsedId, sessionUser)
     if ('response' in writableProject) {
       return writableProject.response
     }
 
-    const belongsToProject = await sectionExistsInProject(sectionId, id)
+    const belongsToProject = await sectionExistsInProject(parsedSectionId, parsedId)
     if (!belongsToProject) {
       return NextResponse.json({ error: 'Secao nao encontrada' }, { status: 404 })
     }
 
-    await OrganizationProjectService.archiveSection(sectionId)
+    await OrganizationProjectService.archiveSection(parsedSectionId)
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Erro ao arquivar secao de projeto de organizacao:', error)
+
+    const validationResponse = validationErrorResponse(error)
+    if (validationResponse) {
+      return validationResponse
+    }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

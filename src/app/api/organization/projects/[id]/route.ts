@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ZodError } from 'zod'
 
+import {
+  bodyRequestsValue,
+  parseUuid,
+  sanitizeUpdateData,
+  validationErrorResponse,
+} from '@/app/api/organization/_utils'
 import { updateOrganizationProjectSchema } from '@/app/db/schemas/organization-project-schema'
 
 import { getCurrentSession } from '@/lib/auth'
@@ -26,18 +31,6 @@ async function getSessionUser() {
   }
 }
 
-function validationErrorResponse(error: unknown) {
-  if (error instanceof ZodError) {
-    return NextResponse.json({ error: error.issues[0]?.message || 'Dados invalidos' }, { status: 400 })
-  }
-
-  if (error instanceof SyntaxError) {
-    return NextResponse.json({ error: 'JSON invalido' }, { status: 400 })
-  }
-
-  return null
-}
-
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const sessionUser = await getSessionUser()
@@ -48,17 +41,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
+    const parsedId = parseUuid(id, 'id')
 
     if (!spaceId) {
       return NextResponse.json({ error: 'spaceId e obrigatorio' }, { status: 400 })
     }
 
-    const hasAccess = await canViewSpace(sessionUser.email, spaceId)
+    const parsedSpaceId = parseUuid(spaceId, 'spaceId')
+    const hasAccess = await canViewSpace(sessionUser.email, parsedSpaceId)
     if (!hasAccess) {
       return NextResponse.json({ error: 'Acesso negado ao espaco' }, { status: 403 })
     }
 
-    const project = await OrganizationProjectService.findByIdForUser(id, spaceId, sessionUser.id)
+    const project = await OrganizationProjectService.findByIdForUser(parsedId, parsedSpaceId, sessionUser.id)
     if (!project) {
       return NextResponse.json({ error: 'Projeto nao encontrado' }, { status: 404 })
     }
@@ -66,6 +61,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(project)
   } catch (error) {
     console.error('Erro ao buscar projeto de organizacao:', error)
+
+    const validationResponse = validationErrorResponse(error)
+    if (validationResponse) {
+      return validationResponse
+    }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
@@ -78,7 +79,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params
-    const existingProject = await OrganizationProjectService.findById(id)
+    const parsedId = parseUuid(id, 'id')
+    const existingProject = await OrganizationProjectService.findById(parsedId)
     if (!existingProject) {
       return NextResponse.json({ error: 'Projeto nao encontrado' }, { status: 404 })
     }
@@ -95,13 +97,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json()
-    const validatedData = updateOrganizationProjectSchema.parse({ ...body, id })
+    const validatedData = updateOrganizationProjectSchema.parse({ ...body, id: parsedId })
+    const updateData = sanitizeUpdateData(validatedData, body, ['id', 'spaceId', 'createdById'])
 
-    if (validatedData.visibility === 'shared' && existingProject.visibility === 'personal' && !canEditSpace) {
+    if (bodyRequestsValue(body, 'visibility', 'shared') && !canEditSpace) {
       return NextResponse.json({ error: 'Sem permissao para editar este item' }, { status: 403 })
     }
 
-    const project = await OrganizationProjectService.update(id, validatedData)
+    const project = await OrganizationProjectService.update(parsedId, updateData)
     if (!project) {
       return NextResponse.json({ error: 'Projeto nao encontrado' }, { status: 404 })
     }
@@ -127,7 +130,8 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params
-    const existingProject = await OrganizationProjectService.findById(id)
+    const parsedId = parseUuid(id, 'id')
+    const existingProject = await OrganizationProjectService.findById(parsedId)
     if (!existingProject) {
       return NextResponse.json({ error: 'Projeto nao encontrado' }, { status: 404 })
     }
@@ -143,11 +147,17 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Sem permissao para editar este item' }, { status: 403 })
     }
 
-    await OrganizationProjectService.archive(id)
+    await OrganizationProjectService.archive(parsedId)
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Erro ao arquivar projeto de organizacao:', error)
+
+    const validationResponse = validationErrorResponse(error)
+    if (validationResponse) {
+      return validationResponse
+    }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

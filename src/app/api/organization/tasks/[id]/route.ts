@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ZodError } from 'zod'
 
+import {
+  bodyRequestsValue,
+  parseUuid,
+  sanitizeUpdateData,
+  uuidValidationMessages,
+  validationErrorResponse,
+} from '@/app/api/organization/_utils'
 import { updateOrganizationTaskSchema } from '@/app/db/schemas/organization-task-schema'
 
 import { getCurrentSession } from '@/lib/auth'
@@ -14,6 +20,7 @@ interface RouteParams {
 }
 
 const VALIDATION_MESSAGES = new Set([
+  ...uuidValidationMessages,
   'Secao invalida para este espaco',
   'Projeto invalido para este espaco',
   'Etiqueta invalida para este espaco',
@@ -32,22 +39,6 @@ async function getSessionUser() {
   }
 }
 
-function validationErrorResponse(error: unknown) {
-  if (error instanceof ZodError) {
-    return NextResponse.json({ error: error.issues[0]?.message || 'Dados invalidos' }, { status: 400 })
-  }
-
-  if (error instanceof SyntaxError) {
-    return NextResponse.json({ error: 'JSON invalido' }, { status: 400 })
-  }
-
-  if (error instanceof Error && VALIDATION_MESSAGES.has(error.message)) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
-  }
-
-  return null
-}
-
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const sessionUser = await getSessionUser()
@@ -58,17 +49,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const spaceId = searchParams.get('spaceId')
+    const parsedId = parseUuid(id, 'id')
 
     if (!spaceId) {
       return NextResponse.json({ error: 'spaceId e obrigatorio' }, { status: 400 })
     }
 
-    const hasAccess = await canViewSpace(sessionUser.email, spaceId)
+    const parsedSpaceId = parseUuid(spaceId, 'spaceId')
+    const hasAccess = await canViewSpace(sessionUser.email, parsedSpaceId)
     if (!hasAccess) {
       return NextResponse.json({ error: 'Acesso negado ao espaco' }, { status: 403 })
     }
 
-    const task = await OrganizationTaskService.findByIdWithDetailsForUser(id, spaceId, sessionUser.id)
+    const task = await OrganizationTaskService.findByIdWithDetailsForUser(parsedId, parsedSpaceId, sessionUser.id)
     if (!task) {
       return NextResponse.json({ error: 'Tarefa nao encontrada' }, { status: 404 })
     }
@@ -76,6 +69,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(task)
   } catch (error) {
     console.error('Erro ao buscar tarefa de organizacao:', error)
+
+    const validationResponse = validationErrorResponse(error, VALIDATION_MESSAGES)
+    if (validationResponse) {
+      return validationResponse
+    }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
@@ -88,7 +87,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params
-    const existingTask = await OrganizationTaskService.findById(id)
+    const parsedId = parseUuid(id, 'id')
+    const existingTask = await OrganizationTaskService.findById(parsedId)
     if (!existingTask) {
       return NextResponse.json({ error: 'Tarefa nao encontrada' }, { status: 404 })
     }
@@ -105,13 +105,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json()
-    const validatedData = updateOrganizationTaskSchema.parse({ ...body, id })
+    const validatedData = updateOrganizationTaskSchema.parse({ ...body, id: parsedId })
+    const updateData = sanitizeUpdateData(validatedData, body, ['id', 'spaceId', 'createdById'])
 
-    if (validatedData.visibility === 'shared' && existingTask.visibility === 'personal' && !canEditSpace) {
+    if (bodyRequestsValue(body, 'visibility', 'shared') && !canEditSpace) {
       return NextResponse.json({ error: 'Sem permissao para editar este item' }, { status: 403 })
     }
 
-    const task = await OrganizationTaskService.update(id, validatedData)
+    const task = await OrganizationTaskService.update(parsedId, updateData)
     if (!task) {
       return NextResponse.json({ error: 'Tarefa nao encontrada' }, { status: 404 })
     }
@@ -120,7 +121,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('Erro ao atualizar tarefa de organizacao:', error)
 
-    const validationResponse = validationErrorResponse(error)
+    const validationResponse = validationErrorResponse(error, VALIDATION_MESSAGES)
     if (validationResponse) {
       return validationResponse
     }
@@ -137,7 +138,8 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params
-    const existingTask = await OrganizationTaskService.findById(id)
+    const parsedId = parseUuid(id, 'id')
+    const existingTask = await OrganizationTaskService.findById(parsedId)
     if (!existingTask) {
       return NextResponse.json({ error: 'Tarefa nao encontrada' }, { status: 404 })
     }
@@ -153,11 +155,17 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Sem permissao para editar este item' }, { status: 403 })
     }
 
-    await OrganizationTaskService.archive(id)
+    await OrganizationTaskService.archive(parsedId)
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Erro ao arquivar tarefa de organizacao:', error)
+
+    const validationResponse = validationErrorResponse(error, VALIDATION_MESSAGES)
+    if (validationResponse) {
+      return validationResponse
+    }
+
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
