@@ -1,17 +1,7 @@
+CREATE TYPE "public"."category_type" AS ENUM('entrada', 'saida');--> statement-breakpoint
 CREATE TYPE "public"."reserve_movement_type" AS ENUM('deposit', 'withdraw');--> statement-breakpoint
 CREATE TYPE "public"."member_role" AS ENUM('owner', 'editor', 'viewer');--> statement-breakpoint
-CREATE TYPE "public"."transaction_type" AS ENUM('entrada', 'saida');--> statement-breakpoint
-CREATE TABLE "activity_logs" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"action" text NOT NULL,
-	"description" text NOT NULL,
-	"ip_address" text,
-	"user_agent" text,
-	"metadata" text,
-	"created_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
+CREATE TYPE "public"."transaction_type" AS ENUM('entrada', 'saida', 'reserva');--> statement-breakpoint
 CREATE TABLE "budgets" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"space_id" uuid NOT NULL,
@@ -21,6 +11,15 @@ CREATE TABLE "budgets" (
 	"created_by_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "categories" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	"type" "category_type" NOT NULL,
+	"space_id" uuid NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "reserve_movements" (
@@ -67,13 +66,22 @@ CREATE TABLE "spaces" (
 	"updated_at" timestamp
 );
 --> statement-breakpoint
+CREATE TABLE "tags" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	"space_id" uuid NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp
+);
+--> statement-breakpoint
 CREATE TABLE "transactions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"type" "transaction_type" NOT NULL,
 	"amount" numeric(10, 2) NOT NULL,
 	"date" timestamp NOT NULL,
 	"description" text NOT NULL,
-	"category" text NOT NULL,
+	"category" text,
+	"reserve_id" uuid,
 	"tags" text[],
 	"space_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -94,11 +102,14 @@ CREATE TABLE "users" (
 --> statement-breakpoint
 ALTER TABLE "budgets" ADD CONSTRAINT "budgets_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "budgets" ADD CONSTRAINT "budgets_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "categories" ADD CONSTRAINT "categories_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reserve_movements" ADD CONSTRAINT "reserve_movements_reserve_id_reserves_id_fk" FOREIGN KEY ("reserve_id") REFERENCES "public"."reserves"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reserve_movements" ADD CONSTRAINT "reserve_movements_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reserves" ADD CONSTRAINT "reserves_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "space_members" ADD CONSTRAINT "space_members_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "space_members" ADD CONSTRAINT "space_members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "spaces" ADD CONSTRAINT "spaces_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tags" ADD CONSTRAINT "tags_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_reserve_id_reserves_id_fk" FOREIGN KEY ("reserve_id") REFERENCES "public"."reserves"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
