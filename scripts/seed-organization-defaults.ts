@@ -2,7 +2,7 @@
 
 import 'dotenv/config'
 
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 
 import { db } from '@/app/db'
 import {
@@ -16,6 +16,8 @@ const defaultProjects = ['Casa', 'Compras', 'Trabalho', 'Estudos', 'Projetos', '
 const defaultSections = ['A fazer', 'Aguardando', 'Concluido'] as const
 const defaultLabels = ['urgente', 'mercado', 'ligacao', 'online'] as const
 
+const normalizeName = (name: string) => name.toLocaleLowerCase('pt-BR')
+
 type SeedCounts = {
   projectsCreated: number
   projectsSkipped: number
@@ -26,13 +28,12 @@ type SeedCounts = {
 }
 
 async function findProject(spaceId: string, name: string) {
-  const [project] = await db
+  const projects = await db
     .select()
     .from(organizationProjectsTable)
-    .where(and(eq(organizationProjectsTable.spaceId, spaceId), eq(organizationProjectsTable.name, name)))
-    .limit(1)
+    .where(eq(organizationProjectsTable.spaceId, spaceId))
 
-  return project
+  return projects.find(project => normalizeName(project.name) === normalizeName(name))
 }
 
 async function ensureProject(spaceId: string, ownerId: string, name: string, counts: SeedCounts) {
@@ -58,15 +59,15 @@ async function ensureProject(spaceId: string, ownerId: string, name: string, cou
 }
 
 async function ensureSection(projectId: string, name: string, position: number, counts: SeedCounts) {
-  const [existingSection] = await db
-    .select({ id: organizationProjectSectionsTable.id })
+  const sections = await db
+    .select({
+      id: organizationProjectSectionsTable.id,
+      name: organizationProjectSectionsTable.name,
+    })
     .from(organizationProjectSectionsTable)
-    .where(
-      and(eq(organizationProjectSectionsTable.projectId, projectId), eq(organizationProjectSectionsTable.name, name)),
-    )
-    .limit(1)
+    .where(eq(organizationProjectSectionsTable.projectId, projectId))
 
-  if (existingSection) {
+  if (sections.some(section => normalizeName(section.name) === normalizeName(name))) {
     counts.sectionsSkipped++
     return
   }
@@ -81,13 +82,15 @@ async function ensureSection(projectId: string, name: string, position: number, 
 }
 
 async function ensureLabel(spaceId: string, name: string, counts: SeedCounts) {
-  const [existingLabel] = await db
-    .select({ id: organizationLabelsTable.id })
+  const labels = await db
+    .select({
+      id: organizationLabelsTable.id,
+      name: organizationLabelsTable.name,
+    })
     .from(organizationLabelsTable)
-    .where(and(eq(organizationLabelsTable.spaceId, spaceId), eq(organizationLabelsTable.name, name)))
-    .limit(1)
+    .where(eq(organizationLabelsTable.spaceId, spaceId))
 
-  if (existingLabel) {
+  if (labels.some(label => normalizeName(label.name) === normalizeName(name))) {
     counts.labelsSkipped++
     return
   }
