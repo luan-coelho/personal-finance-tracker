@@ -46,11 +46,7 @@ export function bodyRequestsValue(body: unknown, fieldName: string, value: unkno
   return (body as Record<string, unknown>)[fieldName] === value
 }
 
-export function sanitizeUpdateData<T extends object>(
-  validatedData: T,
-  body: unknown,
-  immutableFields: string[],
-) {
+export function sanitizeUpdateData<T extends object>(validatedData: T, body: unknown, immutableFields: string[]) {
   const requestedFields =
     typeof body === 'object' && body !== null && !Array.isArray(body)
       ? new Set(Object.keys(body as Record<string, unknown>))

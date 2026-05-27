@@ -21,9 +21,6 @@ export function organizationVisibilityWhere<
     visibility: AnyColumn<{ data: OrganizationVisibility }>
     createdById: AnyColumn<{ data: string }>
   },
->(
-  table: T,
-  userId: string,
-) {
+>(table: T, userId: string) {
   return or(eq(table.visibility, 'shared'), and(eq(table.visibility, 'personal'), eq(table.createdById, userId)))
 }

@@ -3,10 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import type {
-  OrganizationLabel,
-  OrganizationLabelFormValues,
-} from '@/app/db/schemas/organization-label-schema'
+import type { OrganizationLabel, OrganizationLabelFormValues } from '@/app/db/schemas/organization-label-schema'
+
 import { organizationTaskKeys } from '@/hooks/use-organization-tasks'
 
 async function parseJsonError(response: Response, fallback: string): Promise<Error> {

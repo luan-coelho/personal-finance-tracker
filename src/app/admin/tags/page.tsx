@@ -60,9 +60,7 @@ export default function TagsPage() {
       {/* Card único com busca e criar no header, tabela no body */}
       <Card>
         <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
-          <CardTitle className="shrink-0">
-            Tags Cadastradas ({tags.length})
-          </CardTitle>
+          <CardTitle className="shrink-0">Tags Cadastradas ({tags.length})</CardTitle>
 
           <div className="flex w-full min-w-0 items-center gap-2 md:w-auto">
             <div className="relative min-w-0 flex-1 md:w-72 md:flex-none">

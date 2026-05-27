@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useForm, type Resolver } from 'react-hook-form'
+import { useForm, useWatch, type Resolver } from 'react-hook-form'
 
 import {
   insertOrganizationTaskSchema,
@@ -104,9 +104,9 @@ export function OrganizationTaskForm({ task, onSuccess, onCancel }: Organization
     defaultValues: computeDefaultValues(),
   })
 
-  const selectedProjectId = form.watch('projectId')
-  const recurrenceType = form.watch('recurrenceType')
-  const visibility = form.watch('visibility')
+  const selectedProjectId = useWatch({ control: form.control, name: 'projectId' })
+  const recurrenceType = useWatch({ control: form.control, name: 'recurrenceType' })
+  const visibility = useWatch({ control: form.control, name: 'visibility' })
 
   useEffect(() => {
     form.reset(computeDefaultValues())
@@ -121,7 +121,7 @@ export function OrganizationTaskForm({ task, onSuccess, onCancel }: Organization
     }
 
     return visibility === 'shared' ? options.filter(project => project.visibility === 'shared') : options
-  }, [projects, task?.project, visibility])
+  }, [projects, task, visibility])
 
   const sectionOptions = useMemo(
     () => projectOptions.find(project => project.id === selectedProjectId)?.sections ?? [],
@@ -158,7 +158,7 @@ export function OrganizationTaskForm({ task, onSuccess, onCancel }: Organization
     }
 
     return [...users.values()]
-  }, [spaceMembers, task?.assignee])
+  }, [spaceMembers, task])
 
   const createMutation = useCreateOrganizationTask()
   const updateMutation = useUpdateOrganizationTask()

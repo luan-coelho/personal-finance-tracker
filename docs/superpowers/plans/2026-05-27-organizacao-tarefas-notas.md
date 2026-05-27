@@ -41,6 +41,7 @@
 ## Task 1: Recurrence Utility With Tests
 
 **Files:**
+
 - Create: `src/lib/organization-recurrence.ts`
 - Create: `src/lib/organization-recurrence.test.ts`
 
@@ -195,6 +196,7 @@ git commit -m "test: add organization recurrence utility"
 ## Task 2: Database Schemas And Migration
 
 **Files:**
+
 - Create: `src/app/db/schemas/organization-project-schema.ts`
 - Create: `src/app/db/schemas/organization-project-section-schema.ts`
 - Create: `src/app/db/schemas/organization-label-schema.ts`
@@ -222,13 +224,17 @@ export const organizationVisibilityEnum = pgEnum('organization_visibility', ['sh
 
 export const organizationProjectsTable = pgTable('organization_projects', {
   id: uuid('id').primaryKey().defaultRandom(),
-  spaceId: uuid('space_id').notNull().references(() => spacesTable.id, { onDelete: 'cascade' }),
+  spaceId: uuid('space_id')
+    .notNull()
+    .references(() => spacesTable.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   description: text('description'),
   color: text('color').default('#10B981').notNull(),
   icon: text('icon').default('folder').notNull(),
   visibility: organizationVisibilityEnum('visibility').notNull().default('shared'),
-  createdById: uuid('created_by_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+  createdById: uuid('created_by_id')
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at'),
   archivedAt: timestamp('archived_at'),
@@ -263,7 +269,9 @@ import { organizationProjectsTable } from './organization-project-schema'
 
 export const organizationProjectSectionsTable = pgTable('organization_project_sections', {
   id: uuid('id').primaryKey().defaultRandom(),
-  projectId: uuid('project_id').notNull().references(() => organizationProjectsTable.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => organizationProjectsTable.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   position: integer('position').notNull().default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -294,7 +302,9 @@ import { spacesTable } from './space-schema'
 
 export const organizationLabelsTable = pgTable('organization_labels', {
   id: uuid('id').primaryKey().defaultRandom(),
-  spaceId: uuid('space_id').notNull().references(() => spacesTable.id, { onDelete: 'cascade' }),
+  spaceId: uuid('space_id')
+    .notNull()
+    .references(() => spacesTable.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   color: text('color').default('#64748B').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -320,8 +330,8 @@ export type OrganizationLabelFormValues = z.infer<typeof insertOrganizationLabel
 import { date, integer, pgEnum, pgTable, text, time, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 
-import { organizationProjectSectionsTable } from './organization-project-section-schema'
 import { organizationProjectsTable, organizationVisibilityEnum } from './organization-project-schema'
+import { organizationProjectSectionsTable } from './organization-project-section-schema'
 import { spacesTable } from './space-schema'
 import { usersTable } from './user-schema'
 
@@ -336,14 +346,18 @@ export const organizationRecurrenceTypeEnum = pgEnum('organization_recurrence_ty
 
 export const organizationTasksTable = pgTable('organization_tasks', {
   id: uuid('id').primaryKey().defaultRandom(),
-  spaceId: uuid('space_id').notNull().references(() => spacesTable.id, { onDelete: 'cascade' }),
+  spaceId: uuid('space_id')
+    .notNull()
+    .references(() => spacesTable.id, { onDelete: 'cascade' }),
   projectId: uuid('project_id').references(() => organizationProjectsTable.id, { onDelete: 'set null' }),
   sectionId: uuid('section_id').references(() => organizationProjectSectionsTable.id, { onDelete: 'set null' }),
   title: text('title').notNull(),
   description: text('description'),
   status: organizationTaskStatusEnum('status').notNull().default('pending'),
   visibility: organizationVisibilityEnum('visibility').notNull().default('shared'),
-  createdById: uuid('created_by_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+  createdById: uuid('created_by_id')
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
   assigneeId: uuid('assignee_id').references(() => usersTable.id, { onDelete: 'set null' }),
   dueDate: date('due_date', { mode: 'date' }),
   dueTime: time('due_time'),
@@ -371,7 +385,11 @@ export const insertOrganizationTaskSchema = z.object({
   createdById: z.string().uuid('ID do criador deve ser um UUID valido'),
   assigneeId: z.string().uuid('ID do responsavel deve ser um UUID valido').nullable().optional(),
   dueDate: z.coerce.date().nullable().optional(),
-  dueTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Horario deve estar no formato HH:mm').nullable().optional(),
+  dueTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Horario deve estar no formato HH:mm')
+    .nullable()
+    .optional(),
   reminderAt: z.coerce.date().nullable().optional(),
   recurrenceType: z.enum(['none', 'daily', 'weekly', 'monthly', 'yearly']).default('none'),
   recurrenceInterval: z.coerce.number().int().min(1).default(1),
@@ -401,8 +419,12 @@ import { organizationTasksTable } from './organization-task-schema'
 export const organizationTaskLabelsTable = pgTable(
   'organization_task_labels',
   {
-    taskId: uuid('task_id').notNull().references(() => organizationTasksTable.id, { onDelete: 'cascade' }),
-    labelId: uuid('label_id').notNull().references(() => organizationLabelsTable.id, { onDelete: 'cascade' }),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => organizationTasksTable.id, { onDelete: 'cascade' }),
+    labelId: uuid('label_id')
+      .notNull()
+      .references(() => organizationLabelsTable.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   table => [primaryKey({ columns: [table.taskId, table.labelId] })],
@@ -423,13 +445,17 @@ import { usersTable } from './user-schema'
 
 export const organizationNotesTable = pgTable('organization_notes', {
   id: uuid('id').primaryKey().defaultRandom(),
-  spaceId: uuid('space_id').notNull().references(() => spacesTable.id, { onDelete: 'cascade' }),
+  spaceId: uuid('space_id')
+    .notNull()
+    .references(() => spacesTable.id, { onDelete: 'cascade' }),
   projectId: uuid('project_id').references(() => organizationProjectsTable.id, { onDelete: 'set null' }),
   taskId: uuid('task_id').references(() => organizationTasksTable.id, { onDelete: 'set null' }),
   title: text('title').notNull(),
   content: text('content').notNull().default(''),
   visibility: organizationVisibilityEnum('visibility').notNull().default('shared'),
-  createdById: uuid('created_by_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+  createdById: uuid('created_by_id')
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at'),
   archivedAt: timestamp('archived_at'),
@@ -460,8 +486,8 @@ Modify `src/app/db/schemas/index.ts` so the imports and `schema` object include:
 ```ts
 import { organizationLabelsTable } from './organization-label-schema'
 import { organizationNotesTable } from './organization-note-schema'
-import { organizationProjectSectionsTable } from './organization-project-section-schema'
 import { organizationProjectsTable } from './organization-project-schema'
+import { organizationProjectSectionsTable } from './organization-project-section-schema'
 import { organizationTaskLabelsTable } from './organization-task-label-schema'
 import { organizationTasksTable } from './organization-task-schema'
 
@@ -491,8 +517,8 @@ Modify `src/app/db/schemas/relations.ts` with imports:
 ```ts
 import { organizationLabelsTable } from './organization-label-schema'
 import { organizationNotesTable } from './organization-note-schema'
-import { organizationProjectSectionsTable } from './organization-project-section-schema'
 import { organizationProjectsTable } from './organization-project-schema'
+import { organizationProjectSectionsTable } from './organization-project-section-schema'
 import { organizationTaskLabelsTable } from './organization-task-label-schema'
 import { organizationTasksTable } from './organization-task-schema'
 ```
@@ -554,7 +580,10 @@ export const organizationNotesRelations = relations(organizationNotesTable, ({ o
     fields: [organizationNotesTable.projectId],
     references: [organizationProjectsTable.id],
   }),
-  task: one(organizationTasksTable, { fields: [organizationNotesTable.taskId], references: [organizationTasksTable.id] }),
+  task: one(organizationTasksTable, {
+    fields: [organizationNotesTable.taskId],
+    references: [organizationTasksTable.id],
+  }),
   createdBy: one(usersTable, { fields: [organizationNotesTable.createdById], references: [usersTable.id] }),
 }))
 ```
@@ -585,6 +614,7 @@ git commit -m "feat: add organization database schema"
 ## Task 3: Access Helpers
 
 **Files:**
+
 - Create: `src/lib/organization-access.ts`
 
 - [ ] **Step 1: Create helper functions for item visibility**
@@ -608,10 +638,7 @@ export function canWriteOrganizationItem(item: OrganizationAccessInput, userId: 
   return canEditSpace
 }
 
-export function organizationVisibilityWhere<T extends { visibility: any; createdById: any }>(
-  table: T,
-  userId: string,
-) {
+export function organizationVisibilityWhere<T extends { visibility: any; createdById: any }>(table: T, userId: string) {
   return or(eq(table.visibility, 'shared'), and(eq(table.visibility, 'personal'), eq(table.createdById, userId)))
 }
 ```
@@ -634,6 +661,7 @@ git commit -m "feat: add organization access helpers"
 ## Task 4: Services
 
 **Files:**
+
 - Create: `src/services/organization-project-service.ts`
 - Create: `src/services/organization-label-service.ts`
 - Create: `src/services/organization-task-service.ts`
@@ -813,7 +841,12 @@ export class OrganizationNoteService {
 Search should match title or content:
 
 ```ts
-conditions.push(or(ilike(organizationNotesTable.title, `%${filters.search}%`), ilike(organizationNotesTable.content, `%${filters.search}%`)))
+conditions.push(
+  or(
+    ilike(organizationNotesTable.title, `%${filters.search}%`),
+    ilike(organizationNotesTable.content, `%${filters.search}%`),
+  ),
+)
 ```
 
 - [ ] **Step 5: Build**
@@ -834,6 +867,7 @@ git commit -m "feat: add organization services"
 ## Task 5: API Routes
 
 **Files:**
+
 - Create route files under `src/app/api/organization/projects`, `labels`, `tasks`, `today`, and `notes`.
 
 - [ ] **Step 1: Add project routes**
@@ -949,6 +983,7 @@ git commit -m "feat: add organization api routes"
 ## Task 6: React Query Hooks
 
 **Files:**
+
 - Create: `src/hooks/use-organization-projects.ts`
 - Create: `src/hooks/use-organization-labels.ts`
 - Create: `src/hooks/use-organization-tasks.ts`
@@ -1052,6 +1087,7 @@ git commit -m "feat: add organization hooks"
 ## Task 7: Shared Organization Components
 
 **Files:**
+
 - Create: `src/components/organization/organization-empty-state.tsx`
 - Create: `src/components/organization/organization-quick-capture.tsx`
 - Create: `src/components/organization/organization-task-card.tsx`
@@ -1087,6 +1123,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+
 import { useCreateOrganizationTask } from '@/hooks/use-organization-tasks'
 
 export function OrganizationQuickCapture({ spaceId }: { spaceId: string }) {
@@ -1172,6 +1209,7 @@ git commit -m "feat: add organization ui components"
 ## Task 8: Today And Task Pages
 
 **Files:**
+
 - Create: `src/app/admin/organization/today/page.tsx`
 - Create: `src/app/admin/organization/tasks/page.tsx`
 
@@ -1240,7 +1278,13 @@ export default function OrganizationTodayPage() {
   const handleReopen = (task: OrganizationTaskWithDetails) => reopenTask.mutate(task.id)
 
   if (isSpaceLoading && !selectedSpace) return <TodaySkeleton />
-  if (!selectedSpace) return <OrganizationEmptyState title="Nenhum espaco selecionado" description="Selecione um espaco para ver suas tarefas." />
+  if (!selectedSpace)
+    return (
+      <OrganizationEmptyState
+        title="Nenhum espaco selecionado"
+        description="Selecione um espaco para ver suas tarefas."
+      />
+    )
 
   return (
     <div className="space-y-6">
@@ -1249,10 +1293,34 @@ export default function OrganizationTodayPage() {
         <p className="text-muted-foreground">Tarefas atrasadas, compromissos do dia e proximas pendencias.</p>
       </div>
       <OrganizationQuickCapture spaceId={selectedSpace.id} />
-      <TodaySection title="Atrasadas" tasks={todayQuery.data?.overdue || []} onEdit={setEditingTask} onComplete={handleComplete} onReopen={handleReopen} />
-      <TodaySection title="Com horario" tasks={todayQuery.data?.timedToday || []} onEdit={setEditingTask} onComplete={handleComplete} onReopen={handleReopen} />
-      <TodaySection title="Sem horario" tasks={todayQuery.data?.untimedToday || []} onEdit={setEditingTask} onComplete={handleComplete} onReopen={handleReopen} />
-      <TodaySection title="Proximas" tasks={todayQuery.data?.upcoming || []} onEdit={setEditingTask} onComplete={handleComplete} onReopen={handleReopen} />
+      <TodaySection
+        title="Atrasadas"
+        tasks={todayQuery.data?.overdue || []}
+        onEdit={setEditingTask}
+        onComplete={handleComplete}
+        onReopen={handleReopen}
+      />
+      <TodaySection
+        title="Com horario"
+        tasks={todayQuery.data?.timedToday || []}
+        onEdit={setEditingTask}
+        onComplete={handleComplete}
+        onReopen={handleReopen}
+      />
+      <TodaySection
+        title="Sem horario"
+        tasks={todayQuery.data?.untimedToday || []}
+        onEdit={setEditingTask}
+        onComplete={handleComplete}
+        onReopen={handleReopen}
+      />
+      <TodaySection
+        title="Proximas"
+        tasks={todayQuery.data?.upcoming || []}
+        onEdit={setEditingTask}
+        onComplete={handleComplete}
+        onReopen={handleReopen}
+      />
       <Dialog open={!!editingTask} onOpenChange={() => setEditingTask(null)}>
         <DialogContent>
           {editingTask && <OrganizationTaskForm task={editingTask} onSuccess={() => setEditingTask(null)} />}
@@ -1285,6 +1353,7 @@ git commit -m "feat: add organization task views"
 ## Task 9: Projects, Sections, Labels, And Notes Pages
 
 **Files:**
+
 - Create: `src/app/admin/organization/projects/page.tsx`
 - Create: `src/app/admin/organization/notes/page.tsx`
 
@@ -1326,6 +1395,7 @@ git commit -m "feat: add organization project and note views"
 ## Task 10: Local Reminder Manager
 
 **Files:**
+
 - Create: `src/components/organization/organization-reminder-manager.tsx`
 - Modify: `src/app/layout.tsx`
 - Modify: `public/sw.js`
@@ -1337,8 +1407,8 @@ git commit -m "feat: add organization project and note views"
 
 import { useEffect, useRef } from 'react'
 
-import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useOrganizationReminderCandidates } from '@/hooks/use-organization-tasks'
+import { useSelectedSpace } from '@/hooks/use-selected-space'
 
 const STORAGE_KEY = 'organization-reminders-shown'
 
@@ -1404,15 +1474,15 @@ Inside `SpaceProvider`, after `{children}`, add:
 Append to `public/sw.js`:
 
 ```js
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', event => {
   event.notification.close()
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
       for (const client of clients) {
         if ('focus' in client) return client.focus()
       }
       if (self.clients.openWindow) return self.clients.openWindow('/admin/organization/today')
-    })
+    }),
   )
 })
 ```
@@ -1435,6 +1505,7 @@ git commit -m "feat: add local organization reminders"
 ## Task 11: Navigation, Routes, Manifest, And Seeds
 
 **Files:**
+
 - Modify: `src/lib/routes.ts`
 - Modify: `src/components/layout/app-sidebar.tsx`
 - Modify: `src/app/manifest.ts`
@@ -1537,6 +1608,7 @@ git commit -m "feat: wire organization navigation and seed"
 ## Task 12: Final Verification
 
 **Files:**
+
 - No new files unless verification exposes bugs.
 
 - [ ] **Step 1: Run recurrence tests**

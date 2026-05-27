@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
-import { useForm, type Resolver } from 'react-hook-form'
+import { useForm, useWatch, type Resolver } from 'react-hook-form'
 
 import {
   insertOrganizationNoteSchema,
@@ -59,9 +59,9 @@ export function OrganizationNoteForm({ note, onSuccess, onCancel }: Organization
     defaultValues: computeDefaultValues(),
   })
 
-  const selectedProjectId = form.watch('projectId')
-  const selectedTaskId = form.watch('taskId')
-  const visibility = form.watch('visibility')
+  const selectedProjectId = useWatch({ control: form.control, name: 'projectId' })
+  const selectedTaskId = useWatch({ control: form.control, name: 'taskId' })
+  const visibility = useWatch({ control: form.control, name: 'visibility' })
 
   useEffect(() => {
     form.reset(computeDefaultValues())
