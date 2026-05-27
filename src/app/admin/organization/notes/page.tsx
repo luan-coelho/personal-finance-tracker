@@ -1,7 +1,7 @@
 'use client'
 
 import { Archive, Edit, FileText, MoreVertical, Plus, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import type { OrganizationNote } from '@/app/db/schemas/organization-note-schema'
 
@@ -82,6 +82,12 @@ export default function OrganizationNotesPage() {
 
   const projectsById = useMemo(() => new Map(projects.map(project => [project.id, project])), [projects])
   const tasksById = useMemo(() => new Map(tasks.map(task => [task.id, task])), [tasks])
+
+  useEffect(() => {
+    setIsCreateOpen(false)
+    setEditingNote(null)
+    setNoteToArchive(null)
+  }, [spaceId])
 
   async function handleArchiveNote() {
     if (!noteToArchive || archiveNote.isPending) return
@@ -172,7 +178,9 @@ export default function OrganizationNotesPage() {
                           {project.name}
                         </Badge>
                       )}
+                      {note.projectId && !project && <Badge variant="outline">Projeto arquivado/removido</Badge>}
                       {task && <Badge variant="outline">{task.title}</Badge>}
+                      {note.taskId && !task && <Badge variant="outline">Tarefa arquivada/removida</Badge>}
                     </div>
                   </div>
 

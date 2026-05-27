@@ -204,6 +204,17 @@ export default function OrganizationProjectsPage() {
   )
 
   useEffect(() => {
+    setIsProjectCreateOpen(false)
+    setEditingProject(null)
+    setProjectToArchive(null)
+    setSectionDialog(null)
+    setSectionToArchive(null)
+    setIsLabelCreateOpen(false)
+    setEditingLabel(null)
+    setLabelToDelete(null)
+  }, [spaceId])
+
+  useEffect(() => {
     if (!spaceId) {
       setSelectedProjectId('')
       return
