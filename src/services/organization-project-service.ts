@@ -48,6 +48,27 @@ export class OrganizationProjectService {
     return project || null
   }
 
+  static async findByIdForUser(id: string, spaceId: string, userId: string): Promise<OrganizationProject | null> {
+    const conditions: SQL[] = [
+      eq(organizationProjectsTable.id, id),
+      eq(organizationProjectsTable.spaceId, spaceId),
+      isNull(organizationProjectsTable.archivedAt),
+    ]
+    const visibilityCondition = organizationVisibilityWhere(organizationProjectsTable, userId)
+
+    if (visibilityCondition) {
+      conditions.push(visibilityCondition)
+    }
+
+    const [project] = await db
+      .select()
+      .from(organizationProjectsTable)
+      .where(and(...conditions))
+      .limit(1)
+
+    return project || null
+  }
+
   static async findMany(filters: OrganizationProjectFilters): Promise<OrganizationProjectWithSections[]> {
     const conditions: SQL[] = [eq(organizationProjectsTable.spaceId, filters.spaceId)]
     const visibilityCondition = organizationVisibilityWhere(organizationProjectsTable, filters.userId)

@@ -67,29 +67,23 @@ function mapById<T extends { id: string }>(items: T[]): Map<string, T> {
   return new Map(items.map(item => [item.id, item]))
 }
 
+function normalizeDbDateOnly(date: Date | null): Date | null {
+  if (!date) return null
+
+  // Drizzle PgDate builds Date from YYYY-MM-DD at UTC midnight; use UTC parts to keep the stored calendar day.
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+}
+
+function toDbDateOnly(date: Date): Date {
+  return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+}
+
 export class OrganizationTaskService {
   static async create(data: OrganizationTaskFormValues): Promise<OrganizationTask> {
     return await db.transaction(async tx => {
       const now = new Date()
       const { labelIds = [], ...taskData } = data
       const uniqueLabelIds = uniqueValues(labelIds)
-
-      if (taskData.projectId) {
-        const [project] = await tx
-          .select({ id: organizationProjectsTable.id })
-          .from(organizationProjectsTable)
-          .where(
-            and(
-              eq(organizationProjectsTable.id, taskData.projectId),
-              eq(organizationProjectsTable.spaceId, data.spaceId),
-            ),
-          )
-          .limit(1)
-
-        if (!project) {
-          throw new Error('Projeto invalido para este espaco')
-        }
-      }
 
       if (taskData.sectionId) {
         const [section] = await tx
@@ -111,6 +105,27 @@ export class OrganizationTaskService {
 
         if (!section || (taskData.projectId && section.projectId !== taskData.projectId)) {
           throw new Error('Secao invalida para este espaco')
+        }
+
+        if (!taskData.projectId) {
+          taskData.projectId = section.projectId
+        }
+      }
+
+      if (taskData.projectId) {
+        const [project] = await tx
+          .select({ id: organizationProjectsTable.id })
+          .from(organizationProjectsTable)
+          .where(
+            and(
+              eq(organizationProjectsTable.id, taskData.projectId),
+              eq(organizationProjectsTable.spaceId, data.spaceId),
+            ),
+          )
+          .limit(1)
+
+        if (!project) {
+          throw new Error('Projeto invalido para este espaco')
         }
       }
 
@@ -155,11 +170,33 @@ export class OrganizationTaskService {
     return task || null
   }
 
+  static async findByIdForUser(id: string, spaceId: string, userId: string): Promise<OrganizationTask | null> {
+    const [task] = await db
+      .select()
+      .from(organizationTasksTable)
+      .where(and(...this.visibleTaskConditions(spaceId, userId), eq(organizationTasksTable.id, id)))
+      .limit(1)
+
+    return task || null
+  }
+
   static async findByIdWithDetails(id: string): Promise<OrganizationTaskWithDetails | null> {
     const task = await this.findById(id)
     if (!task) return null
 
-    const [taskWithDetails] = await this.hydrateTasks([task])
+    const [taskWithDetails] = await this.hydrateTasksRaw([task])
+    return taskWithDetails || null
+  }
+
+  static async findByIdWithDetailsForUser(
+    id: string,
+    spaceId: string,
+    userId: string,
+  ): Promise<OrganizationTaskWithDetails | null> {
+    const task = await this.findByIdForUser(id, spaceId, userId)
+    if (!task) return null
+
+    const [taskWithDetails] = await this.hydrateTasks([task], userId)
     return taskWithDetails || null
   }
 
@@ -217,7 +254,7 @@ export class OrganizationTaskService {
         desc(organizationTasksTable.createdAt),
       )
 
-    return await this.hydrateTasks(tasks)
+    return await this.hydrateTasks(tasks, filters.userId)
   }
 
   static async findReminderCandidates(spaceId: string, userId: string): Promise<OrganizationTaskWithDetails[]> {
@@ -237,7 +274,7 @@ export class OrganizationTaskService {
       .where(and(...conditions))
       .orderBy(asc(organizationTasksTable.reminderAt))
 
-    return await this.hydrateTasks(tasks)
+    return await this.hydrateTasks(tasks, userId)
   }
 
   static async findToday(spaceId: string, userId: string): Promise<OrganizationTodayResult> {
@@ -285,7 +322,7 @@ export class OrganizationTaskService {
       .limit(10)
 
     const allTasks = [...overdueTasks, ...timedTodayTasks, ...untimedTodayTasks, ...upcomingTasks]
-    const tasksWithDetails = await this.hydrateTasks(allTasks)
+    const tasksWithDetails = await this.hydrateTasks(allTasks, userId)
     const taskById = mapById(tasksWithDetails)
     const getTask = (task: OrganizationTask) => taskById.get(task.id)
 
@@ -312,24 +349,13 @@ export class OrganizationTaskService {
       const now = new Date()
       const { labelIds, ...taskData } = data
       const effectiveSpaceId = data.spaceId ?? existingTask.spaceId
-      const effectiveProjectId = data.projectId !== undefined ? data.projectId : existingTask.projectId
-      const effectiveSectionId = data.sectionId !== undefined ? data.sectionId : existingTask.sectionId
+      let effectiveProjectId = data.projectId !== undefined ? data.projectId : existingTask.projectId
+      let effectiveSectionId = data.sectionId !== undefined ? data.sectionId : existingTask.sectionId
 
-      if (effectiveProjectId) {
-        const [project] = await tx
-          .select({ id: organizationProjectsTable.id })
-          .from(organizationProjectsTable)
-          .where(
-            and(
-              eq(organizationProjectsTable.id, effectiveProjectId),
-              eq(organizationProjectsTable.spaceId, effectiveSpaceId),
-            ),
-          )
-          .limit(1)
-
-        if (!project) {
-          throw new Error('Projeto invalido para este espaco')
-        }
+      if (data.projectId === null) {
+        effectiveProjectId = null
+        effectiveSectionId = null
+        taskData.sectionId = null
       }
 
       if (effectiveSectionId) {
@@ -352,6 +378,28 @@ export class OrganizationTaskService {
 
         if (!section || (effectiveProjectId && section.projectId !== effectiveProjectId)) {
           throw new Error('Secao invalida para este espaco')
+        }
+
+        if (!effectiveProjectId) {
+          effectiveProjectId = section.projectId
+          taskData.projectId = section.projectId
+        }
+      }
+
+      if (effectiveProjectId) {
+        const [project] = await tx
+          .select({ id: organizationProjectsTable.id })
+          .from(organizationProjectsTable)
+          .where(
+            and(
+              eq(organizationProjectsTable.id, effectiveProjectId),
+              eq(organizationProjectsTable.spaceId, effectiveSpaceId),
+            ),
+          )
+          .limit(1)
+
+        if (!project) {
+          throw new Error('Projeto invalido para este espaco')
         }
       }
 
@@ -405,13 +453,14 @@ export class OrganizationTaskService {
     if (!task) return null
 
     const now = new Date()
+    const normalizedDueDate = normalizeDbDateOnly(task.dueDate)
     const nextDueDate = getNextRecurrenceDate({
-      dueDate: task.dueDate,
+      dueDate: normalizedDueDate,
       recurrenceType: task.recurrenceType,
       recurrenceInterval: task.recurrenceInterval,
       recurrenceDaysOfWeek: task.recurrenceDaysOfWeek,
       recurrenceDayOfMonth: task.recurrenceDayOfMonth,
-      recurrenceEndsAt: task.recurrenceEndsAt,
+      recurrenceEndsAt: normalizeDbDateOnly(task.recurrenceEndsAt),
     })
 
     const [updatedTask] = await db
@@ -420,7 +469,8 @@ export class OrganizationTaskService {
         nextDueDate
           ? {
               status: 'pending',
-              dueDate: nextDueDate,
+              dueDate: toDbDateOnly(nextDueDate),
+              reminderAt: null,
               completedAt: null,
               lastCompletedAt: now,
               updatedAt: now,
@@ -478,7 +528,18 @@ export class OrganizationTaskService {
     return conditions
   }
 
-  private static async hydrateTasks(tasks: OrganizationTask[]): Promise<OrganizationTaskWithDetails[]> {
+  private static async hydrateTasks(tasks: OrganizationTask[], userId: string): Promise<OrganizationTaskWithDetails[]> {
+    return await this.hydrateTaskRelations(tasks, userId)
+  }
+
+  private static async hydrateTasksRaw(tasks: OrganizationTask[]): Promise<OrganizationTaskWithDetails[]> {
+    return await this.hydrateTaskRelations(tasks)
+  }
+
+  private static async hydrateTaskRelations(
+    tasks: OrganizationTask[],
+    userId?: string,
+  ): Promise<OrganizationTaskWithDetails[]> {
     if (tasks.length === 0) {
       return []
     }
@@ -506,19 +567,66 @@ export class OrganizationTaskService {
       labelsByTaskId.set(row.taskId, labels)
     }
 
-    const projects =
-      projectIds.length > 0
-        ? await db.select().from(organizationProjectsTable).where(inArray(organizationProjectsTable.id, projectIds))
-        : []
+    let projects: OrganizationProject[] = []
+    if (projectIds.length > 0) {
+      const projectConditions: SQL[] = [inArray(organizationProjectsTable.id, projectIds)]
+
+      if (userId) {
+        projectConditions.push(isNull(organizationProjectsTable.archivedAt))
+        const projectVisibilityCondition = organizationVisibilityWhere(organizationProjectsTable, userId)
+
+        if (projectVisibilityCondition) {
+          projectConditions.push(projectVisibilityCondition)
+        }
+      }
+
+      projects = await db
+        .select()
+        .from(organizationProjectsTable)
+        .where(and(...projectConditions))
+    }
     const projectById = mapById(projects)
 
-    const sections =
-      sectionIds.length > 0
-        ? await db
-            .select()
-            .from(organizationProjectSectionsTable)
-            .where(inArray(organizationProjectSectionsTable.id, sectionIds))
-        : []
+    let sections: OrganizationProjectSection[] = []
+    if (sectionIds.length > 0) {
+      if (userId) {
+        const sectionConditions: SQL[] = [
+          inArray(organizationProjectSectionsTable.id, sectionIds),
+          isNull(organizationProjectSectionsTable.archivedAt),
+          isNull(organizationProjectsTable.archivedAt),
+        ]
+        const projectVisibilityCondition = organizationVisibilityWhere(organizationProjectsTable, userId)
+
+        if (projectVisibilityCondition) {
+          sectionConditions.push(projectVisibilityCondition)
+        }
+
+        const sectionRows = await db
+          .select({
+            section: organizationProjectSectionsTable,
+            project: organizationProjectsTable,
+          })
+          .from(organizationProjectSectionsTable)
+          .innerJoin(
+            organizationProjectsTable,
+            eq(organizationProjectSectionsTable.projectId, organizationProjectsTable.id),
+          )
+          .where(and(...sectionConditions))
+
+        sections = sectionRows.map(row => row.section)
+
+        for (const row of sectionRows) {
+          if (!projectById.has(row.project.id)) {
+            projectById.set(row.project.id, row.project)
+          }
+        }
+      } else {
+        sections = await db
+          .select()
+          .from(organizationProjectSectionsTable)
+          .where(inArray(organizationProjectSectionsTable.id, sectionIds))
+      }
+    }
     const sectionById = mapById(sections)
 
     const users =
@@ -535,14 +643,18 @@ export class OrganizationTaskService {
         : []
     const userById = mapById(users)
 
-    return tasks.map(task => ({
-      ...task,
-      labels: labelsByTaskId.get(task.id) ?? [],
-      project: task.projectId ? (projectById.get(task.projectId) ?? null) : null,
-      section: task.sectionId ? (sectionById.get(task.sectionId) ?? null) : null,
-      assignee: task.assigneeId ? (userById.get(task.assigneeId) ?? null) : null,
-      createdBy: userById.get(task.createdById) ?? null,
-    }))
+    return tasks.map(task => {
+      const section = task.sectionId ? (sectionById.get(task.sectionId) ?? null) : null
+
+      return {
+        ...task,
+        labels: labelsByTaskId.get(task.id) ?? [],
+        project: task.projectId ? (projectById.get(task.projectId) ?? null) : null,
+        section: section && (!task.projectId || section.projectId === task.projectId) ? section : null,
+        assignee: task.assigneeId ? (userById.get(task.assigneeId) ?? null) : null,
+        createdBy: userById.get(task.createdById) ?? null,
+      }
+    })
   }
 
   private static getLocalToday(): Date {

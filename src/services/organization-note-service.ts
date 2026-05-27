@@ -6,6 +6,8 @@ import {
   type OrganizationNote,
   type OrganizationNoteFormValues,
 } from '@/app/db/schemas/organization-note-schema'
+import { organizationProjectsTable } from '@/app/db/schemas/organization-project-schema'
+import { organizationTasksTable } from '@/app/db/schemas/organization-task-schema'
 
 import { organizationVisibilityWhere } from '@/lib/organization-access'
 
@@ -20,19 +22,64 @@ export interface OrganizationNoteFilters {
 
 export class OrganizationNoteService {
   static async create(data: OrganizationNoteFormValues): Promise<OrganizationNote> {
-    const [note] = await db
-      .insert(organizationNotesTable)
-      .values({
-        ...data,
-        createdAt: new Date(),
-      })
-      .returning()
+    return await db.transaction(async tx => {
+      if (data.projectId) {
+        const [project] = await tx
+          .select({ id: organizationProjectsTable.id })
+          .from(organizationProjectsTable)
+          .where(
+            and(eq(organizationProjectsTable.id, data.projectId), eq(organizationProjectsTable.spaceId, data.spaceId)),
+          )
+          .limit(1)
 
-    return note
+        if (!project) {
+          throw new Error('Projeto invalido para este espaco')
+        }
+      }
+
+      if (data.taskId) {
+        const [task] = await tx
+          .select({
+            id: organizationTasksTable.id,
+            projectId: organizationTasksTable.projectId,
+          })
+          .from(organizationTasksTable)
+          .where(and(eq(organizationTasksTable.id, data.taskId), eq(organizationTasksTable.spaceId, data.spaceId)))
+          .limit(1)
+
+        if (!task) {
+          throw new Error('Tarefa invalida para este espaco')
+        }
+
+        if (data.projectId && task.projectId !== data.projectId) {
+          throw new Error('Tarefa invalida para este projeto')
+        }
+      }
+
+      const [note] = await tx
+        .insert(organizationNotesTable)
+        .values({
+          ...data,
+          createdAt: new Date(),
+        })
+        .returning()
+
+      return note
+    })
   }
 
   static async findById(id: string): Promise<OrganizationNote | null> {
     const [note] = await db.select().from(organizationNotesTable).where(eq(organizationNotesTable.id, id)).limit(1)
+
+    return note || null
+  }
+
+  static async findByIdForUser(id: string, spaceId: string, userId: string): Promise<OrganizationNote | null> {
+    const [note] = await db
+      .select()
+      .from(organizationNotesTable)
+      .where(and(...this.visibleNoteConditions(spaceId, userId), eq(organizationNotesTable.id, id)))
+      .limit(1)
 
     return note || null
   }
@@ -78,16 +125,70 @@ export class OrganizationNoteService {
   }
 
   static async update(id: string, data: Partial<OrganizationNoteFormValues>): Promise<OrganizationNote | null> {
-    const [note] = await db
-      .update(organizationNotesTable)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
-      .where(eq(organizationNotesTable.id, id))
-      .returning()
+    return await db.transaction(async tx => {
+      const [existingNote] = await tx
+        .select()
+        .from(organizationNotesTable)
+        .where(eq(organizationNotesTable.id, id))
+        .limit(1)
 
-    return note || null
+      if (!existingNote) {
+        return null
+      }
+
+      const effectiveSpaceId = data.spaceId ?? existingNote.spaceId
+      const effectiveProjectId = data.projectId !== undefined ? data.projectId : existingNote.projectId
+      const effectiveTaskId = data.taskId !== undefined ? data.taskId : existingNote.taskId
+
+      if (effectiveProjectId) {
+        const [project] = await tx
+          .select({ id: organizationProjectsTable.id })
+          .from(organizationProjectsTable)
+          .where(
+            and(
+              eq(organizationProjectsTable.id, effectiveProjectId),
+              eq(organizationProjectsTable.spaceId, effectiveSpaceId),
+            ),
+          )
+          .limit(1)
+
+        if (!project) {
+          throw new Error('Projeto invalido para este espaco')
+        }
+      }
+
+      if (effectiveTaskId) {
+        const [task] = await tx
+          .select({
+            id: organizationTasksTable.id,
+            projectId: organizationTasksTable.projectId,
+          })
+          .from(organizationTasksTable)
+          .where(
+            and(eq(organizationTasksTable.id, effectiveTaskId), eq(organizationTasksTable.spaceId, effectiveSpaceId)),
+          )
+          .limit(1)
+
+        if (!task) {
+          throw new Error('Tarefa invalida para este espaco')
+        }
+
+        if (effectiveProjectId && task.projectId !== effectiveProjectId) {
+          throw new Error('Tarefa invalida para este projeto')
+        }
+      }
+
+      const [note] = await tx
+        .update(organizationNotesTable)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(organizationNotesTable.id, id))
+        .returning()
+
+      return note || null
+    })
   }
 
   static async archive(id: string): Promise<OrganizationNote | null> {
@@ -102,5 +203,16 @@ export class OrganizationNoteService {
       .returning()
 
     return note || null
+  }
+
+  private static visibleNoteConditions(spaceId: string, userId: string): SQL[] {
+    const conditions: SQL[] = [eq(organizationNotesTable.spaceId, spaceId), isNull(organizationNotesTable.archivedAt)]
+    const visibilityCondition = organizationVisibilityWhere(organizationNotesTable, userId)
+
+    if (visibilityCondition) {
+      conditions.push(visibilityCondition)
+    }
+
+    return conditions
   }
 }
