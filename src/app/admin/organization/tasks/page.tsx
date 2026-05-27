@@ -1,7 +1,7 @@
 'use client'
 
 import { Plus, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import type { OrganizationVisibility } from '@/app/db/schemas/organization-project-schema'
 import type { OrganizationTaskStatus } from '@/app/db/schemas/organization-task-schema'
@@ -27,7 +27,7 @@ import { useSpaceMembers } from '@/hooks/use-space-members'
 
 import type { OrganizationTaskWithDetails } from '@/services/organization-task-service'
 
-type StatusFilter = OrganizationTaskStatus | 'all'
+type StatusFilter = Exclude<OrganizationTaskStatus, 'archived'> | 'all'
 type VisibilityFilter = OrganizationVisibility | 'all'
 
 const ALL = 'all'
@@ -105,6 +105,23 @@ export default function OrganizationTasksPage() {
     [members],
   )
 
+  useEffect(() => {
+    setProjectFilter(ALL)
+    setAssigneeFilter(ALL)
+  }, [spaceId])
+
+  useEffect(() => {
+    if (projectFilter !== ALL && !projects.some(project => project.id === projectFilter)) {
+      setProjectFilter(ALL)
+    }
+  }, [projectFilter, projects])
+
+  useEffect(() => {
+    if (assigneeFilter !== ALL && !memberOptions.some(member => member.id === assigneeFilter)) {
+      setAssigneeFilter(ALL)
+    }
+  }, [assigneeFilter, memberOptions])
+
   function handleComplete(task: OrganizationTaskWithDetails) {
     if (completeTask.isPending) return
     completeTask.mutate(task.id)
@@ -150,7 +167,6 @@ export default function OrganizationTasksPage() {
                 <SelectItem value={ALL}>Todos os status</SelectItem>
                 <SelectItem value="pending">Pendentes</SelectItem>
                 <SelectItem value="completed">Concluídas</SelectItem>
-                <SelectItem value="archived">Arquivadas</SelectItem>
               </SelectContent>
             </Select>
 

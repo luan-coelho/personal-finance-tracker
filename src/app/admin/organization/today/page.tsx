@@ -1,17 +1,19 @@
 'use client'
 
-import { Clock, ListTodo } from 'lucide-react'
-import { useState } from 'react'
+import { Clock, ListTodo, Loader2, Plus } from 'lucide-react'
+import { FormEvent, useState } from 'react'
 
 import { OrganizationEmptyState } from '@/components/organization/organization-empty-state'
-import { OrganizationQuickCapture } from '@/components/organization/organization-quick-capture'
 import { OrganizationTaskCard } from '@/components/organization/organization-task-card'
 import { OrganizationTaskForm } from '@/components/organization/organization-task-form'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import {
   useCompleteOrganizationTask,
+  useCreateOrganizationTask,
   useOrganizationToday,
   useReopenOrganizationTask,
 } from '@/hooks/use-organization-tasks'
@@ -56,6 +58,46 @@ function TodayPageSkeleton() {
         ))}
       </div>
     </div>
+  )
+}
+
+function TodayQuickCapture({ spaceId }: { spaceId: string }) {
+  const [title, setTitle] = useState('')
+  const createTask = useCreateOrganizationTask()
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const trimmed = title.trim()
+    if (!spaceId || !trimmed || createTask.isPending) return
+
+    await createTask.mutateAsync({
+      spaceId,
+      title: trimmed,
+      status: 'pending',
+      visibility: 'shared',
+      dueDate: new Date(),
+      recurrenceType: 'none',
+      recurrenceInterval: 1,
+      recurrenceDaysOfWeek: [],
+      labelIds: [],
+    })
+    setTitle('')
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex items-center gap-2">
+      <Input
+        value={title}
+        onChange={event => setTitle(event.target.value)}
+        placeholder="Adicionar tarefa para acompanhar hoje..."
+        disabled={createTask.isPending}
+        className="h-10 min-w-0 flex-1"
+      />
+      <Button type="submit" size="icon" disabled={!title.trim() || createTask.isPending} aria-label="Adicionar tarefa">
+        {createTask.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+      </Button>
+    </form>
   )
 }
 
@@ -147,7 +189,7 @@ export default function OrganizationTodayPage() {
         </div>
       </div>
 
-      <OrganizationQuickCapture spaceId={selectedSpace.id} placeholder="Adicionar tarefa para acompanhar hoje..." />
+      <TodayQuickCapture spaceId={selectedSpace.id} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <TodaySection
