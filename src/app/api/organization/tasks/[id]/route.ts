@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import {
   bodyRequestsValue,
+  hasOwnField,
   parseUuid,
   sanitizeUpdateData,
   uuidValidationMessages,
+  validateAssigneeForSpace,
+  validateTaskParentReferences,
   validationErrorResponse,
 } from '@/app/api/organization/_utils'
 import { updateOrganizationTaskSchema } from '@/app/db/schemas/organization-task-schema'
@@ -24,6 +27,7 @@ const VALIDATION_MESSAGES = new Set([
   'Secao invalida para este espaco',
   'Projeto invalido para este espaco',
   'Etiqueta invalida para este espaco',
+  'Responsavel invalido para este espaco',
 ])
 
 async function getSessionUser() {
@@ -110,6 +114,32 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (bodyRequestsValue(body, 'visibility', 'shared') && !canEditSpace) {
       return NextResponse.json({ error: 'Sem permissao para editar este item' }, { status: 403 })
+    }
+
+    const hasProjectUpdate = hasOwnField(updateData, 'projectId')
+    const hasSectionUpdate = hasOwnField(updateData, 'sectionId')
+    const hasAssigneeUpdate = hasOwnField(updateData, 'assigneeId')
+    const effectiveVisibility = updateData.visibility ?? existingTask.visibility
+    const effectiveProjectId = hasProjectUpdate ? updateData.projectId : existingTask.projectId
+    const effectiveSectionId =
+      hasProjectUpdate && updateData.projectId === null
+        ? null
+        : hasSectionUpdate
+          ? updateData.sectionId
+          : existingTask.sectionId
+
+    if (hasAssigneeUpdate) {
+      await validateAssigneeForSpace(updateData.assigneeId, existingTask.spaceId)
+    }
+
+    if (hasProjectUpdate || hasSectionUpdate || effectiveVisibility === 'shared') {
+      await validateTaskParentReferences({
+        spaceId: existingTask.spaceId,
+        userId: sessionUser.id,
+        visibility: effectiveVisibility,
+        projectId: effectiveProjectId,
+        sectionId: effectiveSectionId,
+      })
     }
 
     const task = await OrganizationTaskService.update(parsedId, updateData)

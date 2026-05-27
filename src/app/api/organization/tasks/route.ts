@@ -4,6 +4,8 @@ import {
   parseOptionalUuid,
   parseUuid,
   uuidValidationMessages,
+  validateAssigneeForSpace,
+  validateTaskParentReferences,
   validationErrorResponse,
 } from '@/app/api/organization/_utils'
 import type { OrganizationVisibility } from '@/app/db/schemas/organization-project-schema'
@@ -28,6 +30,7 @@ const VALIDATION_MESSAGES = new Set([
   'Secao invalida para este espaco',
   'Projeto invalido para este espaco',
   'Etiqueta invalida para este espaco',
+  'Responsavel invalido para este espaco',
 ])
 
 async function getSessionUser() {
@@ -137,6 +140,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Sem permissao para editar este item' }, { status: 403 })
       }
     }
+
+    await validateAssigneeForSpace(validatedData.assigneeId, validatedData.spaceId)
+    await validateTaskParentReferences({
+      spaceId: validatedData.spaceId,
+      userId: sessionUser.id,
+      visibility: validatedData.visibility,
+      projectId: validatedData.projectId,
+      sectionId: validatedData.sectionId,
+    })
 
     const task = await OrganizationTaskService.create(validatedData)
 

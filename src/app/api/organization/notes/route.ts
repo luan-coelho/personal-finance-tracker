@@ -4,6 +4,7 @@ import {
   parseOptionalUuid,
   parseUuid,
   uuidValidationMessages,
+  validateNoteParentReferences,
   validationErrorResponse,
 } from '@/app/api/organization/_utils'
 import { insertOrganizationNoteSchema } from '@/app/db/schemas/organization-note-schema'
@@ -98,6 +99,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Sem permissao para editar este item' }, { status: 403 })
       }
     }
+
+    await validateNoteParentReferences({
+      spaceId: validatedData.spaceId,
+      userId: sessionUser.id,
+      visibility: validatedData.visibility,
+      projectId: validatedData.projectId,
+      taskId: validatedData.taskId,
+    })
 
     const note = await OrganizationNoteService.create(validatedData)
 

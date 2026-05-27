@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import {
   bodyRequestsValue,
+  hasOwnField,
   parseUuid,
   sanitizeUpdateData,
   uuidValidationMessages,
+  validateNoteParentReferences,
   validationErrorResponse,
 } from '@/app/api/organization/_utils'
 import { updateOrganizationNoteSchema } from '@/app/db/schemas/organization-note-schema'
@@ -110,6 +112,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (bodyRequestsValue(body, 'visibility', 'shared') && !canEditSpace) {
       return NextResponse.json({ error: 'Sem permissao para editar este item' }, { status: 403 })
+    }
+
+    const hasProjectUpdate = hasOwnField(updateData, 'projectId')
+    const hasTaskUpdate = hasOwnField(updateData, 'taskId')
+    const effectiveVisibility = updateData.visibility ?? existingNote.visibility
+    const effectiveProjectId = hasProjectUpdate ? updateData.projectId : existingNote.projectId
+    const effectiveTaskId = hasTaskUpdate ? updateData.taskId : existingNote.taskId
+
+    if (hasProjectUpdate || hasTaskUpdate || effectiveVisibility === 'shared') {
+      await validateNoteParentReferences({
+        spaceId: existingNote.spaceId,
+        userId: sessionUser.id,
+        visibility: effectiveVisibility,
+        projectId: effectiveProjectId,
+        taskId: effectiveTaskId,
+      })
     }
 
     const note = await OrganizationNoteService.update(parsedId, updateData)
