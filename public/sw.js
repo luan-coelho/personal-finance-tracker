@@ -32,3 +32,31 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(request).then((cached) => cached || Response.error()))
   )
 })
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  const targetUrl = new URL(
+    event.notification.data?.url || '/admin/organization/today',
+    self.location.origin
+  )
+
+  event.waitUntil(
+    clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        const targetClient = clientList.find((client) => {
+          const clientUrl = new URL(client.url)
+          return clientUrl.origin === targetUrl.origin && clientUrl.pathname === targetUrl.pathname
+        })
+
+        if (targetClient && 'focus' in targetClient) {
+          return targetClient.focus()
+        }
+
+        if (clients.openWindow) {
+          return clients.openWindow(targetUrl.href)
+        }
+      })
+  )
+})

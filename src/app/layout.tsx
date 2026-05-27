@@ -7,6 +7,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Outfit } from 'next/font/google'
 
+import { OrganizationReminderManager } from '@/components/organization/organization-reminder-manager'
 import { InstallPromptCapture } from '@/components/pwa/install-prompt-capture'
 import { ServiceWorkerRegister } from '@/components/pwa/sw-register'
 import { Toaster } from '@/components/ui/sonner'
@@ -68,6 +69,7 @@ export default function RootLayout({
               <QueryProvider>
                 <SpaceProvider>
                   {children}
+                  <OrganizationReminderManager />
                   <Analytics />
                   <Toaster
                     expand
