@@ -7,6 +7,7 @@ import type {
   OrganizationLabel,
   OrganizationLabelFormValues,
 } from '@/app/db/schemas/organization-label-schema'
+import { organizationTaskKeys } from '@/hooks/use-organization-tasks'
 
 async function parseJsonError(response: Response, fallback: string): Promise<Error> {
   try {
@@ -94,6 +95,7 @@ export function useUpdateOrganizationLabel() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: organizationLabelKeys.all })
+      queryClient.invalidateQueries({ queryKey: organizationTaskKeys.all })
       toast.success('Etiqueta atualizada com sucesso!')
     },
     onError: (error: Error) => {
@@ -120,6 +122,7 @@ export function useDeleteOrganizationLabel() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: organizationLabelKeys.all })
+      queryClient.invalidateQueries({ queryKey: organizationTaskKeys.all })
       toast.success('Etiqueta deletada com sucesso!')
     },
     onError: (error: Error) => {

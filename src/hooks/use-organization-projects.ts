@@ -12,6 +12,7 @@ import type {
   OrganizationProjectSection,
   OrganizationProjectSectionFormValues,
 } from '@/app/db/schemas/organization-project-section-schema'
+import { organizationTaskKeys } from '@/hooks/use-organization-tasks'
 import type { OrganizationProjectWithSections } from '@/services/organization-project-service'
 
 type CreateOrganizationProjectValues = Omit<OrganizationProjectFormValues, 'createdById'>
@@ -122,6 +123,7 @@ export function useUpdateOrganizationProject() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: organizationProjectKeys.all })
+      queryClient.invalidateQueries({ queryKey: organizationTaskKeys.all })
       toast.success('Projeto atualizado com sucesso!')
     },
     onError: (error: Error) => {
@@ -148,6 +150,7 @@ export function useArchiveOrganizationProject() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: organizationProjectKeys.all })
+      queryClient.invalidateQueries({ queryKey: organizationTaskKeys.all })
       toast.success('Projeto arquivado com sucesso!')
     },
     onError: (error: Error) => {
@@ -212,6 +215,7 @@ export function useUpdateOrganizationProjectSection() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: organizationProjectKeys.all })
+      queryClient.invalidateQueries({ queryKey: organizationTaskKeys.all })
       toast.success('Secao atualizada com sucesso!')
     },
     onError: (error: Error) => {
@@ -238,6 +242,7 @@ export function useArchiveOrganizationProjectSection() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: organizationProjectKeys.all })
+      queryClient.invalidateQueries({ queryKey: organizationTaskKeys.all })
       toast.success('Secao arquivada com sucesso!')
     },
     onError: (error: Error) => {
