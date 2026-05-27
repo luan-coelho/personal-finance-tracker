@@ -50,6 +50,16 @@ export default function manifest(): MetadataRoute.Manifest {
         url: '/admin/reserves',
         icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
       },
+      {
+        name: 'Hoje',
+        url: '/admin/organization/today',
+        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
+      },
+      {
+        name: 'Tarefas',
+        url: '/admin/organization/tasks',
+        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
+      },
     ],
   }
 }
