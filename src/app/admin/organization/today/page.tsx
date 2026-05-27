@@ -61,6 +61,11 @@ function TodayPageSkeleton() {
   )
 }
 
+function getLocalTodayDateOnly() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+}
+
 function TodayQuickCapture({ spaceId }: { spaceId: string }) {
   const [title, setTitle] = useState('')
   const createTask = useCreateOrganizationTask()
@@ -76,7 +81,7 @@ function TodayQuickCapture({ spaceId }: { spaceId: string }) {
       title: trimmed,
       status: 'pending',
       visibility: 'shared',
-      dueDate: new Date(),
+      dueDate: getLocalTodayDateOnly(),
       recurrenceType: 'none',
       recurrenceInterval: 1,
       recurrenceDaysOfWeek: [],
