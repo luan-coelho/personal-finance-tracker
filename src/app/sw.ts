@@ -1,5 +1,13 @@
-import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist'
-import { CacheFirst, ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist, StaleWhileRevalidate } from 'serwist'
+import {
+  CacheFirst,
+  ExpirationPlugin,
+  NetworkFirst,
+  NetworkOnly,
+  Serwist,
+  StaleWhileRevalidate,
+  type PrecacheEntry,
+  type SerwistGlobalConfig,
+} from 'serwist'
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -121,3 +129,26 @@ const serwist = new Serwist({
 })
 
 serwist.addEventListeners()
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close()
+
+  const targetUrl = new URL(event.notification.data?.url || '/admin/organization/today', self.location.origin)
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      const targetClient = clientList.find(client => {
+        const clientUrl = new URL(client.url)
+        return clientUrl.origin === targetUrl.origin && clientUrl.pathname === targetUrl.pathname
+      })
+
+      if (targetClient && 'focus' in targetClient) {
+        return targetClient.focus()
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl.href)
+      }
+    }),
+  )
+})
