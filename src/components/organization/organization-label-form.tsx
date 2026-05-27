@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
+import { useCallback, useEffect } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 
 import {
@@ -27,14 +28,23 @@ export function OrganizationLabelForm({ label, onSuccess, onCancel }: Organizati
   const { selectedSpace } = useSelectedSpace()
   const isEditing = !!label
 
-  const form = useForm<OrganizationLabelFormValues>({
-    resolver: zodResolver(insertOrganizationLabelSchema) as Resolver<OrganizationLabelFormValues>,
-    defaultValues: {
+  const computeDefaultValues = useCallback(
+    (): OrganizationLabelFormValues => ({
       spaceId: selectedSpace?.id || label?.spaceId || '',
       name: label?.name || '',
       color: label?.color || '#64748B',
-    },
+    }),
+    [label, selectedSpace?.id],
+  )
+
+  const form = useForm<OrganizationLabelFormValues>({
+    resolver: zodResolver(insertOrganizationLabelSchema) as Resolver<OrganizationLabelFormValues>,
+    defaultValues: computeDefaultValues(),
   })
+
+  useEffect(() => {
+    form.reset(computeDefaultValues())
+  }, [computeDefaultValues, form])
 
   const createMutation = useCreateOrganizationLabel()
   const updateMutation = useUpdateOrganizationLabel()

@@ -21,7 +21,7 @@ function formatDueDate(date: Date | string | null, time: string | null) {
   if (!date && !time) return null
 
   const dateText = date ? format(new Date(date), "dd 'de' MMM", { locale: ptBR }) : null
-  return [dateText, time].filter(Boolean).join(' as ')
+  return [dateText, time].filter(Boolean).join(' às ')
 }
 
 export function OrganizationTaskCard({ task, onEdit, onComplete, onReopen }: OrganizationTaskCardProps) {

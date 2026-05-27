@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Folder, Loader2 } from 'lucide-react'
+import { useCallback, useEffect } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 
 import {
@@ -32,17 +33,26 @@ export function OrganizationProjectForm({ project, onSuccess, onCancel }: Organi
   const { selectedSpace } = useSelectedSpace()
   const isEditing = !!project
 
-  const form = useForm<ProjectFormValues>({
-    resolver: zodResolver(projectFormSchema) as Resolver<ProjectFormValues>,
-    defaultValues: {
+  const computeDefaultValues = useCallback(
+    (): ProjectFormValues => ({
       spaceId: selectedSpace?.id || project?.spaceId || '',
       name: project?.name || '',
       description: project?.description || '',
       color: project?.color || '#10B981',
       icon: project?.icon || 'folder',
       visibility: project?.visibility || 'shared',
-    },
+    }),
+    [project, selectedSpace?.id],
+  )
+
+  const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(projectFormSchema) as Resolver<ProjectFormValues>,
+    defaultValues: computeDefaultValues(),
   })
+
+  useEffect(() => {
+    form.reset(computeDefaultValues())
+  }, [computeDefaultValues, form])
 
   const createMutation = useCreateOrganizationProject()
   const updateMutation = useUpdateOrganizationProject()

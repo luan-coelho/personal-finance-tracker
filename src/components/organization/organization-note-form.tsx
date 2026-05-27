@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 
 import {
@@ -40,17 +41,79 @@ export function OrganizationNoteForm({ note, onSuccess, onCancel }: Organization
   const { data: projects = [] } = useOrganizationProjects(spaceId)
   const { data: tasks = [] } = useOrganizationTasks({ spaceId })
 
-  const form = useForm<NoteFormValues>({
-    resolver: zodResolver(noteFormSchema) as Resolver<NoteFormValues>,
-    defaultValues: {
+  const computeDefaultValues = useCallback((): NoteFormValues => {
+    const useNoteRelations = !!note && note.spaceId === spaceId
+
+    return {
       spaceId,
-      projectId: note?.projectId || null,
-      taskId: note?.taskId || null,
+      projectId: useNoteRelations ? note.projectId || null : null,
+      taskId: useNoteRelations ? note.taskId || null : null,
       title: note?.title || '',
       content: note?.content || '',
       visibility: note?.visibility || 'shared',
-    },
+    }
+  }, [note, spaceId])
+
+  const form = useForm<NoteFormValues>({
+    resolver: zodResolver(noteFormSchema) as Resolver<NoteFormValues>,
+    defaultValues: computeDefaultValues(),
   })
+
+  const selectedProjectId = form.watch('projectId')
+  const selectedTaskId = form.watch('taskId')
+  const visibility = form.watch('visibility')
+
+  useEffect(() => {
+    form.reset(computeDefaultValues())
+  }, [computeDefaultValues, form])
+
+  const projectOptions = useMemo(
+    () => (visibility === 'shared' ? projects.filter(project => project.visibility === 'shared') : projects),
+    [projects, visibility],
+  )
+
+  const taskOptions = useMemo(() => {
+    const availableTasks = visibility === 'shared' ? tasks.filter(task => task.visibility === 'shared') : tasks
+    const projectTasks = selectedProjectId
+      ? availableTasks.filter(task => task.projectId === selectedProjectId)
+      : availableTasks
+
+    const currentTask = tasks.find(task => task.id === note?.taskId)
+    if (currentTask && !projectTasks.some(task => task.id === currentTask.id)) {
+      const canShowCurrentTask =
+        (visibility === 'personal' || currentTask.visibility === 'shared') &&
+        (!selectedProjectId || currentTask.projectId === selectedProjectId)
+      if (!canShowCurrentTask) return projectTasks
+
+      return [...projectTasks, currentTask]
+    }
+
+    return projectTasks
+  }, [note?.taskId, selectedProjectId, tasks, visibility])
+
+  useEffect(() => {
+    if (!selectedTaskId) return
+
+    const selectedTask = tasks.find(task => task.id === selectedTaskId)
+    if (!selectedTask) return
+
+    const invalidSharedTask = visibility === 'shared' && selectedTask.visibility === 'personal'
+    const invalidProjectTask = selectedProjectId && selectedTask.projectId !== selectedProjectId
+
+    if (invalidSharedTask || invalidProjectTask) {
+      form.setValue('taskId', null)
+    }
+  }, [form, selectedProjectId, selectedTaskId, tasks, visibility])
+
+  useEffect(() => {
+    if (visibility !== 'shared' || !selectedProjectId) return
+
+    const selectedProject = projects.find(project => project.id === selectedProjectId)
+    if (selectedProject?.visibility === 'personal') {
+      form.setValue('projectId', null)
+      form.setValue('taskId', null)
+    }
+  }, [form, projects, selectedProjectId, visibility])
 
   const createMutation = useCreateOrganizationNote()
   const updateMutation = useUpdateOrganizationNote()
@@ -123,7 +186,10 @@ export function OrganizationNoteForm({ note, onSuccess, onCancel }: Organization
                 <FormLabel>Projeto</FormLabel>
                 <Select
                   value={field.value || NONE}
-                  onValueChange={value => field.onChange(value === NONE ? null : value)}
+                  onValueChange={value => {
+                    field.onChange(value === NONE ? null : value)
+                    form.setValue('taskId', null)
+                  }}
                   disabled={isLoading}>
                   <FormControl>
                     <SelectTrigger>
@@ -132,7 +198,7 @@ export function OrganizationNoteForm({ note, onSuccess, onCancel }: Organization
                   </FormControl>
                   <SelectContent>
                     <SelectItem value={NONE}>Sem projeto</SelectItem>
-                    {projects.map(project => (
+                    {projectOptions.map(project => (
                       <SelectItem key={project.id} value={project.id}>
                         {project.name}
                       </SelectItem>
@@ -161,7 +227,7 @@ export function OrganizationNoteForm({ note, onSuccess, onCancel }: Organization
                   </FormControl>
                   <SelectContent>
                     <SelectItem value={NONE}>Sem tarefa</SelectItem>
-                    {tasks.map(task => (
+                    {taskOptions.map(task => (
                       <SelectItem key={task.id} value={task.id}>
                         {task.title}
                       </SelectItem>

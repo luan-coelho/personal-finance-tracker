@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 
 import {
@@ -18,7 +18,6 @@ import { MultiSelect } from '@/components/ui/multi-select'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { TimePickerDemo } from '@/components/ui/time-picker'
 
 import { useOrganizationLabels } from '@/hooks/use-organization-labels'
 import { useOrganizationProjects } from '@/hooks/use-organization-projects'
@@ -55,7 +54,7 @@ function dateToTime(value?: Date | string | null) {
 }
 
 function combineDateAndTime(date?: Date | null, time?: string) {
-  if (!date) return null
+  if (!date || !time) return null
   const [hours = 9, minutes = 0] = time ? time.split(':').map(Number) : []
   const combined = new Date(date)
   combined.setHours(hours, minutes, 0, 0)
@@ -65,27 +64,25 @@ function combineDateAndTime(date?: Date | null, time?: string) {
 export function OrganizationTaskForm({ task, onSuccess, onCancel }: OrganizationTaskFormProps) {
   const { selectedSpace } = useSelectedSpace()
   const spaceId = selectedSpace?.id || task?.spaceId || ''
-  const [reminderDate, setReminderDate] = useState<Date | undefined>(
-    task?.reminderAt ? new Date(task.reminderAt) : undefined,
-  )
-  const [reminderTime, setReminderTime] = useState(dateToTime(task?.reminderAt))
   const isEditing = !!task
 
   const { data: projects = [] } = useOrganizationProjects(spaceId)
   const { data: labels = [] } = useOrganizationLabels(spaceId)
   const { data: spaceMembers = [] } = useSpaceMembers(spaceId)
 
-  const form = useForm<TaskFormValues>({
-    resolver: zodResolver(taskFormSchema) as Resolver<TaskFormValues>,
-    defaultValues: {
+  const computeDefaultValues = useCallback((): TaskFormValues => {
+    const useTaskRelations = !!task && task.spaceId === spaceId
+
+    return {
       spaceId,
-      projectId: task?.projectId || null,
-      sectionId: task?.sectionId || null,
+      projectId: useTaskRelations ? task.projectId || null : null,
+      sectionId: useTaskRelations ? task.sectionId || null : null,
+      assigneeId: useTaskRelations ? task.assigneeId || null : null,
+      labelIds: useTaskRelations ? task.labels.map(label => label.id) : [],
       title: task?.title || '',
       description: task?.description || '',
       status: task?.status || 'pending',
       visibility: task?.visibility || 'shared',
-      assigneeId: task?.assigneeId || null,
       dueDate: task?.dueDate ? new Date(task.dueDate) : null,
       dueTime: task?.dueTime || null,
       reminderAt: task?.reminderAt ? new Date(task.reminderAt) : null,
@@ -94,17 +91,52 @@ export function OrganizationTaskForm({ task, onSuccess, onCancel }: Organization
       recurrenceDaysOfWeek: task?.recurrenceDaysOfWeek || [],
       recurrenceDayOfMonth: task?.recurrenceDayOfMonth || null,
       recurrenceEndsAt: task?.recurrenceEndsAt ? new Date(task.recurrenceEndsAt) : null,
-      labelIds: task?.labels.map(label => label.id) || [],
-    },
+    }
+  }, [spaceId, task])
+
+  const [reminderDate, setReminderDate] = useState<Date | undefined>(() =>
+    task?.reminderAt ? new Date(task.reminderAt) : undefined,
+  )
+  const [reminderTime, setReminderTime] = useState(dateToTime(task?.reminderAt))
+
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskFormSchema) as Resolver<TaskFormValues>,
+    defaultValues: computeDefaultValues(),
   })
 
   const selectedProjectId = form.watch('projectId')
   const recurrenceType = form.watch('recurrenceType')
+  const visibility = form.watch('visibility')
+
+  useEffect(() => {
+    form.reset(computeDefaultValues())
+    setReminderDate(task?.reminderAt ? new Date(task.reminderAt) : undefined)
+    setReminderTime(dateToTime(task?.reminderAt))
+  }, [computeDefaultValues, form, task?.reminderAt])
+
+  const projectOptions = useMemo(() => {
+    const options = [...projects]
+    if (task?.project && !options.some(project => project.id === task.project?.id)) {
+      options.push({ ...task.project, sections: task.section ? [task.section] : [] })
+    }
+
+    return visibility === 'shared' ? options.filter(project => project.visibility === 'shared') : options
+  }, [projects, task?.project, visibility])
 
   const sectionOptions = useMemo(
-    () => projects.find(project => project.id === selectedProjectId)?.sections ?? [],
-    [projects, selectedProjectId],
+    () => projectOptions.find(project => project.id === selectedProjectId)?.sections ?? [],
+    [projectOptions, selectedProjectId],
   )
+
+  useEffect(() => {
+    if (visibility !== 'shared' || !selectedProjectId) return
+
+    const selectedProject = projects.find(project => project.id === selectedProjectId) ?? task?.project
+    if (selectedProject?.visibility === 'personal') {
+      form.setValue('projectId', null)
+      form.setValue('sectionId', null)
+    }
+  }, [form, projects, selectedProjectId, task?.project, visibility])
 
   const assigneeOptions = useMemo(() => {
     const users = new Map<string, { id: string; label: string }>()
@@ -212,7 +244,7 @@ export function OrganizationTaskForm({ task, onSuccess, onCancel }: Organization
                   </FormControl>
                   <SelectContent>
                     <SelectItem value={NONE}>Sem projeto</SelectItem>
-                    {projects.map(project => (
+                    {projectOptions.map(project => (
                       <SelectItem key={project.id} value={project.id}>
                         {project.name}
                       </SelectItem>
@@ -303,7 +335,12 @@ export function OrganizationTaskForm({ task, onSuccess, onCancel }: Organization
               <FormItem>
                 <FormLabel>Horário</FormLabel>
                 <FormControl>
-                  <TimePickerDemo value={field.value || ''} onChange={value => field.onChange(value || null)} />
+                  <Input
+                    type="time"
+                    value={field.value || ''}
+                    onChange={event => field.onChange(event.target.value || null)}
+                    disabled={isLoading}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -324,7 +361,12 @@ export function OrganizationTaskForm({ task, onSuccess, onCancel }: Organization
           </FormItem>
           <FormItem>
             <FormLabel>Hora do lembrete</FormLabel>
-            <TimePickerDemo value={reminderTime} onChange={setReminderTime} />
+            <Input
+              type="time"
+              value={reminderTime}
+              onChange={event => setReminderTime(event.target.value)}
+              disabled={isLoading}
+            />
           </FormItem>
         </div>
 
