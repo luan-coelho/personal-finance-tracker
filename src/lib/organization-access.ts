@@ -1,4 +1,4 @@
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq, or, type AnyColumn } from 'drizzle-orm'
 
 import type { OrganizationVisibility } from '@/app/db/schemas/organization-project-schema'
 
@@ -16,7 +16,12 @@ export function canWriteOrganizationItem(item: OrganizationAccessInput, userId: 
   return canEditSpace
 }
 
-export function organizationVisibilityWhere<T extends { visibility: any; createdById: any }>(
+export function organizationVisibilityWhere<
+  T extends {
+    visibility: AnyColumn<{ data: OrganizationVisibility }>
+    createdById: AnyColumn<{ data: string }>
+  },
+>(
   table: T,
   userId: string,
 ) {
