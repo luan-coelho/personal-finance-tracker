@@ -28,6 +28,7 @@ const VALIDATION_MESSAGES = new Set([
   'Projeto invalido para este espaco',
   'Etiqueta invalida para este espaco',
   'Responsavel invalido para este espaco',
+  'Data e obrigatoria para tarefas recorrentes',
 ])
 
 async function getSessionUser() {

@@ -27,7 +27,7 @@ export const organizationProjectsTable = pgTable('organization_projects', {
 export const insertOrganizationProjectSchema = z.object({
   spaceId: z.string().uuid('ID do espaco deve ser um UUID valido'),
   name: z.string().trim().min(1, 'Nome e obrigatorio').max(100, 'Nome deve ter no maximo 100 caracteres'),
-  description: z.string().trim().max(500, 'Descricao deve ter no maximo 500 caracteres').optional(),
+  description: z.string().trim().max(500, 'Descricao deve ter no maximo 500 caracteres').nullable().optional(),
   color: z.string().trim().default('#10B981'),
   icon: z.string().trim().default('folder'),
   visibility: z.enum(['shared', 'personal']).default('shared'),

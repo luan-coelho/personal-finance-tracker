@@ -49,7 +49,9 @@ export const organizationTasksTable = pgTable('organization_tasks', {
   archivedAt: timestamp('archived_at'),
 })
 
-export const insertOrganizationTaskSchema = z.object({
+const recurringTaskDueDateMessage = 'Data e obrigatoria para tarefas recorrentes'
+
+export const organizationTaskSchemaBase = z.object({
   spaceId: z.string().uuid('ID do espaco deve ser um UUID valido'),
   projectId: z.string().uuid('ID do projeto deve ser um UUID valido').nullable().optional(),
   sectionId: z.string().uuid('ID da secao deve ser um UUID valido').nullable().optional(),
@@ -74,9 +76,42 @@ export const insertOrganizationTaskSchema = z.object({
   labelIds: z.array(z.string().uuid()).default([]),
 })
 
-export const updateOrganizationTaskSchema = insertOrganizationTaskSchema.partial().extend({
-  id: z.string().uuid('ID deve ser um UUID valido'),
+export const insertOrganizationTaskSchema = organizationTaskSchemaBase.superRefine((data, ctx) => {
+  if (data.recurrenceType !== 'none' && !data.dueDate) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['dueDate'],
+      message: recurringTaskDueDateMessage,
+    })
+  }
 })
+
+export const organizationTaskFormSchema = organizationTaskSchemaBase
+  .omit({ createdById: true })
+  .superRefine((data, ctx) => {
+    if (data.recurrenceType !== 'none' && !data.dueDate) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['dueDate'],
+        message: recurringTaskDueDateMessage,
+      })
+    }
+  })
+
+export const updateOrganizationTaskSchema = organizationTaskSchemaBase
+  .partial()
+  .extend({
+    id: z.string().uuid('ID deve ser um UUID valido'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.recurrenceType && data.recurrenceType !== 'none' && data.dueDate === null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['dueDate'],
+        message: recurringTaskDueDateMessage,
+      })
+    }
+  })
 
 export type OrganizationTask = typeof organizationTasksTable.$inferSelect
 export type NewOrganizationTask = typeof organizationTasksTable.$inferInsert

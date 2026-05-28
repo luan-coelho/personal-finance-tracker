@@ -22,7 +22,7 @@ import { usersTable } from '@/app/db/schemas/user-schema'
 
 import { getBrazilNow } from '@/lib/date-utils'
 import { organizationVisibilityWhere } from '@/lib/organization-access'
-import { getNextRecurrenceDate } from '@/lib/organization-recurrence'
+import { getNextRecurrenceDate, getNextRecurrenceReminderAt } from '@/lib/organization-recurrence'
 
 export interface OrganizationTaskFilters {
   spaceId: string
@@ -78,12 +78,22 @@ function toDbDateOnly(date: Date): Date {
   return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
 }
 
+function ensureRecurringTaskHasDueDate(
+  recurrenceType: OrganizationTaskFormValues['recurrenceType'],
+  dueDate?: Date | null,
+) {
+  if (recurrenceType !== 'none' && !dueDate) {
+    throw new Error('Data e obrigatoria para tarefas recorrentes')
+  }
+}
+
 export class OrganizationTaskService {
   static async create(data: OrganizationTaskFormValues): Promise<OrganizationTask> {
     return await db.transaction(async tx => {
       const now = new Date()
       const { labelIds = [], ...taskData } = data
       const uniqueLabelIds = uniqueValues(labelIds)
+      ensureRecurringTaskHasDueDate(taskData.recurrenceType, taskData.dueDate)
 
       if (taskData.sectionId) {
         const [section] = await tx
@@ -349,8 +359,11 @@ export class OrganizationTaskService {
       const now = new Date()
       const { labelIds, ...taskData } = data
       const effectiveSpaceId = data.spaceId ?? existingTask.spaceId
+      const effectiveRecurrenceType = data.recurrenceType ?? existingTask.recurrenceType
+      const effectiveDueDate = data.dueDate !== undefined ? data.dueDate : existingTask.dueDate
       let effectiveProjectId = data.projectId !== undefined ? data.projectId : existingTask.projectId
       let effectiveSectionId = data.sectionId !== undefined ? data.sectionId : existingTask.sectionId
+      ensureRecurringTaskHasDueDate(effectiveRecurrenceType, effectiveDueDate)
 
       if (data.projectId === null) {
         effectiveProjectId = null
@@ -454,6 +467,7 @@ export class OrganizationTaskService {
 
     const now = new Date()
     const normalizedDueDate = normalizeDbDateOnly(task.dueDate)
+    ensureRecurringTaskHasDueDate(task.recurrenceType, normalizedDueDate)
     const nextDueDate = getNextRecurrenceDate({
       dueDate: normalizedDueDate,
       recurrenceType: task.recurrenceType,
@@ -461,6 +475,11 @@ export class OrganizationTaskService {
       recurrenceDaysOfWeek: task.recurrenceDaysOfWeek,
       recurrenceDayOfMonth: task.recurrenceDayOfMonth,
       recurrenceEndsAt: normalizeDbDateOnly(task.recurrenceEndsAt),
+    })
+    const nextReminderAt = getNextRecurrenceReminderAt({
+      reminderAt: task.reminderAt,
+      currentDueDate: normalizedDueDate,
+      nextDueDate,
     })
 
     const [updatedTask] = await db
@@ -470,7 +489,7 @@ export class OrganizationTaskService {
           ? {
               status: 'pending',
               dueDate: toDbDateOnly(nextDueDate),
-              reminderAt: null,
+              reminderAt: nextReminderAt,
               completedAt: null,
               lastCompletedAt: now,
               updatedAt: now,

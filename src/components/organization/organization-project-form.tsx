@@ -64,7 +64,7 @@ export function OrganizationProjectForm({ project, onSuccess, onCancel }: Organi
     const data = {
       ...values,
       spaceId: selectedSpace.id,
-      description: values.description?.trim() || undefined,
+      description: values.description?.trim() || null,
       color: values.color || '#10B981',
       icon: values.icon?.trim() || 'folder',
     }

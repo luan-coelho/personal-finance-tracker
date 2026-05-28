@@ -20,7 +20,7 @@
 - Create `src/app/db/schemas/organization-note-schema.ts`: note table and validation.
 - Modify `src/app/db/schemas/index.ts`: export and register organization tables.
 - Modify `src/app/db/schemas/relations.ts`: add relations between spaces, users, projects, tasks, labels, and notes.
-- Generate `drizzle/0001_*.sql` and update `drizzle/meta/_journal.json`: generated migration output from Drizzle.
+- Generate `drizzle/0000_add_organization_module.sql` and update `drizzle/meta/_journal.json`: migration delta for organization tables/enums only; existing finance schema remains the baseline.
 - Create `src/lib/organization-recurrence.ts`: pure recurrence calculation.
 - Create `src/lib/organization-recurrence.test.ts`: node:test coverage for recurrence.
 - Create `src/lib/organization-access.ts`: shared access predicates for personal/shared items.
@@ -205,7 +205,7 @@ git commit -m "test: add organization recurrence utility"
 - Create: `src/app/db/schemas/organization-note-schema.ts`
 - Modify: `src/app/db/schemas/index.ts`
 - Modify: `src/app/db/schemas/relations.ts`
-- Generate: `drizzle/0001_*.sql`
+- Generate: `drizzle/0000_add_organization_module.sql`
 - Modify: `drizzle/meta/_journal.json`
 
 - [ ] **Step 1: Add schema files**
@@ -594,7 +594,7 @@ Add `organizationProjects`, `organizationLabels`, `organizationTasks`, and `orga
 
 Run: `pnpm db:generate`
 
-Expected: Drizzle creates one new SQL file under `drizzle/` and updates `drizzle/meta/_journal.json`.
+Expected: Drizzle has one organization migration SQL file under `drizzle/` and updates `drizzle/meta/_journal.json` without queuing a finance-schema recreation.
 
 - [ ] **Step 5: Run typecheck through build**
 

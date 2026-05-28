@@ -12,6 +12,8 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
+const VALIDATION_MESSAGES = new Set(['id invalido', 'Data e obrigatoria para tarefas recorrentes'])
+
 async function getSessionUser() {
   const session = await getCurrentSession()
 
@@ -59,7 +61,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('Erro ao concluir tarefa de organizacao:', error)
 
-    const validationResponse = validationErrorResponse(error)
+    const validationResponse = validationErrorResponse(error, VALIDATION_MESSAGES)
     if (validationResponse) {
       return validationResponse
     }

@@ -4,6 +4,7 @@ import { Clock, ListTodo, Loader2, Plus } from 'lucide-react'
 import { FormEvent, useState } from 'react'
 
 import { OrganizationEmptyState } from '@/components/organization/organization-empty-state'
+import { OrganizationNotificationControl } from '@/components/organization/organization-notification-control'
 import { OrganizationTaskCard } from '@/components/organization/organization-task-card'
 import { OrganizationTaskForm } from '@/components/organization/organization-task-form'
 import { Button } from '@/components/ui/button'
@@ -188,9 +189,12 @@ export default function OrganizationTodayPage() {
             Capture, priorize e conclua o que precisa de atenção no espaço selecionado.
           </p>
         </div>
-        <div className="text-muted-foreground flex shrink-0 items-center gap-2 text-sm">
-          <ListTodo className="size-4" />
-          <span>{totalTasks} tarefas em foco</span>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <OrganizationNotificationControl />
+          <div className="text-muted-foreground flex h-9 items-center gap-2 text-sm">
+            <ListTodo className="size-4" />
+            <span>{totalTasks} tarefas em foco</span>
+          </div>
         </div>
       </div>
 

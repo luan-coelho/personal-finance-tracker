@@ -5,10 +5,7 @@ import { Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm, useWatch, type Resolver } from 'react-hook-form'
 
-import {
-  insertOrganizationTaskSchema,
-  type OrganizationTaskFormValues,
-} from '@/app/db/schemas/organization-task-schema'
+import { organizationTaskFormSchema, type OrganizationTaskFormValues } from '@/app/db/schemas/organization-task-schema'
 
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -28,7 +25,6 @@ import { useSpaceMembers } from '@/hooks/use-space-members'
 import type { OrganizationTaskWithDetails } from '@/services/organization-task-service'
 
 type TaskFormValues = Omit<OrganizationTaskFormValues, 'createdById'>
-const taskFormSchema = insertOrganizationTaskSchema.omit({ createdById: true })
 const NONE = 'none'
 
 const weekdayOptions = [
@@ -100,7 +96,7 @@ export function OrganizationTaskForm({ task, onSuccess, onCancel }: Organization
   const [reminderTime, setReminderTime] = useState(dateToTime(task?.reminderAt))
 
   const form = useForm<TaskFormValues>({
-    resolver: zodResolver(taskFormSchema) as Resolver<TaskFormValues>,
+    resolver: zodResolver(organizationTaskFormSchema) as Resolver<TaskFormValues>,
     defaultValues: computeDefaultValues(),
   })
 

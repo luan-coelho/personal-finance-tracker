@@ -11,6 +11,12 @@ export interface RecurrenceInput {
   recurrenceEndsAt: Date | null
 }
 
+export interface RecurrenceReminderInput {
+  reminderAt: Date | null
+  currentDueDate: Date | null
+  nextDueDate: Date | null
+}
+
 function normalizeInterval(value: number) {
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : 1
 }
@@ -59,4 +65,11 @@ export function getNextRecurrenceDate(input: RecurrenceInput): Date | null {
 
   if (!next || isAfterEnd(next, input.recurrenceEndsAt)) return null
   return next
+}
+
+export function getNextRecurrenceReminderAt(input: RecurrenceReminderInput): Date | null {
+  if (!input.reminderAt || !input.currentDueDate || !input.nextDueDate) return null
+
+  const reminderOffset = input.reminderAt.getTime() - input.currentDueDate.getTime()
+  return new Date(input.nextDueDate.getTime() + reminderOffset)
 }

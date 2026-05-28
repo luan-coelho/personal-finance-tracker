@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useOrganizationReminderCandidates } from '@/hooks/use-organization-tasks'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
@@ -10,6 +10,7 @@ const REMINDER_TARGET_URL = '/admin/organization/today'
 const REMINDER_CHECK_INTERVAL = 30 * 1000
 const REMINDER_LOCK_NAME = 'organization-reminders'
 const SHOWN_REMINDER_VALUE = 'shown'
+export const ORGANIZATION_NOTIFICATION_PERMISSION_EVENT = 'organization-notification-permission-change'
 
 type ReminderTask = {
   id: string
@@ -112,6 +113,19 @@ function markReminderShown(reminderKey: string) {
   writeReminderClaims(claims)
 }
 
+function getNotificationPermission(): NotificationPermission | 'unsupported' {
+  if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported'
+  return Notification.permission
+}
+
+export async function requestOrganizationNotificationPermission() {
+  if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported' as const
+
+  const permission = await Notification.requestPermission()
+  window.dispatchEvent(new Event(ORGANIZATION_NOTIFICATION_PERMISSION_EVENT))
+  return permission
+}
+
 async function showReminderNotification(task: ReminderTask, tag: string) {
   const options = {
     body: task.title,
@@ -140,12 +154,30 @@ async function showReminderNotification(task: ReminderTask, tag: string) {
 export function OrganizationReminderManager() {
   const { selectedSpace } = useSelectedSpace()
   const { data: reminders = [] } = useOrganizationReminderCandidates(selectedSpace?.id || '')
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(
+    'unsupported',
+  )
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const syncPermission = () => setNotificationPermission(getNotificationPermission())
+
+    syncPermission()
+    window.addEventListener(ORGANIZATION_NOTIFICATION_PERMISSION_EVENT, syncPermission)
+    document.addEventListener('visibilitychange', syncPermission)
+
+    return () => {
+      window.removeEventListener(ORGANIZATION_NOTIFICATION_PERMISSION_EVENT, syncPermission)
+      document.removeEventListener('visibilitychange', syncPermission)
+    }
+  }, [])
 
   useEffect(() => {
     if (!selectedSpace?.id) return
     if (typeof window === 'undefined') return
     if (!('Notification' in window)) return
-    if (Notification.permission !== 'granted') return
+    if (notificationPermission !== 'granted') return
 
     let isActive = true
 
@@ -180,7 +212,7 @@ export function OrganizationReminderManager() {
       isActive = false
       window.clearInterval(intervalId)
     }
-  }, [reminders, selectedSpace?.id])
+  }, [notificationPermission, reminders, selectedSpace?.id])
 
   return null
 }
