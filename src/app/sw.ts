@@ -133,7 +133,7 @@ serwist.addEventListeners()
 self.addEventListener('notificationclick', event => {
   event.notification.close()
 
-  const targetUrl = new URL(event.notification.data?.url || '/admin/organization/today', self.location.origin)
+  const targetUrl = new URL(event.notification.data?.url || '/admin/transactions', self.location.origin)
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {

@@ -37,7 +37,7 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
   const targetUrl = new URL(
-    event.notification.data?.url || '/admin/organization/today',
+    event.notification.data?.url || '/admin/transactions',
     self.location.origin
   )
 

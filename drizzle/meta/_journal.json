@@ -8,6 +8,13 @@
       "when": 1779914677346,
       "tag": "0000_add_organization_module",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780235969016,
+      "tag": "0001_drop_organization_module",
+      "breakpoints": true
     }
   ]
 }

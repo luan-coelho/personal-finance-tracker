@@ -56,12 +56,6 @@ export const routes = {
         edit: (id: string) => `/admin/budgets/${validateId(id)}/edit`,
         bySpace: (spaceId: string) => `/admin/budgets?spaceId=${validateId(spaceId)}`,
       },
-      organization: {
-        today: '/admin/organization/today',
-        tasks: '/admin/organization/tasks',
-        projects: '/admin/organization/projects',
-        notes: '/admin/organization/notes',
-      },
     },
 
     // Autenticação
@@ -94,13 +88,6 @@ export const routes = {
       summary: (spaceId: string, month: string) => `/api/budgets/summary?spaceId=${validateId(spaceId)}&month=${month}`,
       categories: (spaceId: string, month: string) =>
         `/api/budgets/categories?spaceId=${validateId(spaceId)}&month=${month}`,
-    },
-    organization: {
-      projects: '/api/organization/projects',
-      labels: '/api/organization/labels',
-      tasks: '/api/organization/tasks',
-      today: '/api/organization/today',
-      notes: '/api/organization/notes',
     },
   },
 }

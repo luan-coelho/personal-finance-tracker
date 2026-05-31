@@ -2,12 +2,8 @@
 
 import {
   Building2,
-  CalendarCheck,
-  CheckSquare,
-  ClipboardList,
   CreditCard,
   FolderTree,
-  NotebookText,
   PiggyBank,
   Rabbit,
   Tag,
@@ -61,30 +57,6 @@ const items = [
   },
 ]
 
-// Menu items de organizacao
-const organizationItems = [
-  {
-    title: 'Hoje',
-    url: routes.frontend.admin.organization.today,
-    icon: CalendarCheck,
-  },
-  {
-    title: 'Tarefas',
-    url: routes.frontend.admin.organization.tasks,
-    icon: CheckSquare,
-  },
-  {
-    title: 'Projetos',
-    url: routes.frontend.admin.organization.projects,
-    icon: ClipboardList,
-  },
-  {
-    title: 'Notas',
-    url: routes.frontend.admin.organization.notes,
-    icon: NotebookText,
-  },
-]
-
 // Menu items de usuários (administração)
 const userManagementItems = [
   {
@@ -122,24 +94,6 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {items.map(item => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>Organizacao</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {organizationItems.map(item => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <Link href={item.url}>

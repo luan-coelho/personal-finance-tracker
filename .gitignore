@@ -34,8 +34,11 @@ yarn-error.log*
 .env*
 !.env.local.example
 
-# database
-/drizzle
+# database migrations
+/drizzle/*
+!/drizzle/*.sql
+!/drizzle/meta/
+!/drizzle/meta/*.json
 
 # vercel
 .vercel
