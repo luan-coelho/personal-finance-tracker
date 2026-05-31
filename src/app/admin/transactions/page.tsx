@@ -29,6 +29,7 @@ import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useSpaceMembers } from '@/hooks/use-space-members'
 import { useTransactions, useTransactionSummary } from '@/hooks/use-transactions'
 
+import { formatCurrency } from '@/lib/currency'
 import { getBrazilCurrentYearMonth, getMonthRangeBrazil } from '@/lib/date-utils'
 
 function TransactionsPageSkeleton() {
@@ -355,6 +356,26 @@ export default function TransacoesPage() {
                   Até: {filters.dateTo.toLocaleDateString('pt-BR')}
                   <button
                     onClick={() => handleFiltersChange({ ...filters, dateTo: undefined })}
+                    className="hover:text-destructive ml-1">
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {filters.amountFrom !== undefined && (
+                <Badge variant="secondary">
+                  Valor mínimo: {formatCurrency(filters.amountFrom)}
+                  <button
+                    onClick={() => handleFiltersChange({ ...filters, amountFrom: undefined })}
+                    className="hover:text-destructive ml-1">
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {filters.amountTo !== undefined && (
+                <Badge variant="secondary">
+                  Valor máximo: {formatCurrency(filters.amountTo)}
+                  <button
+                    onClick={() => handleFiltersChange({ ...filters, amountTo: undefined })}
                     className="hover:text-destructive ml-1">
                     ×
                   </button>

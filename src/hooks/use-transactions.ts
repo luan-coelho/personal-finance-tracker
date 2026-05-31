@@ -52,6 +52,8 @@ export function useTransactions(filters: TransactionFilters = {}, page: number =
       if (filters.tags) params.append('tags', filters.tags.join(','))
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom.toISOString())
       if (filters.dateTo) params.append('dateTo', filters.dateTo.toISOString())
+      if (filters.amountFrom !== undefined) params.append('amountFrom', filters.amountFrom.toString())
+      if (filters.amountTo !== undefined) params.append('amountTo', filters.amountTo.toString())
       if (filters.search) params.append('search', filters.search)
 
       params.append('page', page.toString())
@@ -98,6 +100,8 @@ export function useTransactionSummary(filters: TransactionFilters = {}) {
       if (filters.tags) params.append('tags', filters.tags.join(','))
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom.toISOString())
       if (filters.dateTo) params.append('dateTo', filters.dateTo.toISOString())
+      if (filters.amountFrom !== undefined) params.append('amountFrom', filters.amountFrom.toString())
+      if (filters.amountTo !== undefined) params.append('amountTo', filters.amountTo.toString())
       if (filters.search) params.append('search', filters.search)
 
       const response = await fetch(`/api/transactions/summary?${params}`)

@@ -2,9 +2,9 @@
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowDownCircle, ArrowUpCircle, Edit2, Loader2, Wallet, X } from 'lucide-react'
-import React, { useCallback, useState } from 'react'
-import { useForm, type Resolver } from 'react-hook-form'
+import { ArrowDownCircle, ArrowUpCircle, Loader2, Wallet, X } from 'lucide-react'
+import React, { useCallback } from 'react'
+import { useForm, useWatch, type Resolver } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -27,6 +27,7 @@ import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTags } from '@/hooks/use-tags'
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transactions'
 
+import { formatBrazilianAmountInput } from '@/lib/amount-utils'
 import { useSession } from '@/lib/auth-client'
 
 type TransactionFormValues = Omit<z.infer<typeof insertTransactionSchema>, 'tags'> & { tags?: string[] }
@@ -52,11 +53,12 @@ export function TransactionForm({
   const { monthStartDate } = useMonthSelectorContext()
   const selectedSpaceId = selectedSpace?.id || ''
   const userId = session?.user?.id || ''
+  const transactionDate = transaction?.date
 
   // Calcular a data padrão: última transação do mês ou primeiro dia do mês
   const defaultDate = React.useMemo(() => {
-    if (transaction?.date) {
-      return new Date(transaction.date)
+    if (transactionDate) {
+      return new Date(transactionDate)
     }
 
     if (existingTransactions.length > 0) {
@@ -69,7 +71,7 @@ export function TransactionForm({
 
     // Se não houver transações, usar o primeiro dia do mês selecionado
     return monthStartDate
-  }, [transaction?.date, existingTransactions, monthStartDate])
+  }, [transactionDate, existingTransactions, monthStartDate])
 
   const formMode = mode ?? (transaction ? 'edit' : 'create')
   const isEditing = formMode === 'edit'
@@ -109,7 +111,7 @@ export function TransactionForm({
   }, [computeDefaultValues, form])
 
   // Buscar categorias do espaço baseado no tipo selecionado
-  const currentType = form.watch('type')
+  const currentType = useWatch({ control: form.control, name: 'type' })
   const { data: customCategories = [] } = useCategories(
     selectedSpaceId,
     currentType === 'reserva' ? undefined : currentType,
@@ -131,15 +133,7 @@ export function TransactionForm({
 
   // Máscara de real para o campo amount
   function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value
-    const onlyDigits = raw.replace(/\D/g, '')
-    const number = Number(onlyDigits) / 100
-    form.setValue(
-      'amount',
-      number === 0
-        ? ''
-        : number.toLocaleString('pt-BR', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    )
+    form.setValue('amount', formatBrazilianAmountInput(e.target.value))
   }
 
   // Submit

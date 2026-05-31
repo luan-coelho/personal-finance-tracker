@@ -32,6 +32,25 @@ export function normalizeBrazilianAmount(input: string): string {
 }
 
 /**
+ * Aplica a máscara de digitação monetária usada nos formulários.
+ * "1" → "0,01", "1234" → "12,34".
+ */
+export function formatBrazilianAmountInput(input: string): string {
+  const onlyDigits = input.replace(/\D/g, '')
+  const amount = Number(onlyDigits) / 100
+
+  if (amount === 0) {
+    return ''
+  }
+
+  return amount.toLocaleString('pt-BR', {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+/**
  * Verifica se um valor no formato brasileiro é um número positivo válido.
  * Usado para validação Zod.
  */

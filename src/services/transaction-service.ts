@@ -22,6 +22,8 @@ export interface TransactionFilters {
   tags?: string[]
   dateFrom?: Date
   dateTo?: Date
+  amountFrom?: number
+  amountTo?: number
   search?: string
 }
 
@@ -123,6 +125,14 @@ export class TransactionService {
       // As datas já vêm com os timestamps corretos do timezone brasileiro
       // Não devemos manipular as horas aqui
       conditions.push(sql`${transactionsTable.date} <= ${filters.dateTo.toISOString()}`)
+    }
+
+    if (filters.amountFrom !== undefined) {
+      conditions.push(sql`${transactionsTable.amount} >= ${filters.amountFrom.toString()}`)
+    }
+
+    if (filters.amountTo !== undefined) {
+      conditions.push(sql`${transactionsTable.amount} <= ${filters.amountTo.toString()}`)
     }
 
     if (filters.search) {
@@ -309,6 +319,14 @@ export class TransactionService {
 
     if (filters.dateTo) {
       conditions.push(sql`${transactionsTable.date} <= ${filters.dateTo.toISOString()}`)
+    }
+
+    if (filters.amountFrom !== undefined) {
+      conditions.push(sql`${transactionsTable.amount} >= ${filters.amountFrom.toString()}`)
+    }
+
+    if (filters.amountTo !== undefined) {
+      conditions.push(sql`${transactionsTable.amount} <= ${filters.amountTo.toString()}`)
     }
 
     if (filters.search) {

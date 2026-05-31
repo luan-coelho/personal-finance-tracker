@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { getCurrentSession } from '@/lib/auth'
 import { canViewSpace } from '@/lib/space-access'
+import { parseAmountFilterParam } from '@/lib/transaction-filter-utils'
 
 import { TransactionService } from '@/services/transaction-service'
 
@@ -21,6 +22,8 @@ export async function GET(request: NextRequest) {
     const tags = searchParams.get('tags')
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
+    const amountFrom = parseAmountFilterParam(searchParams.get('amountFrom'))
+    const amountTo = parseAmountFilterParam(searchParams.get('amountTo'))
     const search = searchParams.get('search')
 
     // Verificar acesso ao espaço se spaceId for fornecido
@@ -41,6 +44,8 @@ export async function GET(request: NextRequest) {
       tags: tags ? tags.split(',') : undefined,
       dateFrom: dateFrom ? new Date(dateFrom) : undefined,
       dateTo: dateTo ? new Date(dateTo) : undefined,
+      amountFrom,
+      amountTo,
       search: search || undefined,
     }
 

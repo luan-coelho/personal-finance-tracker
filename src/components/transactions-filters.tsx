@@ -6,6 +6,7 @@ import {
   CalendarIcon,
   Check,
   ChevronsUpDown,
+  DollarSign,
   Filter,
   PiggyBank,
   Search,
@@ -40,7 +41,10 @@ import { useSpaceMembers } from '@/hooks/use-space-members'
 import { useTags } from '@/hooks/use-tags'
 import { useTransactionCategories } from '@/hooks/use-transactions'
 
+import { formatBrazilianAmountInput } from '@/lib/amount-utils'
 import { useSession } from '@/lib/auth-client'
+import { formatCurrency } from '@/lib/currency'
+import { getActiveTransactionFiltersCount, parseAmountFilterParam } from '@/lib/transaction-filter-utils'
 import { cn } from '@/lib/utils'
 
 export interface TransactionFilters {
@@ -50,6 +54,8 @@ export interface TransactionFilters {
   tags?: string[]
   dateFrom?: Date
   dateTo?: Date
+  amountFrom?: number
+  amountTo?: number
   userId?: string
 }
 
@@ -58,6 +64,18 @@ interface TransactionsFiltersProps {
   onFiltersChange: (filters: TransactionFilters) => void
   onClearFilters: () => void
   hideBadges?: boolean
+}
+
+function formatAmountFilterValue(value: number | undefined) {
+  if (value === undefined) {
+    return ''
+  }
+
+  return value.toLocaleString('pt-BR', {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
 
 export function TransactionsFilters({
@@ -71,6 +89,7 @@ export function TransactionsFilters({
   const [dateFromOpen, setDateFromOpen] = useState(false)
   const [dateToOpen, setDateToOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [draftFilters, setDraftFilters] = useState<TransactionFilters>(filters)
   const [categoryOpen, setCategoryOpen] = useState(false)
   const [userOpen, setUserOpen] = useState(false)
 
@@ -98,13 +117,18 @@ export function TransactionsFilters({
     [spaceMembers],
   )
 
-  const hasActiveFilters = Object.values(filters).some(
-    value => value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true),
-  )
+  const activeFiltersCount = getActiveTransactionFiltersCount(filters)
+  const draftFiltersCount = getActiveTransactionFiltersCount(draftFilters)
+  const hasActiveFilters = activeFiltersCount > 0
+  const hasDraftFilters = draftFiltersCount > 0
 
-  const activeFiltersCount = Object.values(filters).filter(
-    value => value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true),
-  ).length
+  const handleFiltersOpenChange = (open: boolean) => {
+    setFiltersOpen(open)
+
+    if (open) {
+      setDraftFilters(filters)
+    }
+  }
 
   const handleSearchChange = (search: string) => {
     onFiltersChange({ ...filters, search: search || undefined })
@@ -117,11 +141,25 @@ export function TransactionsFilters({
     })
   }
 
+  const handleDraftTypeChange = (type: string) => {
+    setDraftFilters(currentFilters => ({
+      ...currentFilters,
+      type: type === 'all' ? undefined : (type as TransactionType),
+    }))
+  }
+
   const handleCategoryChange = (category: string) => {
     onFiltersChange({
       ...filters,
       category: category === 'all' ? undefined : category,
     })
+  }
+
+  const handleDraftCategoryChange = (category: string) => {
+    setDraftFilters(currentFilters => ({
+      ...currentFilters,
+      category: category === 'all' ? undefined : category,
+    }))
   }
 
   const handleUserChange = (userId: string) => {
@@ -131,6 +169,13 @@ export function TransactionsFilters({
     })
   }
 
+  const handleDraftUserChange = (userId: string) => {
+    setDraftFilters(currentFilters => ({
+      ...currentFilters,
+      userId: userId === 'all' ? undefined : userId,
+    }))
+  }
+
   const handleTagToggle = (tag: string) => {
     const currentTags = filters.tags || []
     const newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag]
@@ -138,6 +183,18 @@ export function TransactionsFilters({
     onFiltersChange({
       ...filters,
       tags: newTags.length > 0 ? newTags : undefined,
+    })
+  }
+
+  const handleDraftTagToggle = (tag: string) => {
+    setDraftFilters(currentFilters => {
+      const currentTags = currentFilters.tags || []
+      const newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag]
+
+      return {
+        ...currentFilters,
+        tags: newTags.length > 0 ? newTags : undefined,
+      }
     })
   }
 
@@ -153,6 +210,19 @@ export function TransactionsFilters({
     setDateFromOpen(false)
   }
 
+  const handleDraftDateFromChange = (date: Date | undefined) => {
+    setDraftFilters(currentFilters => {
+      if (!date) {
+        return { ...currentFilters, dateFrom: undefined }
+      }
+
+      const adjustedDate = new Date(date)
+      adjustedDate.setHours(0, 0, 0, 0)
+      return { ...currentFilters, dateFrom: adjustedDate }
+    })
+    setDateFromOpen(false)
+  }
+
   const handleDateToChange = (date: Date | undefined) => {
     if (date) {
       // Garantir que a data final termine às 23:59:59.999
@@ -165,8 +235,57 @@ export function TransactionsFilters({
     setDateToOpen(false)
   }
 
-  const selectedCategory = categoryOptions.find(opt => opt.value === (filters.category || 'all'))
-  const selectedUser = userOptions.find(opt => opt.value === (filters.userId || 'all'))
+  const handleDraftDateToChange = (date: Date | undefined) => {
+    setDraftFilters(currentFilters => {
+      if (!date) {
+        return { ...currentFilters, dateTo: undefined }
+      }
+
+      const adjustedDate = new Date(date)
+      adjustedDate.setHours(23, 59, 59, 999)
+      return { ...currentFilters, dateTo: adjustedDate }
+    })
+    setDateToOpen(false)
+  }
+
+  const handleAmountFromChange = (value: string) => {
+    const maskedValue = formatBrazilianAmountInput(value)
+    onFiltersChange({ ...filters, amountFrom: parseAmountFilterParam(maskedValue) })
+  }
+
+  const handleDraftAmountFromChange = (value: string) => {
+    const maskedValue = formatBrazilianAmountInput(value)
+    setDraftFilters(currentFilters => ({
+      ...currentFilters,
+      amountFrom: parseAmountFilterParam(maskedValue),
+    }))
+  }
+
+  const handleAmountToChange = (value: string) => {
+    const maskedValue = formatBrazilianAmountInput(value)
+    onFiltersChange({ ...filters, amountTo: parseAmountFilterParam(maskedValue) })
+  }
+
+  const handleDraftAmountToChange = (value: string) => {
+    const maskedValue = formatBrazilianAmountInput(value)
+    setDraftFilters(currentFilters => ({
+      ...currentFilters,
+      amountTo: parseAmountFilterParam(maskedValue),
+    }))
+  }
+
+  const handleApplyFilters = () => {
+    onFiltersChange(draftFilters)
+    setFiltersOpen(false)
+  }
+
+  const handleClearAllFilters = () => {
+    setDraftFilters({})
+    onClearFilters()
+  }
+
+  const selectedCategory = categoryOptions.find(opt => opt.value === (draftFilters.category || 'all'))
+  const selectedUser = userOptions.find(opt => opt.value === (draftFilters.userId || 'all'))
 
   return (
     <div className="w-full space-y-4">
@@ -200,7 +319,7 @@ export function TransactionsFilters({
         )}
 
         {/* Botão de filtros */}
-        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <Sheet open={filtersOpen} onOpenChange={handleFiltersOpenChange}>
           <SheetTrigger asChild>
             <Button variant="outline" className="relative h-10 shrink-0 gap-2">
               <Filter className="h-4 w-4" />
@@ -215,14 +334,14 @@ export function TransactionsFilters({
           <SheetContent className="flex h-full flex-col overflow-hidden p-0">
             <SheetHeader className="flex-shrink-0 px-5 pt-5">
               <SheetTitle>Filtros</SheetTitle>
-              <SheetDescription>Filtre as transações por tipo, categoria, tags e período.</SheetDescription>
+              <SheetDescription>Filtre as transações por tipo, categoria, tags, valor e período.</SheetDescription>
             </SheetHeader>
 
             <div className="flex-1 space-y-6 overflow-y-auto px-5 py-4">
               {/* Tipo */}
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Select value={filters.type || 'all'} onValueChange={handleTypeChange}>
+                <Select value={draftFilters.type || 'all'} onValueChange={handleDraftTypeChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -275,13 +394,13 @@ export function TransactionsFilters({
                               key={option.value}
                               value={option.label}
                               onSelect={() => {
-                                handleCategoryChange(option.value)
+                                handleDraftCategoryChange(option.value)
                                 setCategoryOpen(false)
                               }}>
                               <Check
                                 className={cn(
                                   'mr-2 h-4 w-4',
-                                  (filters.category || 'all') === option.value ? 'opacity-100' : 'opacity-0',
+                                  (draftFilters.category || 'all') === option.value ? 'opacity-100' : 'opacity-0',
                                 )}
                               />
                               {option.label}
@@ -326,13 +445,13 @@ export function TransactionsFilters({
                               key={option.value}
                               value={option.label}
                               onSelect={() => {
-                                handleUserChange(option.value)
+                                handleDraftUserChange(option.value)
                                 setUserOpen(false)
                               }}>
                               <Check
                                 className={cn(
                                   'mr-2 h-4 w-4',
-                                  (filters.userId || 'all') === option.value ? 'opacity-100' : 'opacity-0',
+                                  (draftFilters.userId || 'all') === option.value ? 'opacity-100' : 'opacity-0',
                                 )}
                               />
                               {option.user ? (
@@ -358,13 +477,13 @@ export function TransactionsFilters({
                   <Label>Tags</Label>
                   <div className="flex flex-wrap gap-2">
                     {tags.map((tag: string) => {
-                      const isSelected = filters.tags?.includes(tag)
+                      const isSelected = draftFilters.tags?.includes(tag)
                       return (
                         <Button
                           key={tag}
                           variant={isSelected ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => handleTagToggle(tag)}
+                          onClick={() => handleDraftTagToggle(tag)}
                           className="h-7">
                           {tag}
                           {isSelected && <X className="ml-1 h-3 w-3" />}
@@ -375,68 +494,124 @@ export function TransactionsFilters({
                 </div>
               )}
 
+              {/* Faixa de Valor */}
+              <div className="space-y-4">
+                <Label className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Faixa de valor
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-sm">Mínimo</Label>
+                    <div className="relative">
+                      <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 transform">
+                        R$
+                      </span>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        pattern="[0-9,.]*"
+                        autoComplete="off"
+                        placeholder="0,00"
+                        value={formatAmountFilterValue(draftFilters.amountFrom)}
+                        onChange={e => handleDraftAmountFromChange(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-sm">Máximo</Label>
+                    <div className="relative">
+                      <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 transform">
+                        R$
+                      </span>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        pattern="[0-9,.]*"
+                        autoComplete="off"
+                        placeholder="9999,99"
+                        value={formatAmountFilterValue(draftFilters.amountTo)}
+                        onChange={e => handleDraftAmountToChange(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Período */}
               <div className="space-y-4">
                 <Label>Período</Label>
 
-                {/* Data inicial */}
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground text-sm">De</Label>
-                  <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !filters.dateFrom && 'text-muted-foreground',
-                        )}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {filters.dateFrom ? filters.dateFrom.toLocaleDateString('pt-BR') : 'Data inicial'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={filters.dateFrom}
-                        onSelect={handleDateFromChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Data inicial */}
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground text-sm">De</Label>
+                    <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !draftFilters.dateFrom && 'text-muted-foreground',
+                          )}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {draftFilters.dateFrom ? draftFilters.dateFrom.toLocaleDateString('pt-BR') : 'Data inicial'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={draftFilters.dateFrom}
+                          onSelect={handleDraftDateFromChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
-                {/* Data final */}
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground text-sm">Até</Label>
-                  <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !filters.dateTo && 'text-muted-foreground',
-                        )}>
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {filters.dateTo ? filters.dateTo.toLocaleDateString('pt-BR') : 'Data final'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={filters.dateTo} onSelect={handleDateToChange} initialFocus />
-                    </PopoverContent>
-                  </Popover>
+                  {/* Data final */}
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground text-sm">Até</Label>
+                    <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !draftFilters.dateTo && 'text-muted-foreground',
+                          )}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {draftFilters.dateTo ? draftFilters.dateTo.toLocaleDateString('pt-BR') : 'Data final'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={draftFilters.dateTo}
+                          onSelect={handleDraftDateToChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Botão limpar filtros fixo no rodapé */}
-            {hasActiveFilters && (
-              <SheetFooter className="flex-shrink-0 border-t px-5 pb-5">
-                <Button variant="outline" onClick={onClearFilters} className="w-full">
+            <SheetFooter className="flex-shrink-0 border-t px-5 pb-5">
+              <Button onClick={handleApplyFilters} className="w-full">
+                <Check className="mr-2 h-4 w-4" />
+                Aplicar Filtros
+              </Button>
+              {(hasActiveFilters || hasDraftFilters) && (
+                <Button variant="outline" onClick={handleClearAllFilters} className="w-full">
                   <X className="mr-2 h-4 w-4" />
                   Limpar Filtros
                 </Button>
-              </SheetFooter>
-            )}
+              )}
+            </SheetFooter>
           </SheetContent>
         </Sheet>
 
@@ -500,6 +675,24 @@ export function TransactionsFilters({
             <Badge variant="secondary">
               Até: {filters.dateTo.toLocaleDateString('pt-BR')}
               <button onClick={() => handleDateToChange(undefined)} className="hover:text-destructive ml-1">
+                ×
+              </button>
+            </Badge>
+          )}
+
+          {filters.amountFrom !== undefined && (
+            <Badge variant="secondary">
+              Valor mínimo: {formatCurrency(filters.amountFrom)}
+              <button onClick={() => handleAmountFromChange('')} className="hover:text-destructive ml-1">
+                ×
+              </button>
+            </Badge>
+          )}
+
+          {filters.amountTo !== undefined && (
+            <Badge variant="secondary">
+              Valor máximo: {formatCurrency(filters.amountTo)}
+              <button onClick={() => handleAmountToChange('')} className="hover:text-destructive ml-1">
                 ×
               </button>
             </Badge>
