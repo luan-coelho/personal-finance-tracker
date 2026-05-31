@@ -12,6 +12,7 @@ const withSerwist = withSerwistInit({
 })
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['ws'],
   redirects: async () => [
     {
       source: routes.frontend.home,
