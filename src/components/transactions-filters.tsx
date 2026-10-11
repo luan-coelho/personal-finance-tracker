@@ -5,26 +5,27 @@ import {
   ArrowUpCircle,
   CalendarIcon,
   Check,
-  ChevronsUpDown,
   DollarSign,
   Filter,
+  LayoutGrid,
   PiggyBank,
   Search,
   User,
+  Users,
   X,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import { TransactionType } from '@/app/db/schemas'
 
+import { CategoryIcon } from '@/components/category-icon'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectionButton } from '@/components/ui/selection-button'
 import {
   Sheet,
   SheetContent,
@@ -90,32 +91,12 @@ export function TransactionsFilters({
   const [dateToOpen, setDateToOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState<TransactionFilters>(filters)
-  const [categoryOpen, setCategoryOpen] = useState(false)
-  const [userOpen, setUserOpen] = useState(false)
 
   // Queries para categorias, tags e membros do espaço
   const { data: categories = [] } = useTransactionCategories(selectedSpace?.id || '')
   const { data: tagsData = [] } = useTags(selectedSpace?.id || '')
   const { data: spaceMembers = [] } = useSpaceMembers(selectedSpace?.id || '')
   const tags = tagsData.map(tag => tag.name)
-
-  // Opções para os comboboxes
-  const categoryOptions = useMemo(
-    () => [{ value: 'all', label: 'Todas' }, ...categories.map(category => ({ value: category, label: category }))],
-    [categories],
-  )
-
-  const userOptions = useMemo(
-    () => [
-      { value: 'all', label: 'Todos', user: null },
-      ...spaceMembers.map(member => ({
-        value: member.user.id,
-        label: member.user.name || 'Sem nome',
-        user: member.user,
-      })),
-    ],
-    [spaceMembers],
-  )
 
   const activeFiltersCount = getActiveTransactionFiltersCount(filters)
   const draftFiltersCount = getActiveTransactionFiltersCount(draftFilters)
@@ -284,9 +265,6 @@ export function TransactionsFilters({
     onClearFilters()
   }
 
-  const selectedCategory = categoryOptions.find(opt => opt.value === (draftFilters.category || 'all'))
-  const selectedUser = userOptions.find(opt => opt.value === (draftFilters.userId || 'all'))
-
   return (
     <div className="w-full space-y-4">
       {/* Barra de busca */}
@@ -321,7 +299,7 @@ export function TransactionsFilters({
         {/* Botão de filtros */}
         <Sheet open={filtersOpen} onOpenChange={handleFiltersOpenChange}>
           <SheetTrigger asChild>
-            <Button variant="outline" className="relative h-10 shrink-0 gap-2">
+            <Button variant="outline" aria-label="Filtros" className="relative h-10 shrink-0 gap-2">
               <Filter className="h-4 w-4" />
               <span className="hidden sm:inline">Filtros</span>
               {activeFiltersCount > 0 && (
@@ -331,7 +309,7 @@ export function TransactionsFilters({
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent className="flex h-full flex-col overflow-hidden p-0">
+          <SheetContent className="flex h-full w-full flex-col overflow-hidden p-0">
             <SheetHeader className="flex-shrink-0 px-5 pt-5">
               <SheetTitle>Filtros</SheetTitle>
               <SheetDescription>Filtre as transações por tipo, categoria, tags, valor e período.</SheetDescription>
@@ -341,134 +319,86 @@ export function TransactionsFilters({
               {/* Tipo */}
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Select value={draftFilters.type || 'all'} onValueChange={handleDraftTypeChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="entrada">
-                      <div className="flex items-center gap-2">
-                        <ArrowUpCircle className="h-4 w-4 text-green-600 dark:text-green-500" />
-                        Entradas
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="saida">
-                      <div className="flex items-center gap-2">
-                        <ArrowDownCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
-                        Saídas
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="reserva">
-                      <div className="flex items-center gap-2">
-                        <PiggyBank className="h-4 w-4 text-blue-600 dark:text-blue-500" />
-                        Reservas
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <div role="group" aria-label="Tipo" className="grid grid-cols-3 gap-2">
+                  {(
+                    [
+                      {
+                        value: 'entrada',
+                        label: 'Entrada',
+                        icon: ArrowUpCircle,
+                        color: 'text-green-600 dark:text-green-500',
+                      },
+                      {
+                        value: 'saida',
+                        label: 'Saída',
+                        icon: ArrowDownCircle,
+                        color: 'text-red-600 dark:text-red-500',
+                      },
+                      {
+                        value: 'reserva',
+                        label: 'Reserva',
+                        icon: PiggyBank,
+                        color: 'text-blue-600 dark:text-blue-500',
+                      },
+                    ] as const
+                  ).map(({ value, label, icon: Icon, color }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant={draftFilters.type === value ? 'default' : 'outline'}
+                      aria-pressed={draftFilters.type === value}
+                      onClick={() => handleDraftTypeChange(draftFilters.type === value ? 'all' : value)}
+                      className="min-w-0 gap-1.5 px-2 has-[>svg]:px-2">
+                      <Icon className={draftFilters.type === value ? 'size-4' : `size-4 ${color}`} aria-hidden="true" />
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  {draftFilters.type ? 'Clique no tipo selecionado para mostrar todos.' : 'Mostrando todos os tipos.'}
+                </p>
               </div>
 
-              {/* Categoria com pesquisa */}
+              {/* Categoria */}
               <div className="space-y-2">
                 <Label>Categoria</Label>
-                <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={categoryOpen}
-                      className="w-full justify-between">
-                      {selectedCategory?.label || 'Todas'}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Buscar categoria..." />
-                      <CommandList>
-                        <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
-                        <CommandGroup>
-                          {categoryOptions.map(option => (
-                            <CommandItem
-                              key={option.value}
-                              value={option.label}
-                              onSelect={() => {
-                                handleDraftCategoryChange(option.value)
-                                setCategoryOpen(false)
-                              }}>
-                              <Check
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  (draftFilters.category || 'all') === option.value ? 'opacity-100' : 'opacity-0',
-                                )}
-                              />
-                              {option.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <div role="group" aria-label="Categoria" className="flex flex-wrap gap-2">
+                  <SelectionButton selected={!draftFilters.category} onClick={() => handleDraftCategoryChange('all')}>
+                    <LayoutGrid className="size-4" aria-hidden="true" />
+                    Todas
+                  </SelectionButton>
+                  {categories.map(category => (
+                    <SelectionButton
+                      key={category}
+                      selected={draftFilters.category === category}
+                      onClick={() => handleDraftCategoryChange(category)}>
+                      <CategoryIcon name={category} className="size-4" aria-hidden="true" />
+                      <span className="min-w-0 break-words">{category}</span>
+                    </SelectionButton>
+                  ))}
+                </div>
               </div>
 
-              {/* Usuário com pesquisa */}
+              {/* Usuário */}
               <div className="space-y-2">
                 <Label>Usuário</Label>
-                <Popover open={userOpen} onOpenChange={setUserOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={userOpen}
-                      className="w-full justify-between">
-                      {selectedUser?.user ? (
-                        <div className="flex items-center gap-2">
-                          <UserAvatarDisplay user={selectedUser.user} size="sm" showTooltip={false} />
-                          <span>{selectedUser.label}</span>
-                        </div>
-                      ) : (
-                        selectedUser?.label || 'Todos'
-                      )}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Buscar usuário..." />
-                      <CommandList>
-                        <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {userOptions.map(option => (
-                            <CommandItem
-                              key={option.value}
-                              value={option.label}
-                              onSelect={() => {
-                                handleDraftUserChange(option.value)
-                                setUserOpen(false)
-                              }}>
-                              <Check
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  (draftFilters.userId || 'all') === option.value ? 'opacity-100' : 'opacity-0',
-                                )}
-                              />
-                              {option.user ? (
-                                <div className="flex items-center gap-2">
-                                  <UserAvatarDisplay user={option.user} size="sm" showTooltip={false} />
-                                  <span>{option.label}</span>
-                                </div>
-                              ) : (
-                                option.label
-                              )}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <div role="group" aria-label="Usuário" className="flex flex-wrap gap-2">
+                  <SelectionButton selected={!draftFilters.userId} onClick={() => handleDraftUserChange('all')}>
+                    <Users className="size-4" aria-hidden="true" />
+                    Todos
+                  </SelectionButton>
+                  {spaceMembers.map(({ user }) => (
+                    <SelectionButton
+                      key={user.id}
+                      selected={draftFilters.userId === user.id}
+                      onClick={() => handleDraftUserChange(user.id)}>
+                      <span className="shrink-0" aria-hidden="true">
+                        <UserAvatarDisplay user={user} size="sm" showTooltip={false} />
+                      </span>
+                      <span className="min-w-0 break-words">{user.name || 'Sem nome'}</span>
+                    </SelectionButton>
+                  ))}
+                </div>
               </div>
 
               {/* Tags */}

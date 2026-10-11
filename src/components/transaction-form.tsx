@@ -11,14 +11,15 @@ import { z } from 'zod'
 import { DefaultCategories, Transaction } from '@/app/db/schemas'
 import { insertTransactionSchema } from '@/app/db/schemas/transaction-schema'
 
+import { CategoryIcon } from '@/components/category-icon'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Combobox } from '@/components/ui/combobox'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectionButton } from '@/components/ui/selection-button'
 import { Textarea } from '@/components/ui/textarea'
 
 import { useCategories } from '@/hooks/use-categories'
@@ -129,7 +130,14 @@ export function TransactionForm({
   // Combinar categorias: customCategories + DefaultCategories (fallback)
   const defaultCats = DefaultCategories[currentType as keyof typeof DefaultCategories] || []
   const categoryNames = customCategories.map(c => c.name)
-  const availableCategories = categoryNames.length > 0 ? categoryNames : defaultCats
+  const availableCategories: string[] = [...(categoryNames.length > 0 ? categoryNames : defaultCats)]
+  if (
+    transaction?.type === currentType &&
+    transaction.category &&
+    !availableCategories.includes(transaction.category)
+  ) {
+    availableCategories.push(transaction.category)
+  }
 
   // Máscara de real para o campo amount
   function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -313,18 +321,25 @@ export function TransactionForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Categoria</FormLabel>
-                <FormControl>
-                  <Combobox
-                    options={availableCategories.map((cat: string) => ({ value: cat, label: cat }))}
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    placeholder="Selecione uma categoria"
-                    searchPlaceholder="Pesquisar categoria..."
-                    emptyText="Nenhuma categoria encontrada."
-                    className="h-9"
-                    disabled={isLoading}
-                  />
-                </FormControl>
+                <div role="group" aria-label="Categoria" className="flex flex-wrap gap-2">
+                  {availableCategories.map((category, index) => {
+                    const button = (
+                      <SelectionButton
+                        key={category}
+                        ref={index === 0 ? field.ref : undefined}
+                        aria-label={category}
+                        selected={field.value === category}
+                        onClick={() => field.onChange(category)}
+                        onBlur={field.onBlur}
+                        disabled={isLoading}>
+                        <CategoryIcon name={category} className="size-4" aria-hidden="true" />
+                        <span className="min-w-0 break-words">{category}</span>
+                      </SelectionButton>
+                    )
+
+                    return index === 0 ? <FormControl key={category}>{button}</FormControl> : button
+                  })}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
