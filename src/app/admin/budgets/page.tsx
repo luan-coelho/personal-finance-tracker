@@ -2,7 +2,7 @@
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { Grid3X3, Plus, Table2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
 
@@ -11,6 +11,7 @@ import { BudgetComparisonCard } from '@/components/budget-comparison-card'
 import { BudgetFilters, BudgetFilters as BudgetFiltersType } from '@/components/budget-filters'
 import { BudgetForm } from '@/components/budget-form'
 import { BudgetSummary } from '@/components/budget-summary'
+import { BudgetTransactionsDialog } from '@/components/budget-transactions-dialog'
 import { BudgetsTable } from '@/components/budgets-table'
 import { CopyBudgetDialog } from '@/components/copy-budget-dialog'
 import { MonthSelector } from '@/components/month-selector'
@@ -28,6 +29,8 @@ export default function OrcamentosPage() {
   const { selectedSpace } = useSelectedSpace()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<BudgetWithSpending | null>(null)
+  const [viewingBudgetId, setViewingBudgetId] = useState<string | null>(null)
+  const viewingBudgetTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
   const [filters, setFilters] = useState<BudgetFiltersType>({})
 
@@ -40,14 +43,28 @@ export default function OrcamentosPage() {
   const previousMonthString = `${previousDate.getFullYear()}-${String(previousDate.getMonth() + 1).padStart(2, '0')}`
 
   // Queries para dados do orçamento
-  const { data: budgets = [], isLoading: budgetsLoading } = useBudgetsWithSpending(
-    selectedSpace?.id || '',
-    currentMonthString,
-  )
-  const { data: summary, isLoading: summaryLoading } = useBudgetSummary(selectedSpace?.id || '', currentMonthString)
+  const {
+    data: budgets = [],
+    isLoading: budgetsLoading,
+    refetch: refetchBudgets,
+  } = useBudgetsWithSpending(selectedSpace?.id || '', currentMonthString)
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    refetch: refetchSummary,
+  } = useBudgetSummary(selectedSpace?.id || '', currentMonthString)
 
   // Buscar orçamentos do mês anterior para comparação
   const { data: previousBudgets = [] } = useBudgetsWithSpending(selectedSpace?.id || '', previousMonthString)
+
+  useEffect(() => {
+    setViewingBudgetId(null)
+  }, [selectedSpace?.id, currentMonthString])
+
+  const viewingBudget = budgets.find(
+    budget =>
+      budget.id === viewingBudgetId && budget.spaceId === selectedSpace?.id && budget.month === currentMonthString,
+  )
 
   // Aplicar filtros aos orçamentos
   const filteredBudgets = budgets.filter(budget => {
@@ -87,7 +104,17 @@ export default function OrcamentosPage() {
   }
 
   const handleView = (budget: BudgetWithSpending) => {
-    // Navegar para página de detalhes (implementar se necessário)
+    viewingBudgetTriggerRef.current = document.querySelector<HTMLButtonElement>(
+      `[data-budget-transactions-trigger="${budget.id}"]`,
+    )
+    setViewingBudgetId(budget.id)
+    void refetchBudgets()
+    void refetchSummary()
+  }
+
+  function handleCompositionCloseAutoFocus(event: Event) {
+    event.preventDefault()
+    viewingBudgetTriggerRef.current?.focus()
   }
 
   const handleCreateSuccess = () => {
@@ -160,6 +187,8 @@ export default function OrcamentosPage() {
               <Button
                 variant={viewMode === 'cards' ? 'default' : 'ghost'}
                 size="sm"
+                aria-label="Visualizar em cards"
+                aria-pressed={viewMode === 'cards'}
                 onClick={() => setViewMode('cards')}
                 className="h-8 px-3">
                 <Grid3X3 className="h-4 w-4" />
@@ -167,6 +196,8 @@ export default function OrcamentosPage() {
               <Button
                 variant={viewMode === 'table' ? 'default' : 'ghost'}
                 size="sm"
+                aria-label="Visualizar em tabela"
+                aria-pressed={viewMode === 'table'}
                 onClick={() => setViewMode('table')}
                 className="h-8 px-3">
                 <Table2 className="h-4 w-4" />
@@ -223,7 +254,7 @@ export default function OrcamentosPage() {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {filteredBudgets.map(budget => (
-                    <BudgetCard key={budget.id} budget={budget} onEdit={handleEdit} />
+                    <BudgetCard key={budget.id} budget={budget} onEdit={handleEdit} onView={handleView} />
                   ))}
                 </div>
               )}
@@ -251,6 +282,15 @@ export default function OrcamentosPage() {
             isLoading={budgetsLoading}
           />
         </div>
+      )}
+
+      {viewingBudget && (
+        <BudgetTransactionsDialog
+          key={viewingBudget.id}
+          budget={viewingBudget}
+          onClose={() => setViewingBudgetId(null)}
+          onCloseAutoFocus={handleCompositionCloseAutoFocus}
+        />
       )}
 
       {/* Dialog de edição */}

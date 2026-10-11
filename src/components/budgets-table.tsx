@@ -1,8 +1,8 @@
 'use client'
 
-import { Edit2, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
+import { Edit2, List, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { BudgetWithSpendingAndUser } from '@/app/db/schemas/budget-schema'
 
@@ -44,6 +44,7 @@ interface BudgetsTableProps {
 export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTableProps) {
   const [budgetToDelete, setBudgetToDelete] = useState<BudgetWithSpendingAndUser | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const pendingViewBudgetRef = useRef<BudgetWithSpendingAndUser | null>(null)
   const deleteBudget = useDeleteBudget()
 
   const handleDelete = async () => {
@@ -171,12 +172,28 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
+                      <Button variant="ghost" className="h-8 w-8 p-0" data-budget-transactions-trigger={budget.id}>
                         <MoreHorizontal className="h-4 w-4" />
                         <span className="sr-only">Abrir menu</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent
+                      align="end"
+                      onCloseAutoFocus={event => {
+                        // Abre o modal depois que o menu libera o bloqueio de cliques externos.
+                        const pendingBudget = pendingViewBudgetRef.current
+                        if (pendingBudget?.id !== budget.id) return
+
+                        pendingViewBudgetRef.current = null
+                        event.preventDefault()
+                        onView?.(pendingBudget)
+                      }}>
+                      {onView && (
+                        <DropdownMenuItem onSelect={() => (pendingViewBudgetRef.current = budget)}>
+                          <List className="mr-2 h-4 w-4" />
+                          Ver transações
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem asChild>
                         <Link href={`/admin/budgets/${budget.id}`}>Visualizar Detalhes</Link>
                       </DropdownMenuItem>
