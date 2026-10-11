@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, sql } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/app/db'
 import {
@@ -12,6 +12,7 @@ import { reservesTable } from '@/app/db/schemas/reserve-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
 import { addAmounts, subtractAmounts } from '@/lib/amount-utils'
+import { transactionDescriptionSearch } from '@/lib/transaction-search'
 
 export interface TransactionFilters {
   spaceId?: string
@@ -136,7 +137,7 @@ export class TransactionService {
     }
 
     if (filters.search) {
-      conditions.push(ilike(transactionsTable.description, `%${filters.search}%`))
+      conditions.push(transactionDescriptionSearch(filters.search))
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined
@@ -330,7 +331,7 @@ export class TransactionService {
     }
 
     if (filters.search) {
-      conditions.push(ilike(transactionsTable.description, `%${filters.search}%`))
+      conditions.push(transactionDescriptionSearch(filters.search))
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined
