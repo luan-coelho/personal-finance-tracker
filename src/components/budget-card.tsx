@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit2, MoreVertical, Trash2 } from 'lucide-react'
+import { Edit2, List, MoreVertical, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
@@ -29,10 +29,11 @@ import { cn } from '@/lib/utils'
 interface BudgetCardProps {
   budget: BudgetWithSpending
   onEdit?: (budget: BudgetWithSpending) => void
+  onView?: (budget: BudgetWithSpending) => void
   className?: string
 }
 
-export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
+export function BudgetCard({ budget, onEdit, onView, className }: BudgetCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const deleteBudget = useDeleteBudget()
 
@@ -118,6 +119,17 @@ export function BudgetCard({ budget, onEdit, className }: BudgetCardProps) {
         <div className="flex justify-center">
           <Badge className={getStatusColor(budget.percentage)}>{getStatusText(budget.percentage)}</Badge>
         </div>
+        {onView && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            data-budget-transactions-trigger={budget.id}
+            onClick={() => onView(budget)}>
+            <List className="mr-2 h-4 w-4" />
+            Ver transações
+          </Button>
+        )}
       </CardContent>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

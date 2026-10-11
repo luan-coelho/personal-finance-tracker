@@ -32,9 +32,16 @@ interface TransactionsTableProps {
   onEdit?: (transaction: TransactionWithUser) => void
   onDuplicate?: (transaction: TransactionWithUser) => void
   isLoading?: boolean
+  readOnly?: boolean
 }
 
-export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading }: TransactionsTableProps) {
+export function TransactionsTable({
+  transactions,
+  onEdit,
+  onDuplicate,
+  isLoading,
+  readOnly = false,
+}: TransactionsTableProps) {
   const [transactionToDelete, setTransactionToDelete] = useState<TransactionWithUser | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const deleteMutation = useDeleteTransaction()
@@ -104,7 +111,11 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
       <div className="py-12 text-center">
         <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
         <h3 className="mb-2 text-lg font-semibold">Nenhuma transação encontrada</h3>
-        <p className="text-muted-foreground">Comece criando sua primeira transação para acompanhar suas finanças.</p>
+        <p className="text-muted-foreground">
+          {readOnly
+            ? 'Nenhuma saída neste orçamento.'
+            : 'Comece criando sua primeira transação para acompanhar suas finanças.'}
+        </p>
       </div>
     )
   }
@@ -121,7 +132,7 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
             <TableHead>Tags</TableHead>
             <TableHead>Data</TableHead>
             <TableHead className="text-right">Valor</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
+            {!readOnly && <TableHead className="w-[50px]"></TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -178,55 +189,59 @@ export function TransactionsTable({ transactions, onEdit, onDuplicate, isLoading
                   {formatCurrency(transaction.amount)}
                 </span>
               </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Abrir menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit?.(transaction)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDuplicate?.(transaction)}>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Duplicar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setTransactionToDelete(transaction)}
-                      className="text-destructive"
-                      disabled={deletingId === transaction.id}>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      {deletingId === transaction.id ? 'Excluindo...' : 'Excluir'}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+              {!readOnly && (
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Abrir menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit?.(transaction)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onDuplicate?.(transaction)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Duplicar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setTransactionToDelete(transaction)}
+                        className="text-destructive"
+                        disabled={deletingId === transaction.id}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {deletingId === transaction.id ? 'Excluindo...' : 'Excluir'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Essa ação não pode ser desfeita. A transação &quot;{transactionToDelete?.description}&quot; será excluída
-              permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {!readOnly && (
+        <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Essa ação não pode ser desfeita. A transação &quot;{transactionToDelete?.description}&quot; será
+                excluída permanentemente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+                {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   )
 }

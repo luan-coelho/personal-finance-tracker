@@ -11,6 +11,8 @@ import type {
   UpdateTransactionFormValues,
 } from '@/app/db/schemas'
 
+import { budgetKeys } from '@/hooks/use-budgets'
+
 import { reserveQueryKeys } from '@/services/reserve-service'
 import type { TransactionFilters, TransactionSummary } from '@/services/transaction-service'
 
@@ -38,8 +40,17 @@ export const transactionKeys = {
   byReserve: (reserveId: string) => [...transactionKeys.all, 'byReserve', reserveId] as const,
 }
 
+export interface TransactionQueryOptions {
+  staleTime?: number
+}
+
 // Hook para listar transações
-export function useTransactions(filters: TransactionFilters = {}, page: number = 1, limit: number = 20) {
+export function useTransactions(
+  filters: TransactionFilters = {},
+  page: number = 1,
+  limit: number = 20,
+  options: TransactionQueryOptions = {},
+) {
   return useQuery({
     queryKey: transactionKeys.list(filters, page, limit),
     queryFn: async () => {
@@ -66,7 +77,7 @@ export function useTransactions(filters: TransactionFilters = {}, page: number =
 
       return response.json() as Promise<{ transactions: TransactionWithUser[]; total: number }>
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: options.staleTime ?? 5 * 60 * 1000, // 5 minutos por padrão
   })
 }
 
@@ -86,7 +97,7 @@ export function useTransaction(id: string) {
 }
 
 // Hook para resumo financeiro
-export function useTransactionSummary(filters: TransactionFilters = {}) {
+export function useTransactionSummary(filters: TransactionFilters = {}, options: TransactionQueryOptions = {}) {
   return useQuery({
     queryKey: transactionKeys.summary(filters),
     queryFn: async () => {
@@ -111,7 +122,7 @@ export function useTransactionSummary(filters: TransactionFilters = {}) {
 
       return response.json() as Promise<TransactionSummary>
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: options.staleTime ?? 5 * 60 * 1000, // 5 minutos por padrão
   })
 }
 
@@ -234,6 +245,7 @@ export function useCreateTransaction() {
     onSuccess: (_, variables) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transactionKeys.all })
+      queryClient.invalidateQueries({ queryKey: budgetKeys.all })
       // Se for transação de reserva, invalidar queries de reservas
       if (variables.type === 'reserva' && variables.spaceId) {
         queryClient.invalidateQueries({ queryKey: reserveQueryKeys.all })
@@ -269,6 +281,7 @@ export function useUpdateTransaction() {
     onSuccess: (_, variables) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transactionKeys.all })
+      queryClient.invalidateQueries({ queryKey: budgetKeys.all })
       // Se for ou era transação de reserva, invalidar queries de reservas
       if (variables.data.type === 'reserva' && variables.data.spaceId) {
         queryClient.invalidateQueries({ queryKey: reserveQueryKeys.all })
@@ -302,6 +315,7 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: transactionKeys.all })
+      queryClient.invalidateQueries({ queryKey: budgetKeys.all })
       // Invalidar todas as queries de reservas (não sabemos qual reserva era, então invalidamos todas)
       queryClient.invalidateQueries({ queryKey: reserveQueryKeys.all })
       toast.success('Transação deletada com sucesso!')
