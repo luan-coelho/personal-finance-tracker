@@ -23,11 +23,11 @@ const transaction: TransactionWithUser = {
   updatedAt: null,
 }
 
-function renderTable(transactions: TransactionWithUser[], readOnly?: boolean) {
+function renderTable(transactions: TransactionWithUser[], readOnly?: boolean, actions?: 'all' | 'edit') {
   const client = new QueryClient()
   return renderToStaticMarkup(
     <QueryClientProvider client={client}>
-      <TransactionsTable transactions={transactions} readOnly={readOnly} />
+      <TransactionsTable transactions={transactions} readOnly={readOnly} actions={actions} />
     </QueryClientProvider>,
   )
 }
@@ -50,6 +50,28 @@ describe('TransactionsTable readOnly', () => {
 
     assert.ok(html.includes('Abrir menu'))
     assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 7)
+  })
+
+  it('shows only a directly accessible edit action in edit-only mode', () => {
+    const html = renderTable([transaction], false, 'edit')
+
+    assert.ok(html.includes('aria-label="Editar transação: Compra de mercado"'))
+    assert.ok(html.includes('data-transaction-edit-trigger="transaction-1"'))
+    assert.equal(html.includes('Abrir menu'), false)
+    assert.equal(html.includes('data-slot="dropdown-menu-trigger"'), false)
+    assert.equal(html.includes('Duplicar'), false)
+    assert.equal(html.includes('Excluir'), false)
+    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 7)
+    assert.equal((html.match(/data-slot="table-head"/g) ?? []).length, 7)
+  })
+
+  it('keeps edit actions hidden when read-only mode is also enabled', () => {
+    const html = renderTable([transaction], true, 'edit')
+
+    assert.equal(html.includes('Editar transação:'), false)
+    assert.equal(html.includes('data-transaction-edit-trigger'), false)
+    assert.equal(html.includes('Abrir menu'), false)
+    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 6)
   })
 
   it('shows an empty budget without suggesting transaction creation', () => {

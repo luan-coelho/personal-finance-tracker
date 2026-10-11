@@ -29,14 +29,17 @@ import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transact
 
 import { formatBrazilianAmountInput } from '@/lib/amount-utils'
 import { useSession } from '@/lib/auth-client'
+import { getTransactionFormContextDefaults, type TransactionInitialValues } from '@/lib/transaction-form-utils'
 
 type TransactionFormValues = Omit<z.infer<typeof insertTransactionSchema>, 'tags'> & { tags?: string[] }
+const EMPTY_TRANSACTIONS: Transaction[] = []
 
 interface TransactionFormProps {
   transaction?: Transaction
   onSuccess?: () => void
   onCancel?: () => void
   mode?: 'create' | 'edit' | 'copy'
+  initialValues?: TransactionInitialValues
   /** Transações já carregadas na página para cálculo da data padrão */
   existingTransactions?: Transaction[]
 }
@@ -46,35 +49,31 @@ export function TransactionForm({
   onSuccess,
   onCancel,
   mode,
-  existingTransactions = [],
+  initialValues,
+  existingTransactions = EMPTY_TRANSACTIONS,
 }: TransactionFormProps) {
   const { data: session } = useSession()
   const { selectedSpace } = useSelectedSpace()
   const { monthStartDate } = useMonthSelectorContext()
   const selectedSpaceId = selectedSpace?.id || ''
   const userId = session?.user?.id || ''
-  const transactionDate = transaction?.date
-
-  // Calcular a data padrão: última transação do mês ou primeiro dia do mês
-  const defaultDate = React.useMemo(() => {
-    if (transactionDate) {
-      return new Date(transactionDate)
-    }
-
-    if (existingTransactions.length > 0) {
-      // Ordenar por data decrescente e pegar a mais recente
-      const sortedTransactions = [...existingTransactions].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      )
-      return new Date(sortedTransactions[0].date)
-    }
-
-    // Se não houver transações, usar o primeiro dia do mês selecionado
-    return monthStartDate
-  }, [transactionDate, existingTransactions, monthStartDate])
-
   const formMode = mode ?? (transaction ? 'edit' : 'create')
   const isEditing = formMode === 'edit'
+  const initialType = initialValues?.type
+  const initialCategory = initialValues?.category
+  const initialDate = initialValues?.date
+  const contextDefaults = React.useMemo(
+    () =>
+      getTransactionFormContextDefaults({
+        transaction,
+        initialValues: { type: initialType, category: initialCategory, date: initialDate },
+        existingTransactions,
+        monthStartDate,
+        userId,
+        mode: formMode,
+      }),
+    [transaction, initialType, initialCategory, initialDate, existingTransactions, monthStartDate, userId, formMode],
+  )
 
   // Buscar tags cadastradas no espaço
   const { data: existingTagsData = [] } = useTags(selectedSpaceId)
@@ -83,7 +82,7 @@ export function TransactionForm({
   // Formulário react-hook-form
   const computeDefaultValues = useCallback((): TransactionFormValues => {
     return {
-      type: transaction?.type || 'saida',
+      type: contextDefaults.type,
       amount: transaction?.amount
         ? Number(transaction.amount).toLocaleString('pt-BR', {
             style: 'decimal',
@@ -91,15 +90,15 @@ export function TransactionForm({
             maximumFractionDigits: 2,
           })
         : '',
-      date: defaultDate,
+      date: contextDefaults.date,
       description: transaction?.description || '',
-      category: transaction?.category || undefined,
+      category: contextDefaults.category,
       reserveId: transaction?.reserveId || undefined,
       tags: Array.isArray(transaction?.tags) ? transaction.tags : [],
       spaceId: selectedSpaceId,
-      userId,
+      userId: contextDefaults.userId,
     }
-  }, [selectedSpaceId, userId, transaction, defaultDate])
+  }, [selectedSpaceId, transaction, contextDefaults])
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(insertTransactionSchema) as Resolver<TransactionFormValues>,
@@ -129,7 +128,10 @@ export function TransactionForm({
   // Combinar categorias: customCategories + DefaultCategories (fallback)
   const defaultCats = DefaultCategories[currentType as keyof typeof DefaultCategories] || []
   const categoryNames = customCategories.map(c => c.name)
-  const availableCategories = categoryNames.length > 0 ? categoryNames : defaultCats
+  const baseCategories: readonly string[] = categoryNames.length > 0 ? categoryNames : defaultCats
+  const contextCategory = currentType === contextDefaults.type ? contextDefaults.category : undefined
+  const availableCategories =
+    contextCategory && !baseCategories.includes(contextCategory) ? [contextCategory, ...baseCategories] : baseCategories
 
   // Máscara de real para o campo amount
   function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -150,7 +152,7 @@ export function TransactionForm({
         reserveId: values.type === 'reserva' ? values.reserveId : undefined,
         tags: Array.isArray(values.tags) ? values.tags : [],
         spaceId: selectedSpace.id,
-        userId: session.user.id,
+        userId: contextDefaults.userId,
       }
       if (isEditing && transaction) {
         await updateMutation.mutateAsync({
@@ -197,7 +199,7 @@ export function TransactionForm({
                 <RadioGroup
                   value={field.value}
                   onValueChange={field.onChange}
-                  className="mt-2 flex gap-6"
+                  className="mt-2 flex flex-wrap gap-x-6 gap-y-3"
                   disabled={isLoading}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="entrada" id="entrada" />

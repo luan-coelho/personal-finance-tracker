@@ -33,6 +33,7 @@ interface TransactionsTableProps {
   onDuplicate?: (transaction: TransactionWithUser) => void
   isLoading?: boolean
   readOnly?: boolean
+  actions?: 'all' | 'edit'
 }
 
 export function TransactionsTable({
@@ -41,6 +42,7 @@ export function TransactionsTable({
   onDuplicate,
   isLoading,
   readOnly = false,
+  actions = 'all',
 }: TransactionsTableProps) {
   const [transactionToDelete, setTransactionToDelete] = useState<TransactionWithUser | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -191,31 +193,43 @@ export function TransactionsTable({
               </TableCell>
               {!readOnly && (
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Abrir menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit?.(transaction)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDuplicate?.(transaction)}>
-                        <Copy className="mr-2 h-4 w-4" />
-                        Duplicar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setTransactionToDelete(transaction)}
-                        className="text-destructive"
-                        disabled={deletingId === transaction.id}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {deletingId === transaction.id ? 'Excluindo...' : 'Excluir'}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {actions === 'edit' ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label={`Editar transação: ${transaction.description}`}
+                      data-transaction-edit-trigger={transaction.id}
+                      onClick={() => onEdit?.(transaction)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Abrir menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onEdit?.(transaction)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDuplicate?.(transaction)}>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Duplicar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setTransactionToDelete(transaction)}
+                          className="text-destructive"
+                          disabled={deletingId === transaction.id}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {deletingId === transaction.id ? 'Excluindo...' : 'Excluir'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               )}
             </TableRow>
@@ -223,7 +237,7 @@ export function TransactionsTable({
         </TableBody>
       </Table>
 
-      {!readOnly && (
+      {!readOnly && actions === 'all' && (
         <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
