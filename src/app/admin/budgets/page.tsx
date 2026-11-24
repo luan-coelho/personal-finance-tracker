@@ -24,6 +24,9 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { useBudgetSummary, useBudgetsWithSpending } from '@/hooks/use-budgets'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 
+import { getBudgetStatus } from '@/lib/budget-status'
+import { addMonths, toMonthString } from '@/lib/date-utils'
+
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 export default function OrcamentosPage() {
@@ -37,11 +40,10 @@ export default function OrcamentosPage() {
 
   // Hook para controle de mês/ano do contexto global
   const monthSelector = useMonthSelectorContext()
-  const currentMonthString = `${monthSelector.selectedYear}-${String(monthSelector.selectedMonth + 1).padStart(2, '0')}`
+  const currentMonthString = toMonthString(monthSelector.selectedYear, monthSelector.selectedMonth)
 
   // Calcular mês anterior
-  const previousDate = new Date(monthSelector.selectedYear, monthSelector.selectedMonth - 1)
-  const previousMonthString = `${previousDate.getFullYear()}-${String(previousDate.getMonth() + 1).padStart(2, '0')}`
+  const previousMonthString = addMonths(currentMonthString, -1)
 
   // Queries para dados do orçamento
   const {
@@ -83,10 +85,8 @@ export default function OrcamentosPage() {
     }
 
     // Filtro de status
-    if (filters.status && filters.status !== 'all') {
-      if (filters.status === 'exceeded' && budget.percentage <= 100) return false
-      if (filters.status === 'near' && (budget.percentage < 80 || budget.percentage > 100)) return false
-      if (filters.status === 'within' && budget.percentage >= 80) return false
+    if (filters.status && filters.status !== 'all' && getBudgetStatus(budget.percentage) !== filters.status) {
+      return false
     }
 
     // Filtro de valor

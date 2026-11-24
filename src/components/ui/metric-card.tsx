@@ -20,6 +20,29 @@ const noteToneClass = {
   success: 'font-medium text-success-text',
 } as const
 
+type TrendTone = 'primary' | 'success' | 'error' | 'warning' | 'info'
+
+// Radar `.sst-metric__trend--*`: traço na cor cheia da família; padrão `muted-fg`.
+const trendToneClass: Record<TrendTone, string> = {
+  primary: 'text-primary',
+  success: 'text-success',
+  error: 'text-error',
+  warning: 'text-warning',
+  info: 'text-info',
+}
+
+/** Caminho da sparkline 96×32 (Radar `metricSparkPath`): 2px de respiro lateral, 4px vertical, min–max normalizado. */
+function sparkPath(values: number[]) {
+  const n = values.length
+  if (n < 2) return ''
+  const min = Math.min(...values)
+  const span = Math.max(...values) - min || 1
+  const points = values.map(
+    (value, index) => `${(2 + index * (92 / (n - 1))).toFixed(1)} ${(28 - ((value - min) / span) * 24).toFixed(1)}`,
+  )
+  return `M${points.join('L')}`
+}
+
 const valueToneClass = {
   default: 'text-foreground',
   success: 'text-success-text',
@@ -45,6 +68,13 @@ type MetricCardProps = Omit<React.ComponentProps<'div'>, 'children'> & {
   tone?: keyof typeof valueToneClass
   /** Discreet 16px icon next to the label. */
   icon?: IconName
+  /**
+   * Série da sparkline de 96×32 à direita do valor (traço 2, uma cor, sem eixos). Indica direção,
+   * não valores. Some quando a linha do valor tem menos de 160px.
+   */
+  trend?: number[]
+  /** Cor do traço da sparkline. Padrão `muted-fg`. */
+  trendTone?: TrendTone
   /** 6px bar under the value, 0–100. */
   progress?: number
   loading?: boolean
@@ -66,6 +96,8 @@ function MetricCard({
   noteTone,
   tone = 'default',
   icon,
+  trend,
+  trendTone,
   progress,
   loading = false,
   children,
@@ -86,7 +118,30 @@ function MetricCard({
   }
 
   const resolvedDeltaTone = deltaTone ?? (deltaTrend === 'down' ? 'error' : 'success')
+  const hasTrend = trend !== undefined && trend.length > 1
   const clampedProgress = progress === undefined ? undefined : Math.min(100, Math.max(0, progress))
+
+  const valueRow = (
+    <>
+      <span
+        data-slot="metric-card-value"
+        className={cn('text-[32px] leading-9 font-bold tracking-[-0.02em] tabular-nums', valueToneClass[tone])}>
+        {value}
+        {unit && <span className="text-muted-foreground text-xl font-medium tracking-normal">{unit}</span>}
+      </span>
+      {delta && (
+        <span
+          data-slot="metric-card-delta"
+          className={cn(
+            'inline-flex h-[22px] items-center gap-0.5 rounded-full px-2 text-xs leading-4 font-semibold whitespace-nowrap tabular-nums',
+            deltaToneClass[resolvedDeltaTone],
+          )}>
+          <Icon name={deltaTrend === 'down' ? 'arrow-down' : 'arrow-up'} size={12} strokeWidth={2.5} />
+          {delta}
+        </span>
+      )}
+    </>
+  )
 
   return (
     <div data-slot="metric-card" className={cn(base, 'gap-3', className)} {...props}>
@@ -96,25 +151,31 @@ function MetricCard({
         {icon && <Icon name={icon} size={16} />}
         <span className="min-w-0">{label}</span>
       </div>
-      <div className="flex flex-wrap items-baseline gap-2.5">
-        <span
-          data-slot="metric-card-value"
-          className={cn('text-[32px] leading-9 font-bold tracking-[-0.02em] tabular-nums', valueToneClass[tone])}>
-          {value}
-          {unit && <span className="text-muted-foreground text-xl font-medium tracking-normal">{unit}</span>}
-        </span>
-        {delta && (
-          <span
-            data-slot="metric-card-delta"
+      {hasTrend ? (
+        // Quebra em vez de sobrepor: sem espaço ao lado do valor, a sparkline desce para a linha de baixo
+        <div className="@container flex min-w-0 flex-wrap items-center justify-between gap-x-2.5 gap-y-2">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-2.5">{valueRow}</div>
+          <svg
+            data-slot="metric-card-trend"
+            viewBox="0 0 96 32"
+            width={96}
+            height={32}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
             className={cn(
-              'inline-flex h-[22px] items-center gap-0.5 rounded-full px-2 text-xs leading-4 font-semibold whitespace-nowrap tabular-nums',
-              deltaToneClass[resolvedDeltaTone],
+              'ml-auto shrink-0 @max-[160px]:hidden',
+              trendTone ? trendToneClass[trendTone] : 'text-muted-foreground',
             )}>
-            <Icon name={deltaTrend === 'down' ? 'arrow-down' : 'arrow-up'} size={12} strokeWidth={2.5} />
-            {delta}
-          </span>
-        )}
-      </div>
+            <path d={sparkPath(trend)} />
+          </svg>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-baseline gap-2.5">{valueRow}</div>
+      )}
       {clampedProgress !== undefined && (
         <div
           role="progressbar"
@@ -137,5 +198,5 @@ function MetricCard({
   )
 }
 
-export type { MetricCardProps }
+export type { MetricCardProps, TrendTone as MetricCardTrendTone }
 export { MetricCard }

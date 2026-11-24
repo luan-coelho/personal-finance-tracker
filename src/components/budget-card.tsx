@@ -30,17 +30,11 @@ import { Progress } from '@/components/ui/progress'
 
 import { useDeleteBudget } from '@/hooks/use-budgets'
 
+import { type BudgetStatus, getBudgetStatus } from '@/lib/budget-status'
 import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
-export type BudgetStatus = 'within' | 'near' | 'exceeded'
-
-/** Mesmos limites do filtro de status: > 100% estourado, 80–100% perto do limite. */
-export function getBudgetStatus(percentage: number): BudgetStatus {
-  if (percentage > 100) return 'exceeded'
-  if (percentage >= 80) return 'near'
-  return 'within'
-}
+export { type BudgetStatus, getBudgetStatus }
 
 export const budgetStatusMeta: Record<
   BudgetStatus,

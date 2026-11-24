@@ -204,3 +204,52 @@ export function getMonthNameInPortuguese(monthIndex: number): string {
 export function getNowInBrazil(): Date {
   return getBrazilNow()
 }
+
+/**
+ * Monta a string de mês 'YYYY-MM'
+ * @param year Ano
+ * @param month0 Mês (0-11); valores fora da faixa são normalizados (ex.: -1 vira dezembro do ano anterior)
+ */
+export function toMonthString(year: number, month0: number): string {
+  const normalizedYear = year + Math.floor(month0 / 12)
+  const normalizedMonth = ((month0 % 12) + 12) % 12
+  return `${normalizedYear}-${String(normalizedMonth + 1).padStart(2, '0')}`
+}
+
+/**
+ * Lê uma string 'YYYY-MM'
+ * @returns { year, month0 } com month0 de 0 a 11
+ */
+export function parseMonthString(monthString: string): { year: number; month0: number } {
+  const [year, month] = monthString.split('-').map(Number)
+  return { year, month0: month - 1 }
+}
+
+/**
+ * Soma (ou subtrai) meses de uma string 'YYYY-MM'
+ * @example addMonths('2025-12', 1) // '2026-01'
+ */
+export function addMonths(monthString: string, n: number): string {
+  const { year, month0 } = parseMonthString(monthString)
+  return toMonthString(year, month0 + n)
+}
+
+/**
+ * Quantidade de dias do mês (28 a 31)
+ * @param year Ano
+ * @param month0 Mês (0-11)
+ */
+export function getDaysInMonth(year: number, month0: number): number {
+  return new Date(Date.UTC(year, month0 + 1, 0)).getUTCDate()
+}
+
+const SHORT_MONTH_NAMES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+
+/**
+ * Nome do mês em português minúsculo a partir de 'YYYY-MM'
+ * @param style 'long' ("outubro") ou 'short' ("out")
+ */
+export function getMonthLabel(monthString: string, style: 'long' | 'short' = 'long'): string {
+  const { month0 } = parseMonthString(monthString)
+  return style === 'short' ? (SHORT_MONTH_NAMES[month0] ?? 'jan') : getMonthNameInPortuguese(month0)
+}

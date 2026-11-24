@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
     },
     {
       source: '/admin',
-      destination: routes.frontend.admin.transactions.index,
+      destination: routes.frontend.admin.index,
       permanent: false,
     },
   ],

@@ -11,11 +11,11 @@ export default function NotFoundPage() {
       <EmptyState
         icon="search"
         title="Página não encontrada"
-        description="O endereço pode estar errado ou a página foi removida. Volte para as suas transações."
+        description="O endereço pode estar errado ou a página foi removida. Volte para o início."
         action={
           <Button asChild variant="primary">
             <Link href={routes.frontend.admin.index} prefetch={false}>
-              Ir para transações
+              Ir para o início
             </Link>
           </Button>
         }

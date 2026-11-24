@@ -1,7 +1,36 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { getActiveTransactionFiltersCount, parseAmountFilterParam } from './transaction-filter-utils'
+import {
+  buildTransactionUrlQuery,
+  getActiveTransactionFiltersCount,
+  parseAmountFilterParam,
+  parseTransactionUrlFilters,
+} from './transaction-filter-utils'
+
+describe('parseTransactionUrlFilters', () => {
+  it('reads type, category and userId', () => {
+    const params = new URLSearchParams('type=saida&category=Mercado%20%26%20feira&userId=u1')
+    assert.deepEqual(parseTransactionUrlFilters(params), { type: 'saida', category: 'Mercado & feira', userId: 'u1' })
+  })
+
+  it('ignores unknown types and blank values', () => {
+    const params = new URLSearchParams('type=outro&category=%20&userId=')
+    assert.deepEqual(parseTransactionUrlFilters(params), {})
+  })
+})
+
+describe('buildTransactionUrlQuery', () => {
+  it('round-trips with parseTransactionUrlFilters', () => {
+    const query = buildTransactionUrlQuery({ type: 'saida', category: 'Saúde' })
+    assert.equal(query, '?type=saida&category=Sa%C3%BAde')
+    assert.deepEqual(parseTransactionUrlFilters(new URLSearchParams(query)), { type: 'saida', category: 'Saúde' })
+  })
+
+  it('returns an empty string without filters', () => {
+    assert.equal(buildTransactionUrlQuery({}), '')
+  })
+})
 
 describe('parseAmountFilterParam', () => {
   it('parses decimal and Brazilian currency-like values', () => {

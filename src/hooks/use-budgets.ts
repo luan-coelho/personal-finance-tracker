@@ -10,6 +10,8 @@ import type {
   UpdateBudgetFormValues,
 } from '@/app/db/schemas/budget-schema'
 
+import { dashboardKeys } from '@/hooks/use-dashboard'
+
 export interface BudgetSummary {
   totalBudget: number
   totalSpent: number
@@ -110,6 +112,7 @@ export function useCreateBudget() {
     onSuccess: newBudget => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: budgetKeys.all })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
       toast.success('Orçamento criado com sucesso!')
     },
     onError: error => {
@@ -140,6 +143,7 @@ export function useUpdateBudget() {
     onSuccess: () => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: budgetKeys.all })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
       toast.success('Orçamento atualizado com sucesso!')
     },
     onError: error => {
@@ -168,6 +172,7 @@ export function useDeleteBudget() {
     onSuccess: () => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: budgetKeys.all })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
       toast.success('Orçamento deletado com sucesso!')
     },
     onError: error => {

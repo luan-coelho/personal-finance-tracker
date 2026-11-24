@@ -3,6 +3,8 @@ import { toast } from 'sonner'
 
 import type { ReserveFormValues } from '@/app/db/schemas/reserve-schema'
 
+import { dashboardKeys } from '@/hooks/use-dashboard'
+
 import {
   createReserve,
   deleteReserve,
@@ -39,6 +41,7 @@ export function useCreateReserve() {
     mutationFn: (data: ReserveFormValues) => createReserve(data),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: reserveQueryKeys.list(data.spaceId) })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
       toast.success('Reserva criada com sucesso!')
     },
     onError: (error: Error) => {
@@ -55,6 +58,7 @@ export function useUpdateReserve(id: string, spaceId: string) {
     mutationFn: (data: Partial<ReserveFormValues>) => updateReserve(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reserveQueryKeys.list(spaceId) })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
       queryClient.invalidateQueries({ queryKey: reserveQueryKeys.detail(id) })
       toast.success('Reserva atualizada com sucesso!')
     },
@@ -72,6 +76,7 @@ export function useDeleteReserve(spaceId: string) {
     mutationFn: (id: string) => deleteReserve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reserveQueryKeys.list(spaceId) })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
       toast.success('Reserva excluída com sucesso!')
     },
     onError: (error: Error) => {
@@ -88,6 +93,7 @@ export function useToggleReserveStatus(spaceId: string) {
     mutationFn: (id: string) => toggleReserveStatus(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reserveQueryKeys.list(spaceId) })
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
       toast.success('Status da reserva alterado com sucesso!')
     },
     onError: (error: Error) => {

@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useCallback, useMemo, useState } from 'react'
 
 import type { Transaction } from '@/app/db/schemas'
 
@@ -30,29 +31,51 @@ import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTransactionSummary, useTransactions } from '@/hooks/use-transactions'
 
 import { formatCurrency } from '@/lib/currency'
-import { getBrazilCurrentYearMonth, getMonthRangeBrazil } from '@/lib/date-utils'
+import { buildTransactionUrlQuery, parseTransactionUrlFilters } from '@/lib/transaction-filter-utils'
 import { cn } from '@/lib/utils'
+
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 import TransacoesLoading from './loading'
 
+// `useSearchParams` exige Suspense para a rota continuar pré-renderizável.
 export default function TransacoesPage() {
+  return (
+    <Suspense fallback={<TransacoesLoading />}>
+      <TransacoesContent />
+    </Suspense>
+  )
+}
+
+function TransacoesContent() {
   const { selectedSpace, isLoading: isSpaceLoading } = useSelectedSpace()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const monthSelector = useMonthSelectorContext()
   const [page, setPage] = useState(1)
-  const [filters, setFilters] = useState<TransactionFilters>({})
+  // Filtros iniciais vindos da URL (ex.: link "ver transações de Mercado" no Início)
+  const [filters, setFilters] = useState<TransactionFilters>(() => parseTransactionUrlFilters(searchParams))
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [prefillTransaction, setPrefillTransaction] = useState<Transaction | null>(null)
 
-  // Estado para controle de mês/ano - usando timezone brasileiro
+  // Mês/ano começa no mês do seletor compartilhado (o mesmo escolhido no Início)
   const [showAllTransactions, setShowAllTransactions] = useState(false)
-  const [monthStartDate, setMonthStartDate] = useState(() => {
-    const { year, month } = getBrazilCurrentYearMonth()
-    return getMonthRangeBrazil(year, month).start
-  })
-  const [monthEndDate, setMonthEndDate] = useState(() => {
-    const { year, month } = getBrazilCurrentYearMonth()
-    return getMonthRangeBrazil(year, month).end
-  })
+  const [monthStartDate, setMonthStartDate] = useState(monthSelector.monthStartDate)
+  const [monthEndDate, setMonthEndDate] = useState(monthSelector.monthEndDate)
+
+  // Mantém na URL só os filtros linkáveis, para recarregar ou compartilhar a mesma visão
+  const syncUrlFilters = (nextFilters: TransactionFilters) => {
+    const query = buildTransactionUrlQuery({
+      type: nextFilters.type,
+      category: nextFilters.category,
+      userId: nextFilters.userId,
+    })
+    if (query !== (searchParams.size ? `?${searchParams.toString()}` : '')) {
+      router.replace(`${pathname}${query}`, { scroll: false })
+    }
+  }
 
   // Adicionar spaceId e filtro mensal condicional aos filtros - memoizado para evitar recriação
   const queryFilters = useMemo(
@@ -76,6 +99,7 @@ export default function TransacoesPage() {
 
   const handleFiltersChange = (newFilters: TransactionFilters) => {
     setFilters(newFilters)
+    syncUrlFilters(newFilters)
     setPage(1) // Reset para primeira página quando filtros mudam
     // Se o usuário definiu filtros de data, desabilitar o filtro mensal automático
     if (newFilters.dateFrom || newFilters.dateTo) {
@@ -85,6 +109,7 @@ export default function TransacoesPage() {
 
   const handleClearFilters = () => {
     setFilters({})
+    syncUrlFilters({})
     setPage(1)
   }
 

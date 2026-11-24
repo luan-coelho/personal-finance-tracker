@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Finanças Pessoais',
     short_name: 'Finanças',
     description: 'Aplicativo pessoal de controle financeiro',
-    start_url: '/admin/transactions',
+    start_url: '/admin/home',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
@@ -30,6 +30,11 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
     shortcuts: [
+      {
+        name: 'Início',
+        url: '/admin/home',
+        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
+      },
       {
         name: 'Transações',
         url: '/admin/transactions',

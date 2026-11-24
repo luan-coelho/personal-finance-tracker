@@ -3,6 +3,7 @@
 import { type ReactNode, useState } from 'react'
 import { toast } from 'sonner'
 
+import { CategoryIconTile } from '@/components/category-icon'
 import { QueryErrorCard } from '@/components/query-error-card'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { BarChart } from '@/components/ui/bar-chart'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -32,8 +34,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { DonutChart } from '@/components/ui/donut-chart'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Icon } from '@/components/ui/icon'
+import { LineChart } from '@/components/ui/line-chart'
+import { List, ListItem } from '@/components/ui/list-item'
 import { MetricCard } from '@/components/ui/metric-card'
 import {
   Pagination,
@@ -60,6 +65,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+import { formatCurrency } from '@/lib/currency'
+import { cn } from '@/lib/utils'
 
 const transactions = [
   {
@@ -96,6 +104,44 @@ const transactions = [
   },
 ]
 
+// Gasto diário fictício: outubro inteiro e novembro até hoje (dia 24).
+const octoberDaily = [
+  180, 42, 0, 310, 95, 60, 1250, 38, 74, 0, 220, 130, 56, 0, 410, 88, 47, 260, 0, 115, 72, 340, 64, 0, 190, 58, 83, 0,
+  275, 96, 140,
+]
+const novemberDaily = [
+  95, 60, 0, 1250, 44, 120, 38, 0, 210, 66, 52, 0, 180, 92, 315, 40, 0, 130, 75, 58, 240, 0, 110, 342,
+]
+
+function cumulative(values: number[]) {
+  let total = 0
+  return values.map(value => {
+    total += value
+    return total
+  })
+}
+
+const dayLabels = Array.from({ length: 31 }, (_, i) => (i === 0 || (i + 1) % 5 === 0 ? String(i + 1) : ''))
+
+const monthlyOutflows = [
+  { label: 'jun', value: 4620 },
+  { label: 'jul', value: 5180 },
+  { label: 'ago', value: 4390 },
+  { label: 'set', value: 4875 },
+  { label: 'out', value: 5310 },
+  { label: 'nov', value: 4912 },
+]
+
+const compactCurrency = (value: number) =>
+  value >= 1000 ? `${(value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil` : String(value)
+
+const recentTransactions = [
+  { id: 1, description: 'Supermercado Pão Dourado', category: 'Alimentação', meta: 'Hoje · Cartão', amount: -342.18 },
+  { id: 2, description: 'Uber', category: 'Transporte', meta: 'Ontem · Pix', amount: -27.4 },
+  { id: 3, description: 'Conta de energia', category: 'Moradia', meta: '10 nov · Boleto', amount: -214.9 },
+  { id: 4, description: 'Salário', category: 'Salário', meta: '5 nov · Transferência', amount: 8200 },
+]
+
 const badgeTones = ['neutral', 'success', 'warning', 'error', 'info', 'primary'] as const
 const badgeLabels: Record<(typeof badgeTones)[number], string> = {
   neutral: 'Rascunho',
@@ -121,6 +167,8 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 export function DisplaySection() {
   const [selected, setSelected] = useState<number>(2)
   const [open, setOpen] = useState(false)
+  const [activeMonth, setActiveMonth] = useState<number | null>(null)
+  const [selectedTransaction, setSelectedTransaction] = useState(3)
 
   return (
     <div className="flex flex-col gap-10">
@@ -148,6 +196,179 @@ export function DisplaySection() {
           <MetricCard label="Orçamento usado" value="64" unit="%" progress={64} note="R$ 3.200,00 de R$ 5.000,00" />
           <MetricCard label="Saldo" value="" loading />
         </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            label="Gasto até hoje"
+            value="R$ 3.517"
+            trend={cumulative(novemberDaily)}
+            trendTone="primary"
+            note="9% a menos que no dia 24 de outubro"
+          />
+          <MetricCard
+            label="Saídas por mês"
+            value="R$ 4.912"
+            trend={monthlyOutflows.map(m => m.value)}
+            note="média de 6 meses: R$ 4.881"
+          />
+          <MetricCard
+            label="Alimentação"
+            value="91"
+            unit="%"
+            trend={[42, 55, 61, 70, 78, 91]}
+            trendTone="warning"
+            note="R$ 910 de R$ 1.000"
+            noteTone="warning"
+          />
+          <MetricCard className="w-40" label="Card estreito" value="37" trend={[4, 10, 6, 16, 12, 20]} />
+        </div>
+      </Block>
+
+      <Block title="Line chart">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gasto acumulado</CardTitle>
+              <CardDescription>novembro até o dia 24 vs. outubro</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <LineChart
+                aria-label="Gasto acumulado: R$ 3.517 até o dia 24 de novembro; outubro fechou em R$ 4.693."
+                labels={dayLabels}
+                format={formatCurrency}
+                marker={{ index: novemberDaily.length - 1 }}
+                series={[
+                  {
+                    name: 'novembro',
+                    values: [...cumulative(novemberDaily), ...Array<null>(31 - novemberDaily.length).fill(null)],
+                  },
+                  { name: 'outubro', values: cumulative(octoberDaily) },
+                ]}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <LineChart
+                title="Saídas por mês"
+                subtitle="últimos 6 meses"
+                aria-label="Saídas por mês, de junho a novembro: entre R$ 4.390 e R$ 5.310."
+                labels={monthlyOutflows.map(m => m.label)}
+                format={formatCurrency}
+                min={3000}
+                max={6000}
+                marker={{ index: 4 }}
+                series={[{ name: 'Saídas', values: monthlyOutflows.map(m => m.value) }]}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </Block>
+
+      <Block title="Bar chart">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardContent>
+              <BarChart
+                title="Saídas por mês"
+                subtitle="clique para filtrar"
+                data={monthlyOutflows}
+                format={compactCurrency}
+                activeIndex={activeMonth}
+                onBarClick={index => setActiveMonth(current => (current === index ? null : index))}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <BarChart
+                title="Maiores categorias"
+                subtitle="novembro"
+                height={120}
+                format={compactCurrency}
+                data={[
+                  { label: 'Moradia', value: 1850 },
+                  { label: 'Mercado', value: 1240, tone: 'error' },
+                  { label: 'Transporte', value: 620 },
+                  { label: 'Lazer', value: 410, dim: true },
+                  { label: 'Saúde', value: 280, dim: true },
+                ]}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </Block>
+
+      <Block title="Donut chart">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardContent>
+              <DonutChart
+                title="Para onde foi a renda"
+                totalLabel="R$ 8.200"
+                unit="de entradas"
+                format={formatCurrency}
+                segments={[
+                  { label: 'Gasto', value: 4912.35, tone: 'warning' },
+                  { label: 'Guardado', value: 1500, tone: 'success' },
+                  { label: 'Sobra', value: 1787.65, tone: 'info' },
+                ]}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <DonutChart
+                title="Orçamentos"
+                unit="orçamentos"
+                size={96}
+                thickness={12}
+                segments={[
+                  { label: 'Dentro do limite', value: 5, tone: 'success' },
+                  { label: 'Perto do limite', value: 2, tone: 'warning' },
+                  { label: 'Estourados', value: 1, tone: 'error' },
+                ]}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </Block>
+
+      <Block title="List item">
+        <Card className="max-w-xl">
+          <CardHeader>
+            <CardTitle>Últimas transações</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <List className="-mx-2">
+              {recentTransactions.map(t => (
+                <ListItem
+                  key={t.id}
+                  leading={<CategoryIconTile name={t.category} iconSize={20} className="size-10" />}
+                  title={t.description}
+                  meta={`${t.category} · ${t.meta}`}
+                  selected={selectedTransaction === t.id}
+                  onClick={() => setSelectedTransaction(t.id)}
+                  right={
+                    <span
+                      className={cn(
+                        'text-sm font-semibold whitespace-nowrap tabular-nums',
+                        t.amount > 0 && 'text-success-text',
+                      )}>
+                      {t.amount > 0 ? formatCurrency(t.amount) : `- ${formatCurrency(-t.amount)}`}
+                    </span>
+                  }
+                />
+              ))}
+              <ListItem
+                icon="arrow-right"
+                tone="primary"
+                title="Ver todas as transações"
+                href="#"
+                right={<Icon name="chevron-right" size={16} className="text-muted-foreground" />}
+              />
+            </List>
+          </CardContent>
+        </Card>
       </Block>
 
       <Block title="Card">

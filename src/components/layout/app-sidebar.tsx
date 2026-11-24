@@ -55,6 +55,7 @@ const navGroups: NavGroup[] = [
   {
     title: 'Finanças',
     items: [
+      { label: 'Início', href: routes.frontend.admin.home.index, icon: 'home' },
       { label: 'Transações', href: routes.frontend.admin.transactions.index, icon: 'credit-card' },
       { label: 'Orçamentos', href: routes.frontend.admin.budgets.index, icon: 'target' },
       { label: 'Reservas', href: routes.frontend.admin.reserves.index, icon: 'piggy-bank' },

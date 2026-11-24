@@ -21,7 +21,11 @@ export const routes = {
   frontend: {
     home: '/',
     admin: {
-      index: '/admin/transactions',
+      /** Destino depois do login e de `/` e `/admin`. */
+      index: '/admin/home',
+      home: {
+        index: '/admin/home',
+      },
       users: {
         index: '/admin/users',
       },
@@ -62,6 +66,7 @@ export const routes = {
 
   // Rotas da API (backend)
   api: {
+    dashboard: '/api/dashboard',
     users: {
       base: '/api/users',
       byId: (id: string) => `/api/users/${validateId(id)}`,

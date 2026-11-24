@@ -5,6 +5,7 @@ import { MetricCard } from '@/components/ui/metric-card'
 
 import type { BudgetSummary as BudgetSummaryType } from '@/hooks/use-budgets'
 
+import { getBudgetStatus } from '@/lib/budget-status'
 import { formatCurrency } from '@/lib/currency'
 
 interface BudgetSummaryProps {
@@ -47,8 +48,9 @@ export function BudgetSummary({ summary, isLoading, month }: BudgetSummaryProps)
 
   const overallPercentage = summary.totalBudget > 0 ? (summary.totalSpent / summary.totalBudget) * 100 : 0
 
-  const isOverBudget = overallPercentage > 100
-  const isNearLimit = overallPercentage >= 80 && overallPercentage <= 100
+  const overallStatus = getBudgetStatus(overallPercentage)
+  const isOverBudget = overallStatus === 'exceeded'
+  const isNearLimit = overallStatus === 'near'
 
   const categoryAlerts = [
     summary.categoriesOverBudget > 0 && plural(summary.categoriesOverBudget, 'estourada', 'estouradas'),

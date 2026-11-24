@@ -10,6 +10,7 @@ import {
 import { transactionsTable } from '@/app/db/schemas/transaction-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
+import { getBudgetStatus } from '@/lib/budget-status'
 import { getMonthRangeBrazil } from '@/lib/date-utils'
 
 export interface BudgetFilters {
@@ -181,8 +182,8 @@ export class BudgetService {
         ? budgetsWithSpending.reduce((sum, b) => sum + b.percentage, 0) / budgetsWithSpending.length
         : 0
 
-    const categoriesOverBudget = budgetsWithSpending.filter(b => b.percentage > 100).length
-    const categoriesNearLimit = budgetsWithSpending.filter(b => b.percentage >= 80 && b.percentage <= 100).length
+    const categoriesOverBudget = budgetsWithSpending.filter(b => getBudgetStatus(b.percentage) === 'exceeded').length
+    const categoriesNearLimit = budgetsWithSpending.filter(b => getBudgetStatus(b.percentage) === 'near').length
 
     return {
       totalBudget,
