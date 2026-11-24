@@ -3,14 +3,7 @@ import { toast } from 'sonner'
 
 import type { UserFormValues } from '@/app/db/schemas/user-schema'
 
-import {
-  createUser,
-  deleteUser,
-  getAllUsers,
-  toggleUserStatus,
-  updateUser,
-  userQueryKeys,
-} from '@/services/user-service'
+import { createUser, getAllUsers, toggleUserStatus, updateUser, userQueryKeys } from '@/services/user-service'
 
 // Hook para listar todos os usuários
 export function useUsers() {
@@ -59,26 +52,6 @@ export function useUpdateUser() {
     },
     onError: error => {
       toast.error(`Erro ao atualizar usuário: ${error.message}`)
-    },
-  })
-}
-
-// Hook para excluir (desativar) um usuário
-export function useDeleteUser() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: deleteUser,
-    onSuccess: () => {
-      // Invalidar a lista de usuários
-      queryClient.invalidateQueries({
-        queryKey: userQueryKeys.lists(),
-      })
-
-      toast.success('Usuário desativado com sucesso!')
-    },
-    onError: error => {
-      toast.error(`Erro ao desativar usuário: ${error.message}`)
     },
   })
 }

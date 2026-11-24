@@ -7,8 +7,6 @@ import { getCategoryIconName } from '@/components/category-icon'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import { CurrencyInput } from '@/components/ui/currency-input'
-import { formatDateBR } from '@/components/ui/date-picker'
-import { DateRangeField } from '@/components/ui/date-range-field'
 import {
   FilterBar,
   FilterBarApplied,
@@ -40,8 +38,6 @@ import { formatCurrency } from '@/lib/currency'
 export interface BudgetFilters {
   search?: string
   category?: string
-  monthFrom?: Date
-  monthTo?: Date
   status?: 'all' | 'within' | 'near' | 'exceeded'
   amountFrom?: number
   amountTo?: number
@@ -71,12 +67,7 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
   const hasActiveFilters = Object.values(filters).some(value => value !== undefined && value !== '' && value !== 'all')
 
   // Filtros avançados (no Sheet); busca e status ficam na própria barra.
-  const sheetFiltersCount = [
-    filters.category,
-    filters.monthFrom || filters.monthTo,
-    filters.amountFrom,
-    filters.amountTo,
-  ].filter(Boolean).length
+  const sheetFiltersCount = [filters.category, filters.amountFrom, filters.amountTo].filter(Boolean).length
 
   const categoryOptions = [
     { value: 'all', label: 'Todas as categorias' },
@@ -101,10 +92,6 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
     })
   }
 
-  const handlePeriodChange = ({ from, to }: { from?: Date; to?: Date }) => {
-    onFiltersChange({ ...filters, monthFrom: from, monthTo: to })
-  }
-
   const handleAmountFromChange = (value: string) => {
     const amount = value ? parseFloat(normalizeBrazilianAmount(value)) : undefined
     onFiltersChange({ ...filters, amountFrom: amount })
@@ -114,8 +101,6 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
     const amount = value ? parseFloat(normalizeBrazilianAmount(value)) : undefined
     onFiltersChange({ ...filters, amountTo: amount })
   }
-
-  const periodLabel = [filters.monthFrom, filters.monthTo].map(date => (date ? formatDateBR(date) : '…')).join(' – ')
 
   return (
     <FilterBar>
@@ -160,17 +145,6 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
                   placeholder="Todas as categorias"
                   searchPlaceholder="Buscar categoria"
                   emptyText="Nenhuma categoria encontrada"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label id="budget-filter-period-label">Período</Label>
-                <DateRangeField
-                  aria-labelledby="budget-filter-period-label"
-                  value={{ from: filters.monthFrom, to: filters.monthTo }}
-                  onChange={handlePeriodChange}
-                  presets={[]}
-                  numberOfMonths={1}
                 />
               </div>
 
@@ -219,9 +193,6 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
           <FilterBarAppliedChip onRemove={() => handleCategoryChange('all')}>
             Categoria: {filters.category}
           </FilterBarAppliedChip>
-        )}
-        {(filters.monthFrom || filters.monthTo) && (
-          <FilterBarAppliedChip onRemove={() => handlePeriodChange({})}>Período: {periodLabel}</FilterBarAppliedChip>
         )}
         {filters.amountFrom && (
           <FilterBarAppliedChip onRemove={() => handleAmountFromChange('')}>

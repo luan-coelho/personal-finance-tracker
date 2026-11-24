@@ -81,13 +81,6 @@ export async function updateUser(id: string, data: Partial<UserFormValues>): Pro
   return response.data
 }
 
-// Excluir usuário (desativar)
-export async function deleteUser(id: string): Promise<void> {
-  await apiRequest(`${API_BASE_URL}/${id}`, {
-    method: 'DELETE',
-  })
-}
-
 // Alternar status ativo/inativo do usuário
 export async function toggleUserStatus(id: string, active: boolean): Promise<User> {
   const response = await apiRequest<User>(`${API_BASE_URL}/${id}/toggle-status`, {

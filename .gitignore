@@ -59,4 +59,4 @@ public/swe-worker-*.js
 
 # editor and local agent config
 .idea/
-.cursor/mcp.json
+.cursor/

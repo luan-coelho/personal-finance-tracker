@@ -17,13 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button, IconButton } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FilterBarSearch } from '@/components/ui/filter-bar'
 import { Icon } from '@/components/ui/icon'
@@ -43,7 +37,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { UserAvatarDisplay } from '@/components/user-avatar-display'
 import { UserForm } from '@/components/user-form'
 
-import { useDeleteUser, useToggleUserStatus, useUsers } from '@/hooks/use-users'
+import { useToggleUserStatus, useUsers } from '@/hooks/use-users'
 
 import { useSession } from '@/lib/auth-client'
 
@@ -53,7 +47,6 @@ const PAGE_DESCRIPTION = 'Pessoas com acesso ao sistema e aos espaços compartil
 export default function UsuariosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | undefined>()
-  const [deletingUser, setDeletingUser] = useState<User | null>(null)
   const [togglingUser, setTogglingUser] = useState<User | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [searchFilter, setSearchFilter] = useState('')
@@ -61,7 +54,6 @@ export default function UsuariosPage() {
 
   const { data: session } = useSession()
   const { data: users, isLoading, error, refetch } = useUsers()
-  const deleteMutation = useDeleteUser()
   const toggleStatusMutation = useToggleUserStatus()
 
   // Filtrar usuários por nome ou email
@@ -119,24 +111,6 @@ export default function UsuariosPage() {
   const handleEdit = (user: User) => {
     setEditingUser(user)
     setIsModalOpen(true)
-  }
-
-  const handleDelete = async () => {
-    if (deletingUser) {
-      try {
-        await deleteMutation.mutateAsync(deletingUser.id)
-        setDeletingUser(null)
-
-        // Ajustar página atual se necessário
-        const newTotalItems = filteredUsers.length - 1
-        const newTotalPages = Math.ceil(newTotalItems / itemsPerPage)
-        if (currentPage > newTotalPages && newTotalPages > 0) {
-          setCurrentPage(newTotalPages)
-        }
-      } catch (error) {
-        console.error('Erro ao desativar usuário:', error)
-      }
-    }
   }
 
   const handleToggleStatus = async () => {
@@ -304,11 +278,6 @@ export default function UsuariosPage() {
                               <Icon name={user.active ? 'user-x' : 'user-check'} size={18} />
                               {user.active ? 'Desativar' : 'Ativar'}
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem variant="destructive" onClick={() => setDeletingUser(user)}>
-                              <Icon name="lock" size={18} />
-                              Revogar acesso
-                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
@@ -379,25 +348,6 @@ export default function UsuariosPage() {
           <UserForm user={editingUser} onSuccess={handleModalClose} onCancel={handleModalClose} />
         </DialogContent>
       </Dialog>
-
-      {/* Dialog de confirmação de revogação de acesso (DELETE desativa o usuário) */}
-      <AlertDialog open={!!deletingUser} onOpenChange={() => setDeletingUser(null)}>
-        <AlertDialogContent destructive>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Revogar acesso</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deletingUser?.name} não conseguirá mais entrar no sistema. A conta fica inativa e pode ser reativada
-              depois pelo menu.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending} />
-            <Button variant="destructive" onClick={handleDelete} loading={deleteMutation.isPending}>
-              {deleteMutation.isPending ? 'Revogando' : 'Revogar acesso'}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Dialog de Confirmação de Alteração de Status */}
       <AlertDialog open={!!togglingUser} onOpenChange={() => setTogglingUser(null)}>
