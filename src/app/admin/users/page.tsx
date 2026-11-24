@@ -32,6 +32,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
+import { RecordList, RecordListSkeleton } from '@/components/ui/record-list'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { UserAvatarDisplay } from '@/components/user-avatar-display'
@@ -220,7 +221,40 @@ export default function UsuariosPage() {
         )
       ) : (
         <div className="flex flex-col gap-4">
-          <Table>
+          {/* Abaixo de `md` a tabela dá lugar à lista; a troca é só por CSS. */}
+          <RecordList
+            className="md:hidden"
+            items={paginatedUsers}
+            getKey={user => user.id}
+            row={user => ({
+              avatar: { name: user.name, src: user.image ?? undefined },
+              title: session?.user?.email === user.email ? `${user.name} (você)` : user.name,
+              meta: user.email,
+              right: user.active ? (
+                <Badge tone="success" dot>
+                  Ativo
+                </Badge>
+              ) : (
+                <Badge tone="neutral" dot>
+                  Inativo
+                </Badge>
+              ),
+            })}
+            actions={user =>
+              session?.user?.email === user.email
+                ? []
+                : [
+                    { icon: 'pencil', label: 'Editar', onSelect: () => handleEdit(user) },
+                    {
+                      icon: user.active ? 'user-x' : 'user-check',
+                      label: user.active ? 'Desativar' : 'Ativar',
+                      onSelect: () => setTogglingUser(user),
+                    },
+                  ]
+            }
+          />
+
+          <Table containerClassName="max-md:hidden">
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
@@ -304,8 +338,9 @@ export default function UsuariosPage() {
                     />
                   </PaginationItem>
 
+                  {/* No celular ficam só Anterior e Próxima; a posição está no texto ao lado. */}
                   {getPageNumbers().map((page, index) => (
-                    <PaginationItem key={index}>
+                    <PaginationItem key={index} className="max-sm:hidden">
                       {page === 'ellipsis' ? (
                         <PaginationEllipsis />
                       ) : (
@@ -380,44 +415,47 @@ export default function UsuariosPage() {
 
 function UsersTableSkeleton() {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Nome</TableHead>
-          <TableHead>E-mail</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead numeric>Criado em</TableHead>
-          <TableHead numeric>Atualizado em</TableHead>
-          <TableHead className="w-14">
-            <span className="sr-only">Ações</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <TableRow key={i}>
-            <TableCell>
-              <div className="flex items-center gap-3">
-                <Skeleton className="size-8 rounded-full" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-4 w-44" />
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-6 w-16 rounded-full" />
-            </TableCell>
-            <TableCell numeric>
-              <Skeleton className="ml-auto h-4 w-28" />
-            </TableCell>
-            <TableCell numeric>
-              <Skeleton className="ml-auto h-4 w-28" />
-            </TableCell>
-            <TableCell className="w-14" />
+    <>
+      <RecordListSkeleton className="md:hidden" />
+      <Table containerClassName="max-md:hidden">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>E-mail</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead numeric>Criado em</TableHead>
+            <TableHead numeric>Atualizado em</TableHead>
+            <TableHead className="w-14">
+              <span className="sr-only">Ações</span>
+            </TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <TableRow key={i}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-8 rounded-full" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-44" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </TableCell>
+              <TableCell numeric>
+                <Skeleton className="ml-auto h-4 w-28" />
+              </TableCell>
+              <TableCell numeric>
+                <Skeleton className="ml-auto h-4 w-28" />
+              </TableCell>
+              <TableCell className="w-14" />
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   )
 }

@@ -33,6 +33,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Icon } from '@/components/ui/icon'
 import { Label } from '@/components/ui/label'
 import { PageActions } from '@/components/ui/page-actions'
+import { RecordList } from '@/components/ui/record-list'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -163,71 +164,115 @@ export function SpaceMembersTable({ spaceId, isOwner }: SpaceMembersTableProps) 
           }
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Pessoa</TableHead>
-              <TableHead>Papel</TableHead>
-              <TableHead numeric>Adicionado em</TableHead>
-              {isOwner && (
-                <TableHead className="w-14">
-                  <span className="sr-only">Ações</span>
-                </TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map(member => (
-              <TableRow key={member.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <UserAvatarDisplay user={member.user} showTooltip={false} />
-                    <div className="flex min-w-0 flex-col">
-                      <span className="font-medium whitespace-nowrap">{member.user.name}</span>
-                      <span className="text-muted-foreground truncate text-xs leading-4">{member.user.email}</span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {isOwner ? (
-                    <Select
-                      value={member.role}
-                      onValueChange={value => handleUpdateRole(member.id, value as MemberRole)}
-                      disabled={updateMemberMutation.isPending}>
-                      <SelectTrigger size="sm" className="w-[160px]" aria-label={`Papel de ${member.user.name}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="editor">Editor</SelectItem>
-                        <SelectItem value="viewer">Visualizador</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Badge tone={roleTones[member.role] ?? 'neutral'}>{getRoleLabel(member.role)}</Badge>
-                  )}
-                </TableCell>
-                <TableCell numeric className="text-muted-foreground">
-                  {format(new Date(member.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
-                </TableCell>
+        <>
+          {/* Abaixo de `md` a tabela dá lugar à lista; trocar o papel vira ação da folha. */}
+          <RecordList
+            className="md:hidden"
+            items={members}
+            getKey={member => member.id}
+            row={member => ({
+              avatar: { name: member.user.name, src: member.user.image ?? undefined },
+              title: member.user.name,
+              meta: member.user.email,
+              right: <Badge tone={roleTones[member.role] ?? 'neutral'}>{getRoleLabel(member.role)}</Badge>,
+            })}
+            actions={member =>
+              isOwner
+                ? [
+                    member.role === 'editor'
+                      ? {
+                          icon: 'eye',
+                          label: 'Tornar visualizador',
+                          disabled: updateMemberMutation.isPending,
+                          onSelect: () => handleUpdateRole(member.id, 'viewer'),
+                        }
+                      : {
+                          icon: 'pencil',
+                          label: 'Tornar editor',
+                          disabled: updateMemberMutation.isPending,
+                          onSelect: () => handleUpdateRole(member.id, 'editor'),
+                        },
+                    {
+                      icon: 'user-x',
+                      label: 'Remover do espaço',
+                      tone: 'error',
+                      onSelect: () => setMemberToRemove(member),
+                    },
+                  ]
+                : []
+            }
+          />
+
+          <Table containerClassName="max-md:hidden">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Pessoa</TableHead>
+                <TableHead>Papel</TableHead>
+                <TableHead numeric>Adicionado em</TableHead>
                 {isOwner && (
-                  <TableCell className="w-14">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <IconButton icon="more-horizontal" label={`Ações de ${member.user.name}`} className="size-9!" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem variant="destructive" onClick={() => setMemberToRemove(member)}>
-                          <Icon name="user-x" size={18} />
-                          Remover do espaço
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+                  <TableHead className="w-14">
+                    <span className="sr-only">Ações</span>
+                  </TableHead>
                 )}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {members.map(member => (
+                <TableRow key={member.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <UserAvatarDisplay user={member.user} showTooltip={false} />
+                      <div className="flex min-w-0 flex-col">
+                        <span className="font-medium whitespace-nowrap">{member.user.name}</span>
+                        <span className="text-muted-foreground truncate text-xs leading-4">{member.user.email}</span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {isOwner ? (
+                      <Select
+                        value={member.role}
+                        onValueChange={value => handleUpdateRole(member.id, value as MemberRole)}
+                        disabled={updateMemberMutation.isPending}>
+                        <SelectTrigger size="sm" className="w-[160px]" aria-label={`Papel de ${member.user.name}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="editor">Editor</SelectItem>
+                          <SelectItem value="viewer">Visualizador</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge tone={roleTones[member.role] ?? 'neutral'}>{getRoleLabel(member.role)}</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell numeric className="text-muted-foreground">
+                    {format(new Date(member.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
+                  </TableCell>
+                  {isOwner && (
+                    <TableCell className="w-14">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <IconButton
+                            icon="more-horizontal"
+                            label={`Ações de ${member.user.name}`}
+                            className="size-9!"
+                          />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem variant="destructive" onClick={() => setMemberToRemove(member)}>
+                            <Icon name="user-x" size={18} />
+                            Remover do espaço
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
       )}
 
       {/* Dialog para adicionar membro */}

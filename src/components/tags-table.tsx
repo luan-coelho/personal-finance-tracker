@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Icon } from '@/components/ui/icon'
+import { RecordList, RecordListSkeleton } from '@/components/ui/record-list'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
@@ -53,28 +54,32 @@ function TagsTableHeader() {
 }
 
 export function TagsTableSkeleton() {
+  // Abaixo de `md` a tabela dá lugar à lista (`RecordList`); a troca é só por CSS.
   return (
-    <Table aria-busy="true">
-      <TagsTableHeader />
-      <TableBody>
-        {SKELETON_ROWS.map(row => (
-          <TableRow key={row}>
-            <TableCell>
-              <div className="flex items-center gap-3">
-                <Skeleton className="size-8 rounded-sm" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            </TableCell>
-            <TableCell numeric>
-              <Skeleton className="ml-auto h-4 w-20" />
-            </TableCell>
-            <TableCell>
-              <Skeleton className="rounded-control size-9" />
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <>
+      <RecordListSkeleton className="md:hidden" />
+      <Table aria-busy="true" containerClassName="max-md:hidden">
+        <TagsTableHeader />
+        <TableBody>
+          {SKELETON_ROWS.map(row => (
+            <TableRow key={row}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-8 rounded-sm" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </TableCell>
+              <TableCell numeric>
+                <Skeleton className="ml-auto h-4 w-20" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="rounded-control size-9" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   )
 }
 
@@ -118,7 +123,22 @@ export function TagsTable({ tags, isLoading, isFiltered = false, onEdit }: TagsT
 
   return (
     <>
-      <Table>
+      <RecordList
+        className="md:hidden"
+        items={tags}
+        getKey={tag => tag.id}
+        row={tag => ({
+          icon: 'tag',
+          title: tag.name,
+          meta: `Criada em ${new Date(tag.createdAt).toLocaleDateString('pt-BR')}`,
+        })}
+        actions={tag => [
+          { icon: 'pencil', label: 'Editar', onSelect: () => onEdit(tag) },
+          { icon: 'trash', label: 'Excluir', tone: 'error', onSelect: () => setDeleteId(tag.id) },
+        ]}
+      />
+
+      <Table containerClassName="max-md:hidden">
         <TagsTableHeader />
         <TableBody>
           {tags.map(tag => (

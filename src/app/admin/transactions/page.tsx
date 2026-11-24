@@ -27,6 +27,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 
+import { PHONE_QUERY, useMediaQuery } from '@/hooks/use-media-query'
 import type { UseMonthSelectorReturn } from '@/hooks/use-month-selector'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTransactionSummary, useTransactions } from '@/hooks/use-transactions'
@@ -36,6 +37,9 @@ import { buildTransactionUrlQuery, parseTransactionUrlFilters } from '@/lib/tran
 import { cn } from '@/lib/utils'
 
 import TransacoesLoading from './loading'
+
+const PAGE_SIZE = 20
+
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 // `useSearchParams` exige Suspense para a rota continuar pré-renderizável.
@@ -54,23 +58,27 @@ function TransacoesContent() {
   const searchParams = useSearchParams()
   const monthSelector = useMonthSelectorContext()
   const [page, setPage] = useState(1)
+  // No celular a lista cresce com "Carregar mais" (Radar) em vez de trocar de página.
+  const isPhone = useMediaQuery(PHONE_QUERY)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const resetPaging = useCallback(() => {
+    setPage(1)
+    setVisibleCount(PAGE_SIZE)
+  }, [])
   // Filtros iniciais vindos da URL (ex.: link "ver transações de Mercado" no Início)
   const [filters, setFilters] = useState<TransactionFilters>(() => parseTransactionUrlFilters(searchParams))
   const { openComposer } = useTransactionComposer()
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
-  // Mês/ano começa no mês do seletor compartilhado (o mesmo escolhido no Início)
-  const [showAllTransactions, setShowAllTransactions] = useState(false)
+  // Mês/ano começa no mês do seletor compartilhado (o mesmo escolhido no Início).
+  // Com período na URL, o filtro de data manda e o seletor de mês sai.
+  const [showAllTransactions, setShowAllTransactions] = useState(() => Boolean(filters.dateFrom || filters.dateTo))
   const [monthStartDate, setMonthStartDate] = useState(monthSelector.monthStartDate)
   const [monthEndDate, setMonthEndDate] = useState(monthSelector.monthEndDate)
 
-  // Mantém na URL só os filtros linkáveis, para recarregar ou compartilhar a mesma visão
+  // Mantém os filtros na URL, para recarregar, voltar ou reabrir o app na mesma visão
   const syncUrlFilters = (nextFilters: TransactionFilters) => {
-    const query = buildTransactionUrlQuery({
-      type: nextFilters.type,
-      category: nextFilters.category,
-      userId: nextFilters.userId,
-    })
+    const query = buildTransactionUrlQuery(nextFilters)
     if (query !== (searchParams.size ? `?${searchParams.toString()}` : '')) {
       router.replace(`${pathname}${query}`, { scroll: false })
     }
@@ -93,13 +101,18 @@ function TransacoesContent() {
     value => value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true),
   )
 
-  const { data, isLoading, error, refetch } = useTransactions(queryFilters, page, 20)
+  const { data, isLoading, error, refetch, isFetching, isPlaceholderData } = useTransactions(
+    queryFilters,
+    isPhone ? 1 : page,
+    isPhone ? visibleCount : PAGE_SIZE,
+    { keepPrevious: true },
+  )
   const { data: filteredSummary } = useTransactionSummary(queryFilters)
 
   const handleFiltersChange = (newFilters: TransactionFilters) => {
     setFilters(newFilters)
     syncUrlFilters(newFilters)
-    setPage(1) // Reset para primeira página quando filtros mudam
+    resetPaging() // Volta ao início quando os filtros mudam
     // Se o usuário definiu filtros de data, desabilitar o filtro mensal automático
     if (newFilters.dateFrom || newFilters.dateTo) {
       setShowAllTransactions(true)
@@ -109,23 +122,26 @@ function TransacoesContent() {
   const handleClearFilters = () => {
     setFilters({})
     syncUrlFilters({})
-    setPage(1)
+    resetPaging()
   }
 
-  const handleMonthChange = useCallback((monthSelectorState: UseMonthSelectorReturn) => {
-    setMonthStartDate(monthSelectorState.monthStartDate)
-    setMonthEndDate(monthSelectorState.monthEndDate)
-    setPage(1) // Reset página ao mudar mês
-  }, [])
+  const handleMonthChange = useCallback(
+    (monthSelectorState: UseMonthSelectorReturn) => {
+      setMonthStartDate(monthSelectorState.monthStartDate)
+      setMonthEndDate(monthSelectorState.monthEndDate)
+      resetPaging() // Volta ao início ao mudar o mês
+    },
+    [resetPaging],
+  )
 
   const handleShowAll = () => {
     setShowAllTransactions(true)
-    setPage(1)
+    resetPaging()
   }
 
   const handleShowMonthly = () => {
     setShowAllTransactions(false)
-    setPage(1)
+    resetPaging()
   }
 
   const handleEdit = (transaction: Transaction) => {
@@ -140,7 +156,9 @@ function TransacoesContent() {
     setEditingTransaction(null)
   }
 
-  const totalPages = data ? Math.ceil(data.total / 20) : 0
+  const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0
+  const shownCount = data?.transactions.length ?? 0
+  const hasMore = !!data && shownCount < data.total
 
   if (isSpaceLoading && !selectedSpace) {
     return <TransacoesLoading />
@@ -243,17 +261,39 @@ function TransacoesContent() {
         {error ? (
           <QueryErrorCard message="Erro ao carregar transações." onRetry={refetch} />
         ) : (
-          <TransactionsTable
-            transactions={data?.transactions || []}
-            onEdit={handleEdit}
-            onDuplicate={handleDuplicate}
-            isLoading={isLoading}
-          />
+          // Com filtro ou página nova a caminho, a lista anterior fica visível e esmaecida
+          <div
+            aria-busy={isPlaceholderData || undefined}
+            className={cn('transition-opacity duration-200', isPlaceholderData && 'opacity-60')}>
+            <TransactionsTable
+              transactions={data?.transactions || []}
+              onEdit={handleEdit}
+              onDuplicate={handleDuplicate}
+              isLoading={isLoading}
+            />
+          </div>
+        )}
+
+        {/* Celular: carregar mais */}
+        {!error && data && data.total > PAGE_SIZE && (
+          <div className="flex flex-col items-center gap-2 md:hidden">
+            <p aria-live="polite" className="text-muted-foreground text-[13px] leading-5 tabular-nums">
+              {shownCount} de {data.total} transações
+            </p>
+            {hasMore && (
+              <Button
+                className="w-full"
+                loading={isFetching}
+                onClick={() => setVisibleCount(count => count + PAGE_SIZE)}>
+                {isFetching ? 'Carregando' : 'Carregar mais'}
+              </Button>
+            )}
+          </div>
         )}
 
         {/* Paginação */}
         {totalPages > 1 && (
-          <Pagination>
+          <Pagination className="max-md:hidden">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious

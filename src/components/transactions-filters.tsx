@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { TransactionType } from '@/app/db/schemas'
 
@@ -13,6 +13,7 @@ import {
   FilterBar,
   FilterBarApplied,
   FilterBarAppliedChip,
+  FilterBarChips,
   FilterBarFiltersButton,
   FilterBarQuick,
   FilterBarRow,
@@ -61,7 +62,8 @@ interface TransactionsFiltersProps {
 }
 
 const ALL = 'all'
-
+/** Espera depois da última tecla antes de buscar: digitar não dispara uma consulta por letra. */
+const SEARCH_DEBOUNCE_MS = 300
 
 function formatAmountFilterValue(value: number | undefined) {
   if (value === undefined) {
@@ -136,9 +138,29 @@ export function TransactionsFilters({
     }
   }
 
-  const handleSearchChange = (search: string) => {
-    onFiltersChange({ ...filters, search: search || undefined })
-  }
+  // Busca: o campo responde na hora e o filtro só muda quando a digitação para.
+  const [searchDraft, setSearchDraft] = useState(filters.search ?? '')
+  const appliedSearchRef = useRef(filters.search ?? '')
+  const latestRef = useRef({ filters, onFiltersChange })
+  latestRef.current = { filters, onFiltersChange }
+
+  // Mudança vinda de fora (limpar filtros, link): o campo acompanha.
+  useEffect(() => {
+    const applied = filters.search ?? ''
+    if (applied !== appliedSearchRef.current) {
+      appliedSearchRef.current = applied
+      setSearchDraft(applied)
+    }
+  }, [filters.search])
+
+  useEffect(() => {
+    if (searchDraft === appliedSearchRef.current) return
+    const timeout = window.setTimeout(() => {
+      appliedSearchRef.current = searchDraft
+      latestRef.current.onFiltersChange({ ...latestRef.current.filters, search: searchDraft || undefined })
+    }, SEARCH_DEBOUNCE_MS)
+    return () => window.clearTimeout(timeout)
+  }, [searchDraft])
 
   const handleTypeChange = (type: string) => {
     onFiltersChange({
@@ -238,159 +260,162 @@ export function TransactionsFilters({
     <FilterBar>
       <FilterBarRow>
         <FilterBarSearch
-          value={filters.search || ''}
-          onValueChange={handleSearchChange}
+          value={searchDraft}
+          onValueChange={setSearchDraft}
           placeholder="Buscar por descrição"
+          enterKeyHint="search"
         />
 
-        {/* Filtros rápidos de tipo */}
-        {transactionTypes.map(type => (
-          <FilterBarQuick
-            key={type}
-            icon={transactionTypeMeta[type].icon}
-            tone={transactionTypeMeta[type].tone}
-            selected={filters.type === type}
-            onClick={() => handleTypeChange(filters.type === type ? ALL : type)}>
-            {transactionTypeMeta[type].pluralLabel}
-          </FilterBarQuick>
-        ))}
+        <FilterBarChips>
+          {/* Filtros rápidos de tipo */}
+          {transactionTypes.map(type => (
+            <FilterBarQuick
+              key={type}
+              icon={transactionTypeMeta[type].icon}
+              tone={transactionTypeMeta[type].tone}
+              selected={filters.type === type}
+              onClick={() => handleTypeChange(filters.type === type ? ALL : type)}>
+              {transactionTypeMeta[type].pluralLabel}
+            </FilterBarQuick>
+          ))}
 
-        {/* "Eu": atalho para filtrar pelo usuário logado */}
-        {currentUserId && (
-          <FilterBarQuick
-            icon="user"
-            selected={filters.userId === currentUserId}
-            onClick={() => handleUserChange(filters.userId === currentUserId ? ALL : currentUserId)}>
-            Eu
-          </FilterBarQuick>
-        )}
+          {/* "Eu": atalho para filtrar pelo usuário logado */}
+          {currentUserId && (
+            <FilterBarQuick
+              icon="user"
+              selected={filters.userId === currentUserId}
+              onClick={() => handleUserChange(filters.userId === currentUserId ? ALL : currentUserId)}>
+              Eu
+            </FilterBarQuick>
+          )}
 
-        <Sheet open={filtersOpen} onOpenChange={handleFiltersOpenChange}>
-          <SheetTrigger asChild>
-            <FilterBarFiltersButton count={activeFiltersCount} />
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Filtros</SheetTitle>
-              <SheetDescription>Filtre as transações por tipo, categoria, tags, valor e período.</SheetDescription>
-            </SheetHeader>
+          <Sheet open={filtersOpen} onOpenChange={handleFiltersOpenChange}>
+            <SheetTrigger asChild>
+              <FilterBarFiltersButton count={activeFiltersCount} />
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Filtros</SheetTitle>
+                <SheetDescription>Filtre as transações por tipo, categoria, tags, valor e período.</SheetDescription>
+              </SheetHeader>
 
-            <SheetBody>
-              {/* Tipo */}
-              <div className="flex flex-col gap-1.5">
-                <Label id="filter-type-label">Tipo</Label>
-                <ToggleGroup
-                  type="single"
-                  fullWidth
-                  aria-labelledby="filter-type-label"
-                  value={draftFilters.type ?? ALL}
-                  onValueChange={handleDraftTypeChange}>
-                  <ToggleGroupItem value={ALL} className="px-2">
-                    Todos
-                  </ToggleGroupItem>
-                  {transactionTypes.map(type => (
-                    <ToggleGroupItem key={type} value={type} tone={transactionTypeMeta[type].tone} className="px-2">
-                      {transactionTypeMeta[type].label}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </div>
-
-              {/* Categoria */}
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="filter-category">Categoria</Label>
-                <Combobox
-                  id="filter-category"
-                  options={categoryOptions}
-                  value={draftFilters.category ?? ALL}
-                  onChange={handleDraftCategoryChange}
-                  searchPlaceholder="Buscar categoria"
-                  emptyText="Nenhuma categoria encontrada"
-                />
-              </div>
-
-              {/* Usuário */}
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="filter-user">Usuário</Label>
-                <Combobox
-                  id="filter-user"
-                  options={userOptions}
-                  value={draftFilters.userId ?? ALL}
-                  onChange={handleDraftUserChange}
-                  searchPlaceholder="Buscar usuário"
-                  emptyText="Nenhum usuário encontrado"
-                />
-              </div>
-
-              {/* Tags */}
-              {tags.length > 0 && (
+              <SheetBody>
+                {/* Tipo */}
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="filter-tags">Tags</Label>
+                  <Label id="filter-type-label">Tipo</Label>
+                  <ToggleGroup
+                    type="single"
+                    fullWidth
+                    aria-labelledby="filter-type-label"
+                    value={draftFilters.type ?? ALL}
+                    onValueChange={handleDraftTypeChange}>
+                    <ToggleGroupItem value={ALL} className="px-2">
+                      Todos
+                    </ToggleGroupItem>
+                    {transactionTypes.map(type => (
+                      <ToggleGroupItem key={type} value={type} tone={transactionTypeMeta[type].tone} className="px-2">
+                        {transactionTypeMeta[type].label}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </div>
+
+                {/* Categoria */}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="filter-category">Categoria</Label>
                   <Combobox
-                    id="filter-tags"
-                    multiple
-                    options={tagOptions}
-                    value={draftFilters.tags ?? []}
-                    onChange={handleDraftTagsChange}
-                    placeholder="Todas as tags"
-                    searchPlaceholder="Buscar tag"
-                    emptyText="Nenhuma tag encontrada"
+                    id="filter-category"
+                    options={categoryOptions}
+                    value={draftFilters.category ?? ALL}
+                    onChange={handleDraftCategoryChange}
+                    searchPlaceholder="Buscar categoria"
+                    emptyText="Nenhuma categoria encontrada"
                   />
                 </div>
-              )}
 
-              {/* Faixa de valor */}
-              <fieldset className="flex min-w-0 flex-col gap-1.5">
-                <legend className="mb-1.5 text-sm leading-5 font-medium">Faixa de valor</legend>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex min-w-0 flex-col gap-1.5">
-                    <Label htmlFor="filter-amount-from" className="text-muted-foreground text-[13px]">
-                      Mínimo
-                    </Label>
-                    <CurrencyInput
-                      id="filter-amount-from"
-                      value={formatAmountFilterValue(draftFilters.amountFrom)}
-                      onChange={handleDraftAmountFromChange}
-                    />
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-1.5">
-                    <Label htmlFor="filter-amount-to" className="text-muted-foreground text-[13px]">
-                      Máximo
-                    </Label>
-                    <CurrencyInput
-                      id="filter-amount-to"
-                      placeholder="9.999,99"
-                      value={formatAmountFilterValue(draftFilters.amountTo)}
-                      onChange={handleDraftAmountToChange}
-                    />
-                  </div>
+                {/* Usuário */}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="filter-user">Usuário</Label>
+                  <Combobox
+                    id="filter-user"
+                    options={userOptions}
+                    value={draftFilters.userId ?? ALL}
+                    onChange={handleDraftUserChange}
+                    searchPlaceholder="Buscar usuário"
+                    emptyText="Nenhum usuário encontrado"
+                  />
                 </div>
-              </fieldset>
 
-              {/* Período */}
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="filter-period">Período</Label>
-                <DateRangeField
-                  id="filter-period"
-                  numberOfMonths={1}
-                  value={{ from: draftFilters.dateFrom, to: draftFilters.dateTo }}
-                  onChange={handleDraftDateRangeChange}
-                />
-              </div>
-            </SheetBody>
+                {/* Tags */}
+                {tags.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="filter-tags">Tags</Label>
+                    <Combobox
+                      id="filter-tags"
+                      multiple
+                      options={tagOptions}
+                      value={draftFilters.tags ?? []}
+                      onChange={handleDraftTagsChange}
+                      placeholder="Todas as tags"
+                      searchPlaceholder="Buscar tag"
+                      emptyText="Nenhuma tag encontrada"
+                    />
+                  </div>
+                )}
 
-            <SheetFooter>
-              {(hasActiveFilters || hasDraftFilters) && (
-                <Button variant="ghost" onClick={handleClearAllFilters}>
-                  Limpar filtros
+                {/* Faixa de valor */}
+                <fieldset className="flex min-w-0 flex-col gap-1.5">
+                  <legend className="mb-1.5 text-sm leading-5 font-medium">Faixa de valor</legend>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                      <Label htmlFor="filter-amount-from" className="text-muted-foreground text-[13px]">
+                        Mínimo
+                      </Label>
+                      <CurrencyInput
+                        id="filter-amount-from"
+                        value={formatAmountFilterValue(draftFilters.amountFrom)}
+                        onChange={handleDraftAmountFromChange}
+                      />
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1.5">
+                      <Label htmlFor="filter-amount-to" className="text-muted-foreground text-[13px]">
+                        Máximo
+                      </Label>
+                      <CurrencyInput
+                        id="filter-amount-to"
+                        placeholder="9.999,99"
+                        value={formatAmountFilterValue(draftFilters.amountTo)}
+                        onChange={handleDraftAmountToChange}
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+
+                {/* Período */}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="filter-period">Período</Label>
+                  <DateRangeField
+                    id="filter-period"
+                    numberOfMonths={1}
+                    value={{ from: draftFilters.dateFrom, to: draftFilters.dateTo }}
+                    onChange={handleDraftDateRangeChange}
+                  />
+                </div>
+              </SheetBody>
+
+              <SheetFooter>
+                {(hasActiveFilters || hasDraftFilters) && (
+                  <Button variant="ghost" onClick={handleClearAllFilters}>
+                    Limpar filtros
+                  </Button>
+                )}
+                <Button variant="primary" icon="check" className="ml-auto" onClick={handleApplyFilters}>
+                  Aplicar filtros
                 </Button>
-              )}
-              <Button variant="primary" icon="check" className="ml-auto" onClick={handleApplyFilters}>
-                Aplicar filtros
-              </Button>
-            </SheetFooter>
-          </SheetContent>
-        </Sheet>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        </FilterBarChips>
       </FilterBarRow>
 
       {/* Filtros aplicados (a linha some sem filtros) */}

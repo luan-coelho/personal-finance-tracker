@@ -20,6 +20,7 @@ import { Button, IconButton } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Icon } from '@/components/ui/icon'
+import { RecordList } from '@/components/ui/record-list'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
@@ -60,7 +61,44 @@ export function ReserveTransactionsTable({ transactions }: ReserveTransactionsTa
 
   return (
     <>
-      <Table>
+      {/* Abaixo de `md` a tabela dá lugar à lista; a troca é só por CSS. */}
+      <RecordList
+        className="md:hidden"
+        items={transactions}
+        getKey={transaction => transaction.id}
+        row={transaction => {
+          const amount = parseFloat(transaction.amount)
+          const isDeposit = amount >= 0
+          const author = transaction.user?.name?.trim().split(/\s+/)[0]
+          return {
+            icon: isDeposit ? 'arrow-up' : 'arrow-down',
+            tone: isDeposit ? 'success' : 'error',
+            title: transaction.description || (isDeposit ? 'Depósito' : 'Retirada'),
+            meta: [
+              isDeposit ? 'Depósito' : 'Retirada',
+              format(new Date(transaction.date), "d 'de' MMM 'de' yyyy", { locale: ptBR }),
+              author,
+            ]
+              .filter(Boolean)
+              .join(' · '),
+            right: (
+              <span
+                className={cn(
+                  'text-sm leading-5 font-medium whitespace-nowrap tabular-nums',
+                  isDeposit ? 'text-success-text' : 'text-error-text',
+                )}>
+                {isDeposit ? '+' : '-'}
+                {formatCurrency(Math.abs(amount))}
+              </span>
+            ),
+          }
+        }}
+        actions={transaction => [
+          { icon: 'trash', label: 'Excluir', tone: 'error', onSelect: () => setTransactionToDelete(transaction.id) },
+        ]}
+      />
+
+      <Table containerClassName="max-md:hidden">
         <TableHeader>
           <TableRow>
             <TableHead>Tipo</TableHead>

@@ -1,3 +1,4 @@
+import { TransactionsListSkeleton } from '@/components/transactions-list'
 import { MetricCard } from '@/components/ui/metric-card'
 import { PageActions } from '@/components/ui/page-actions'
 import { PageHeader } from '@/components/ui/page-header'
@@ -9,8 +10,8 @@ export default function TransacoesLoading() {
     <>
       <PageHeader title="Transações" />
 
-      <PageActions actions={<Skeleton className="h-control-md w-40 rounded-full" />}>
-        <Skeleton className="h-control-md w-64 rounded-full" />
+      <PageActions actions={<Skeleton className="h-control-md w-40 rounded-full max-lg:hidden" />}>
+        <Skeleton className="h-control-md w-64 rounded-full max-lg:w-full" />
       </PageActions>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
@@ -29,11 +30,13 @@ export default function TransacoesLoading() {
         <Skeleton className="h-control-md w-full rounded-full sm:w-[280px]" />
         <Skeleton className="h-control-md w-28 rounded-full" />
         <Skeleton className="h-control-md w-24 rounded-full" />
-        <Skeleton className="h-control-md w-28 rounded-full" />
-        <Skeleton className="h-control-md w-24 rounded-full" />
+        <Skeleton className="h-control-md w-28 rounded-full max-sm:hidden" />
+        <Skeleton className="h-control-md w-24 rounded-full max-sm:hidden" />
       </div>
 
-      <Table aria-busy="true">
+      <TransactionsListSkeleton rows={8} className="md:hidden" />
+
+      <Table aria-busy="true" containerClassName="max-md:hidden">
         <TableHeader>
           <TableRow>
             <TableHead>Descrição</TableHead>

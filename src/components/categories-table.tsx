@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Icon } from '@/components/ui/icon'
+import { RecordList, RecordListSkeleton } from '@/components/ui/record-list'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
@@ -56,31 +57,35 @@ function CategoriesTableHeader() {
 }
 
 export function CategoriesTableSkeleton() {
+  // Abaixo de `md` a tabela dá lugar à lista (`RecordList`); a troca é só por CSS.
   return (
-    <Table aria-busy="true">
-      <CategoriesTableHeader />
-      <TableBody>
-        {SKELETON_ROWS.map(row => (
-          <TableRow key={row}>
-            <TableCell>
-              <div className="flex items-center gap-3">
-                <Skeleton className="size-8 rounded-sm" />
-                <Skeleton className="h-4 w-36" />
-              </div>
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-6 w-20 rounded-full" />
-            </TableCell>
-            <TableCell numeric>
-              <Skeleton className="ml-auto h-4 w-20" />
-            </TableCell>
-            <TableCell>
-              <Skeleton className="rounded-control size-9" />
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <>
+      <RecordListSkeleton className="md:hidden" />
+      <Table aria-busy="true" containerClassName="max-md:hidden">
+        <CategoriesTableHeader />
+        <TableBody>
+          {SKELETON_ROWS.map(row => (
+            <TableRow key={row}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="size-8 rounded-sm" />
+                  <Skeleton className="h-4 w-36" />
+                </div>
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </TableCell>
+              <TableCell numeric>
+                <Skeleton className="ml-auto h-4 w-20" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="rounded-control size-9" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   )
 }
 
@@ -124,7 +129,22 @@ export function CategoriesTable({ categories, isLoading, isFiltered = false, onE
 
   return (
     <>
-      <Table>
+      <RecordList
+        className="md:hidden"
+        items={categories}
+        getKey={category => category.id}
+        row={category => ({
+          leading: <CategoryIconTile name={category.name} className="size-10" iconSize={20} />,
+          title: category.name,
+          meta: category.type === 'entrada' ? 'Entrada' : 'Saída',
+        })}
+        actions={category => [
+          { icon: 'pencil', label: 'Editar', onSelect: () => onEdit(category) },
+          { icon: 'trash', label: 'Excluir', tone: 'error', onSelect: () => setDeleteId(category.id) },
+        ]}
+      />
+
+      <Table containerClassName="max-md:hidden">
         <CategoriesTableHeader />
         <TableBody>
           {categories.map(category => (

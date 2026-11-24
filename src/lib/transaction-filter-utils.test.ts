@@ -30,6 +30,34 @@ describe('buildTransactionUrlQuery', () => {
   it('returns an empty string without filters', () => {
     assert.equal(buildTransactionUrlQuery({}), '')
   })
+
+  it('round-trips search, tags, period and amount range', () => {
+    const filters = {
+      search: 'mercado',
+      tags: ['casa', 'fixo'],
+      dateFrom: new Date(2026, 10, 1),
+      dateTo: new Date(2026, 10, 15, 23, 59, 59, 999),
+      amountFrom: 0,
+      amountTo: 150.5,
+    }
+    const query = buildTransactionUrlQuery(filters)
+
+    assert.equal(query, '?search=mercado&tag=casa&tag=fixo&from=2026-11-01&to=2026-11-15&min=0&max=150.5')
+    assert.deepEqual(parseTransactionUrlFilters(new URLSearchParams(query)), filters)
+  })
+})
+
+describe('parseTransactionUrlFilters dates', () => {
+  it('reads the period as local start and end of day', () => {
+    const filters = parseTransactionUrlFilters(new URLSearchParams('from=2026-11-01&to=2026-11-30'))
+
+    assert.equal(filters.dateFrom?.getTime(), new Date(2026, 10, 1).getTime())
+    assert.equal(filters.dateTo?.getTime(), new Date(2026, 10, 30, 23, 59, 59, 999).getTime())
+  })
+
+  it('ignores malformed and impossible dates', () => {
+    assert.deepEqual(parseTransactionUrlFilters(new URLSearchParams('from=01/11/2026&to=2026-02-31')), {})
+  })
 })
 
 describe('parseAmountFilterParam', () => {

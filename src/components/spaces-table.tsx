@@ -3,6 +3,7 @@
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import type { Space } from '@/app/db/schemas/space-schema'
@@ -28,6 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Icon } from '@/components/ui/icon'
+import { RecordList, RecordListSkeleton } from '@/components/ui/record-list'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
@@ -41,6 +43,7 @@ export function SpacesTable() {
   const { data: session } = useSession()
   const deleteSpaceMutation = useDeleteSpace()
   const [spaceToDelete, setSpaceToDelete] = useState<Space | null>(null)
+  const router = useRouter()
 
   if (isLoading) {
     return <SpacesTableSkeleton />
@@ -75,7 +78,31 @@ export function SpacesTable() {
 
   return (
     <>
-      <Table>
+      {/* Abaixo de `md` a tabela dá lugar à lista; a troca é só por CSS. */}
+      <RecordList
+        className="md:hidden"
+        items={spaces}
+        getKey={space => space.id}
+        row={space => {
+          const isOwner = !!session?.user?.id && space.ownerId === session.user.id
+          return {
+            icon: 'building-2',
+            title: space.name,
+            meta: [isOwner ? 'Proprietário' : 'Compartilhado', space.description].filter(Boolean).join(' · '),
+          }
+        }}
+        actions={space => [
+          {
+            icon: 'users',
+            label: 'Membros',
+            onSelect: () => router.push(routes.frontend.admin.spaces.members(space.id)),
+          },
+          { icon: 'pencil', label: 'Editar', onSelect: () => router.push(routes.frontend.admin.spaces.edit(space.id)) },
+          { icon: 'trash', label: 'Excluir', tone: 'error', onSelect: () => setSpaceToDelete(space) },
+        ]}
+      />
+
+      <Table containerClassName="max-md:hidden">
         <TableHeader>
           <TableRow>
             <TableHead>Nome</TableHead>
@@ -167,40 +194,43 @@ export function SpacesTable() {
 
 export function SpacesTableSkeleton() {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Nome</TableHead>
-          <TableHead>Descrição</TableHead>
-          <TableHead>Papel</TableHead>
-          <TableHead numeric>Criado em</TableHead>
-          <TableHead className="w-14">
-            <span className="sr-only">Ações</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <TableRow key={i}>
-            <TableCell>
-              <div className="flex items-center gap-3">
-                <Skeleton className="rounded-control size-8" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-4 w-48" />
-            </TableCell>
-            <TableCell>
-              <Skeleton className="h-6 w-24 rounded-full" />
-            </TableCell>
-            <TableCell numeric>
-              <Skeleton className="ml-auto h-4 w-20" />
-            </TableCell>
-            <TableCell className="w-14" />
+    <>
+      <RecordListSkeleton rows={4} className="md:hidden" />
+      <Table containerClassName="max-md:hidden">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>Descrição</TableHead>
+            <TableHead>Papel</TableHead>
+            <TableHead numeric>Criado em</TableHead>
+            <TableHead className="w-14">
+              <span className="sr-only">Ações</span>
+            </TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <TableRow key={i}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="rounded-control size-8" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-48" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </TableCell>
+              <TableCell numeric>
+                <Skeleton className="ml-auto h-4 w-20" />
+              </TableCell>
+              <TableCell className="w-14" />
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   )
 }

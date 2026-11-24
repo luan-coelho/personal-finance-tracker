@@ -10,6 +10,7 @@ import type { Reserve, ReserveFormValues } from '@/app/db/schemas/reserve-schema
 import { ReserveIconTile } from '@/components/reserve-card'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Icon, type IconName } from '@/components/ui/icon'
 import { Input } from '@/components/ui/input'
@@ -18,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea'
 
 import { useCreateReserve, useUpdateReserve } from '@/hooks/use-reserves'
 
+import { normalizeBrazilianAmount } from '@/lib/amount-utils'
 import { formatCurrency } from '@/lib/currency'
 import { routes } from '@/lib/routes'
 
@@ -82,7 +84,10 @@ export function ReserveForm({ spaceId, reserve, mode }: ReserveFormProps) {
     defaultValues: {
       name: reserve?.name || '',
       description: reserve?.description || '',
-      targetAmount: reserve?.targetAmount || '',
+      // O campo trabalha no formato digitado ("1.234,56"); o banco guarda "1234.56".
+      targetAmount: reserve?.targetAmount
+        ? Number(reserve.targetAmount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '',
       color: reserve?.color || '#3b82f6',
       icon: reserve?.icon || 'piggy-bank',
     },
@@ -92,7 +97,7 @@ export function ReserveForm({ spaceId, reserve, mode }: ReserveFormProps) {
     try {
       const payload: ReserveFormValues = {
         ...data,
-        targetAmount: data.targetAmount || undefined,
+        targetAmount: data.targetAmount ? normalizeBrazilianAmount(data.targetAmount) : undefined,
         currentAmount: reserve?.currentAmount || '0',
         active: reserve?.active ?? true,
         spaceId: spaceId,
@@ -159,16 +164,7 @@ export function ReserveForm({ spaceId, reserve, mode }: ReserveFormProps) {
                   <FormItem>
                     <FormLabel>Meta (opcional)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        inputMode="decimal"
-                        prefix="R$"
-                        placeholder="0.00"
-                        className="tabular-nums"
-                        {...field}
-                      />
+                      <CurrencyInput {...field} />
                     </FormControl>
                     <FormDescription>Valor que você quer alcançar</FormDescription>
                     <FormMessage />

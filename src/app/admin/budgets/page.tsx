@@ -13,6 +13,7 @@ import { BudgetTransactionsDialog } from '@/components/budget-transactions-dialo
 import { BudgetsTable } from '@/components/budgets-table'
 import { CopyBudgetDialog } from '@/components/copy-budget-dialog'
 import { MonthSelector } from '@/components/month-selector'
+import { QueryErrorCard } from '@/components/query-error-card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -26,6 +27,7 @@ import { useSelectedSpace } from '@/hooks/use-selected-space'
 
 import { getBudgetStatus } from '@/lib/budget-status'
 import { addMonths, toMonthString } from '@/lib/date-utils'
+import { cn } from '@/lib/utils'
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
@@ -49,6 +51,7 @@ export default function OrcamentosPage() {
   const {
     data: budgets = [],
     isLoading: budgetsLoading,
+    isError: budgetsError,
     refetch: refetchBudgets,
   } = useBudgetsWithSpending(selectedSpace?.id || '', currentMonthString)
   const {
@@ -159,6 +162,10 @@ export default function OrcamentosPage() {
   }
 
   const renderList = () => {
+    if (budgetsError && budgets.length === 0) {
+      return <QueryErrorCard message="Não foi possível carregar os orçamentos." onRetry={() => refetchBudgets()} />
+    }
+
     if (!budgetsLoading && filteredBudgets.length === 0) {
       return budgets.length === 0 ? (
         <EmptyState
@@ -183,20 +190,27 @@ export default function OrcamentosPage() {
       )
     }
 
-    if (viewMode === 'table') {
-      return (
-        <BudgetsTable budgets={filteredBudgets} onEdit={handleEdit} onView={handleView} isLoading={budgetsLoading} />
-      )
-    }
-
+    // A tabela (9 colunas) só existe a partir de `md`; no celular a visão é sempre em cards.
     return (
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {budgetsLoading
-          ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-56 rounded-lg" />)
-          : filteredBudgets.map(budget => (
-              <BudgetCard key={budget.id} budget={budget} onEdit={handleEdit} onView={handleView} />
-            ))}
-      </div>
+      <>
+        {viewMode === 'table' && (
+          <div className="max-md:hidden">
+            <BudgetsTable
+              budgets={filteredBudgets}
+              onEdit={handleEdit}
+              onView={handleView}
+              isLoading={budgetsLoading}
+            />
+          </div>
+        )}
+        <div className={cn('grid gap-4 sm:grid-cols-2 xl:grid-cols-3', viewMode === 'table' && 'md:hidden')}>
+          {budgetsLoading
+            ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-56 rounded-lg" />)
+            : filteredBudgets.map(budget => (
+                <BudgetCard key={budget.id} budget={budget} onEdit={handleEdit} onView={handleView} />
+              ))}
+        </div>
+      </>
     )
   }
 
@@ -225,6 +239,7 @@ export default function OrcamentosPage() {
         }>
         <MonthSelector onMonthChange={handleMonthChange} />
         <ToggleGroup
+          className="max-md:hidden"
           type="single"
           value={viewMode}
           onValueChange={value => setViewMode(value as 'cards' | 'table')}

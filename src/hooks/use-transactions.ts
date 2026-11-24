@@ -1,6 +1,6 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import type {
@@ -42,6 +42,8 @@ export const transactionKeys = {
 
 export interface TransactionQueryOptions {
   staleTime?: number
+  /** Mantém a lista anterior na tela enquanto a nova página, o novo limite ou o novo filtro carrega. */
+  keepPrevious?: boolean
 }
 
 // Hook para listar transações
@@ -78,6 +80,7 @@ export function useTransactions(
       return response.json() as Promise<{ transactions: TransactionWithUser[]; total: number }>
     },
     staleTime: options.staleTime ?? 5 * 60 * 1000, // 5 minutos por padrão
+    placeholderData: options.keepPrevious ? keepPreviousData : undefined,
   })
 }
 

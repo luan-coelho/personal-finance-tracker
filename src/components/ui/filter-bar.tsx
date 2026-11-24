@@ -76,6 +76,26 @@ function FilterBarRow({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
+/**
+ * Faixa de filtros rápidos. A partir de `sm` não existe (`contents`): os chips seguem a linha.
+ * Abaixo de `sm` (Radar `size="mobile"`) é uma faixa que rola na horizontal sem quebrar linha,
+ * com o botão "Filtros" fixo na ponta direita, sempre alcançável.
+ */
+function FilterBarChips({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="filter-bar-chips"
+      className={cn(
+        'sm:contents',
+        'max-sm:w-[calc(100%+--spacing(8))] max-sm:-mx-4 max-sm:flex max-sm:[scrollbar-width:none] max-sm:items-center max-sm:gap-2 max-sm:overflow-x-auto max-sm:px-4 max-sm:*:shrink-0 max-sm:[&::-webkit-scrollbar]:hidden',
+        'max-sm:[&>[data-slot=filter-bar-filters]]:sticky max-sm:[&>[data-slot=filter-bar-filters]]:right-0 max-sm:[&>[data-slot=filter-bar-filters]]:ml-auto max-sm:[&>[data-slot=filter-bar-filters]]:shadow-[-12px_0_12px_-4px_var(--bg)]',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
 function FilterBarSearch({
   className,
   onChange,
@@ -90,7 +110,7 @@ function FilterBarSearch({
     <label
       data-slot="filter-bar-search"
       className={cn(
-        'h-control-md border-input bg-card text-muted-foreground flex w-full shrink-0 cursor-text items-center gap-2.5 rounded-full border px-3.5 transition-[border-color,box-shadow] duration-[120ms] sm:w-[280px]',
+        'h-control-md border-input bg-card text-muted-foreground flex w-full shrink-0 cursor-text items-center gap-2.5 rounded-full border px-3.5 transition-[border-color,box-shadow] duration-[120ms] max-lg:text-base sm:w-[280px]',
         'hover:border-border-strong focus-within:border-primary focus-within:text-foreground focus-within:shadow-focus-ring',
         className,
       )}>
@@ -212,6 +232,7 @@ export {
   FilterBar,
   FilterBarApplied,
   FilterBarAppliedChip,
+  FilterBarChips,
   FilterBarEnd,
   FilterBarFiltersButton,
   FilterBarQuick,

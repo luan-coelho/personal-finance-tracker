@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import type { Tag } from '@/app/db/schemas/tag-schema'
 
+import { QueryErrorCard } from '@/components/query-error-card'
 import { TagForm } from '@/components/tag-form'
 import { TagsTable } from '@/components/tags-table'
 import { Button, IconButton } from '@/components/ui/button'
@@ -26,7 +27,7 @@ export default function TagsPage() {
   const [search, setSearch] = useState('')
 
   // Buscar tags
-  const { data: tags = [], isLoading } = useTags(selectedSpace?.id || '', search || undefined)
+  const { data: tags = [], isLoading, isError, refetch } = useTags(selectedSpace?.id || '', search || undefined)
 
   const handleEdit = (tag: Tag) => {
     setEditingTag(tag)
@@ -91,7 +92,11 @@ export default function TagsPage() {
         />
       </PageActions>
 
-      <TagsTable tags={tags} isLoading={isLoading} isFiltered={!!search} onEdit={handleEdit} />
+      {isError && tags.length === 0 ? (
+        <QueryErrorCard message="Não foi possível carregar as tags." onRetry={() => refetch()} />
+      ) : (
+        <TagsTable tags={tags} isLoading={isLoading} isFiltered={!!search} onEdit={handleEdit} />
+      )}
 
       {/* Dialog de edição */}
       <Dialog open={!!editingTag} onOpenChange={() => setEditingTag(null)}>

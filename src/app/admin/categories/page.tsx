@@ -6,6 +6,7 @@ import type { Category, CategoryType } from '@/app/db/schemas/category-schema'
 
 import { CategoriesTable, CategoriesTableSkeleton } from '@/components/categories-table'
 import { CategoryForm } from '@/components/category-form'
+import { QueryErrorCard } from '@/components/query-error-card'
 import { Button, IconButton } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -46,7 +47,12 @@ export default function CategoriasPage() {
   const [typeFilter, setTypeFilter] = useState<CategoryType | 'all'>('all')
 
   // Buscar todas as categorias (filtro aplicado client-side para contadores)
-  const { data: allCategories = [], isLoading } = useCategories(selectedSpace?.id || '', undefined, search || undefined)
+  const {
+    data: allCategories = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useCategories(selectedSpace?.id || '', undefined, search || undefined)
 
   const entradaCount = allCategories.filter(c => c.type === 'entrada').length
   const saidaCount = allCategories.filter(c => c.type === 'saida').length
@@ -131,12 +137,16 @@ export default function CategoriasPage() {
         />
       </PageActions>
 
-      <CategoriesTable
-        categories={filteredCategories}
-        isLoading={isLoading}
-        isFiltered={!!search || typeFilter !== 'all'}
-        onEdit={handleEdit}
-      />
+      {isError && allCategories.length === 0 ? (
+        <QueryErrorCard message="Não foi possível carregar as categorias." onRetry={() => refetch()} />
+      ) : (
+        <CategoriesTable
+          categories={filteredCategories}
+          isLoading={isLoading}
+          isFiltered={!!search || typeFilter !== 'all'}
+          onEdit={handleEdit}
+        />
+      )}
 
       {/* Dialog de edição */}
       <Dialog open={!!editingCategory} onOpenChange={() => setEditingCategory(null)}>
