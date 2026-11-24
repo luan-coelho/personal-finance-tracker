@@ -7,13 +7,14 @@ import type { Transaction } from '@/app/db/schemas'
 
 import { MonthSelector } from '@/components/month-selector'
 import { QueryErrorCard } from '@/components/query-error-card'
+import { useTransactionComposer } from '@/components/transaction-composer'
 import { TransactionForm } from '@/components/transaction-form'
 import { TransactionSummary } from '@/components/transaction-summary'
 import { type TransactionFilters, TransactionsFilters } from '@/components/transactions-filters'
 import { TransactionsTable } from '@/components/transactions-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PageActions } from '@/components/ui/page-actions'
 import { PageHeader } from '@/components/ui/page-header'
@@ -34,9 +35,8 @@ import { formatCurrency } from '@/lib/currency'
 import { buildTransactionUrlQuery, parseTransactionUrlFilters } from '@/lib/transaction-filter-utils'
 import { cn } from '@/lib/utils'
 
-import { useMonthSelectorContext } from '@/providers/month-selector-provider'
-
 import TransacoesLoading from './loading'
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 // `useSearchParams` exige Suspense para a rota continuar pré-renderizável.
 export default function TransacoesPage() {
@@ -56,9 +56,8 @@ function TransacoesContent() {
   const [page, setPage] = useState(1)
   // Filtros iniciais vindos da URL (ex.: link "ver transações de Mercado" no Início)
   const [filters, setFilters] = useState<TransactionFilters>(() => parseTransactionUrlFilters(searchParams))
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const { openComposer } = useTransactionComposer()
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
-  const [prefillTransaction, setPrefillTransaction] = useState<Transaction | null>(null)
 
   // Mês/ano começa no mês do seletor compartilhado (o mesmo escolhido no Início)
   const [showAllTransactions, setShowAllTransactions] = useState(false)
@@ -134,18 +133,7 @@ function TransacoesContent() {
   }
 
   const handleDuplicate = (transaction: Transaction) => {
-    setPrefillTransaction(transaction)
-    setIsCreateOpen(true)
-  }
-
-  const handleCreateSuccess = () => {
-    setIsCreateOpen(false)
-    setPrefillTransaction(null)
-  }
-
-  const handleCreateCancel = () => {
-    setIsCreateOpen(false)
-    setPrefillTransaction(null)
+    openComposer({ duplicateOf: transaction, existingTransactions: data?.transactions })
   }
 
   const handleEditSuccess = () => {
@@ -178,39 +166,14 @@ function TransacoesContent() {
 
       <PageActions
         actions={
-          <Dialog
-            open={isCreateOpen}
-            onOpenChange={open => {
-              setIsCreateOpen(open)
-              if (!open) {
-                setPrefillTransaction(null)
-              }
-            }}>
-            <DialogTrigger asChild>
-              <Button
-                variant="primary"
-                icon="plus"
-                onClick={() => {
-                  setPrefillTransaction(null)
-                }}>
-                Nova transação
-              </Button>
-            </DialogTrigger>
-            <DialogContent size="md" onInteractOutside={e => e.preventDefault()}>
-              <DialogHeader>
-                <DialogTitle>Nova transação</DialogTitle>
-              </DialogHeader>
-              <DialogBody>
-                <TransactionForm
-                  transaction={prefillTransaction ?? undefined}
-                  mode={prefillTransaction ? 'copy' : 'create'}
-                  onSuccess={handleCreateSuccess}
-                  onCancel={handleCreateCancel}
-                  existingTransactions={data?.transactions}
-                />
-              </DialogBody>
-            </DialogContent>
-          </Dialog>
+          // No mobile a mesma ação é o FAB.
+          <Button
+            variant="primary"
+            icon="plus"
+            className="max-lg:hidden"
+            onClick={() => openComposer({ existingTransactions: data?.transactions })}>
+            Nova transação
+          </Button>
         }>
         {/* Seletor de mês/ano */}
         {!showAllTransactions ? (
@@ -337,20 +300,20 @@ function TransacoesContent() {
 
       {/* Dialog de edição */}
       <Dialog open={!!editingTransaction} onOpenChange={() => setEditingTransaction(null)}>
-        <DialogContent size="md">
+        {/* Tocar fora não fecha: evita perder a edição por um toque acidental. */}
+        <DialogContent size="md" onInteractOutside={event => event.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Editar transação</DialogTitle>
           </DialogHeader>
-          <DialogBody>
-            {editingTransaction && (
-              <TransactionForm
-                transaction={editingTransaction}
-                onSuccess={handleEditSuccess}
-                onCancel={() => setEditingTransaction(null)}
-                existingTransactions={data?.transactions}
-              />
-            )}
-          </DialogBody>
+          {editingTransaction && (
+            <TransactionForm
+              layout="dialog"
+              transaction={editingTransaction}
+              onSuccess={handleEditSuccess}
+              onCancel={() => setEditingTransaction(null)}
+              existingTransactions={data?.transactions}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>

@@ -1,9 +1,9 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
+import { startOfDay } from 'date-fns'
 import React, { useCallback } from 'react'
 import { type Resolver, useForm, useWatch } from 'react-hook-form'
-import { toast } from 'sonner'
 import type { z } from 'zod'
 
 import { DefaultCategories, type Transaction } from '@/app/db/schemas'
@@ -15,12 +15,13 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { Combobox } from '@/components/ui/combobox'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { DatePicker } from '@/components/ui/date-picker'
+import { DialogBody, DialogFooter } from '@/components/ui/dialog'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Icon } from '@/components/ui/icon'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SelectionButton } from '@/components/ui/selection-button'
-import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 import { useCategories } from '@/hooks/use-categories'
@@ -30,12 +31,17 @@ import { useTags } from '@/hooks/use-tags'
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transactions'
 
 import { useSession } from '@/lib/auth-client'
+import { readRecentCategories, rememberRecentCategory, sortCategoriesByRecency } from '@/lib/recent-categories'
 import { getTransactionFormContextDefaults, type TransactionInitialValues } from '@/lib/transaction-form-utils'
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 type TransactionFormValues = Omit<z.infer<typeof insertTransactionSchema>, 'tags'> & { tags?: string[] }
 const EMPTY_TRANSACTIONS: Transaction[] = []
+/** Com mais categorias que isso, o campo ganha busca. */
+const CATEGORY_SEARCH_THRESHOLD = 8
+/** Categorias visíveis antes de "Ver todas" (as recentes vêm primeiro). */
+const CATEGORY_COLLAPSED_COUNT = 9
 
 interface TransactionFormProps {
   transaction?: Transaction
@@ -45,6 +51,11 @@ interface TransactionFormProps {
   initialValues?: TransactionInitialValues
   /** Transações já carregadas na página para cálculo da data padrão */
   existingTransactions?: Transaction[]
+  /**
+   * `inline` (padrão): campos e botões no fluxo. `dialog`: o formulário é filho direto do
+   * `DialogContent`; os campos rolam no `DialogBody` e os botões ficam fixos no `DialogFooter`.
+   */
+  layout?: 'inline' | 'dialog'
 }
 
 export function TransactionForm({
@@ -54,10 +65,13 @@ export function TransactionForm({
   mode,
   initialValues,
   existingTransactions = EMPTY_TRANSACTIONS,
+  layout = 'inline',
 }: TransactionFormProps) {
   const { data: session } = useSession()
   const { selectedSpace } = useSelectedSpace()
-  const { monthStartDate } = useMonthSelectorContext()
+  const { monthStartDate, isCurrentMonth } = useMonthSelectorContext()
+  // Fixado na montagem: a data padrão não muda com o formulário aberto.
+  const [today] = React.useState(() => startOfDay(new Date()))
   const selectedSpaceId = selectedSpace?.id || ''
   const userId = session?.user?.id || ''
   const formMode = mode ?? (transaction ? 'edit' : 'create')
@@ -72,10 +86,23 @@ export function TransactionForm({
         initialValues: { type: initialType, category: initialCategory, date: initialDate },
         existingTransactions,
         monthStartDate,
+        today,
+        isCurrentMonth,
         userId,
         mode: formMode,
       }),
-    [transaction, initialType, initialCategory, initialDate, existingTransactions, monthStartDate, userId, formMode],
+    [
+      transaction,
+      initialType,
+      initialCategory,
+      initialDate,
+      existingTransactions,
+      monthStartDate,
+      today,
+      isCurrentMonth,
+      userId,
+      formMode,
+    ],
   )
 
   // Buscar tags cadastradas no espaço
@@ -115,6 +142,14 @@ export function TransactionForm({
   // Buscar categorias do espaço baseado no tipo selecionado
   const currentType = useWatch({ control: form.control, name: 'type' })
   const [categorySearch, setCategorySearch] = React.useState('')
+  const [showAllCategories, setShowAllCategories] = React.useState(false)
+  // Ao criar: continuar lançando depois de salvar, sem fechar o formulário.
+  const [addAnother, setAddAnother] = React.useState(false)
+  // Categorias usadas por último neste espaço e tipo, para aparecerem primeiro.
+  const [recentCategories, setRecentCategories] = React.useState<string[]>([])
+  React.useEffect(() => {
+    setRecentCategories(readRecentCategories(selectedSpaceId, currentType))
+  }, [selectedSpaceId, currentType])
   const { data: customCategories = [] } = useCategories(
     selectedSpaceId,
     currentType === 'reserva' ? undefined : currentType,
@@ -138,11 +173,24 @@ export function TransactionForm({
     availableCategories.push(contextCategory)
   }
 
+  const selectedCategory = useWatch({ control: form.control, name: 'category' })
+  const sortedCategories = sortCategoriesByRecency(availableCategories, recentCategories)
+  const hasCategorySearch = availableCategories.length > CATEGORY_SEARCH_THRESHOLD
+
   // Busca de categoria: ignora acentos e maiúsculas
-  const categoryQuery = normalizeCategoryName(categorySearch.trim())
-  const visibleCategories = categoryQuery
-    ? availableCategories.filter(category => normalizeCategoryName(category).includes(categoryQuery))
-    : availableCategories
+  const categoryQuery = hasCategorySearch ? normalizeCategoryName(categorySearch.trim()) : ''
+  const isCategoryListCollapsed =
+    !categoryQuery && !showAllCategories && sortedCategories.length > CATEGORY_COLLAPSED_COUNT + 1
+  let visibleCategories = sortedCategories
+  if (categoryQuery) {
+    visibleCategories = sortedCategories.filter(category => normalizeCategoryName(category).includes(categoryQuery))
+  } else if (isCategoryListCollapsed) {
+    // Recolhida: as primeiras (recentes na frente) e sempre a selecionada.
+    visibleCategories = sortedCategories.slice(0, CATEGORY_COLLAPSED_COUNT)
+    if (selectedCategory && !visibleCategories.includes(selectedCategory)) {
+      visibleCategories = [...visibleCategories, selectedCategory]
+    }
+  }
 
   // Máscara de real para o campo amount: o CurrencyInput já entrega o valor mascarado
   // por formatBrazilianAmountInput.
@@ -174,13 +222,21 @@ export function TransactionForm({
       } else {
         await createMutation.mutateAsync(formData)
       }
+      if (formData.category) {
+        rememberRecentCategory(selectedSpace.id, formData.type, formData.category)
+        setRecentCategories(readRecentCategories(selectedSpace.id, formData.type))
+      }
+      if (!isEditing && addAnother) {
+        // Mantém tipo, data, categoria e reserva; limpa só o que muda a cada lançamento.
+        form.reset({ ...values, amount: '', description: '', tags: [] })
+        setCategorySearch('')
+        form.setFocus('amount')
+        return
+      }
       form.reset()
       onSuccess?.()
     } catch (error) {
-      toast.error('Não foi possível salvar a transação. Verifique a conexão e tente novamente.', {
-        duration: Infinity,
-        closeButton: true,
-      })
+      // O hook de mutation já mostra o toast; aqui o erro fica também abaixo dos campos.
       console.error('Erro ao salvar transação:', error)
     }
   }
@@ -201,246 +257,279 @@ export function TransactionForm({
   }
 
   const tagOptions = existingTags.map(tag => ({ value: tag, label: tag }))
+  // No dialog, os campos rolam no corpo e os botões ficam fixos no rodapé.
+  const Body = layout === 'dialog' ? DialogBody : 'div'
+  const Footer = layout === 'dialog' ? DialogFooter : 'div'
   const submitError = createMutation.error?.message || updateMutation.error?.message
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Tipo de transação */}
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Tipo</FormLabel>
-                <FormControl>
-                  <ToggleGroup
-                    type="single"
-                    fullWidth
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={isLoading}
-                    aria-label="Tipo de transação">
-                    <ToggleGroupItem value="entrada" icon="arrow-up-circle" tone="success">
-                      Entrada
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="saida" icon="arrow-down-circle" tone="error">
-                      Saída
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="reserva" icon="piggy-bank" tone="info">
-                      Reserva
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Descrição */}
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Descrição</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="Ex.: Compra no mercado"
-                    className="resize-none"
-                    rows={3}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Valor */}
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Valor</FormLabel>
-                <FormControl>
-                  <CurrencyInput
-                    ref={field.ref}
-                    name={field.name}
-                    value={field.value}
-                    onBlur={field.onBlur}
-                    onChange={handleAmountChange}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Data */}
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data</FormLabel>
-                <FormControl>
-                  <DatePicker
-                    date={field.value}
-                    onSelect={field.onChange}
-                    placeholder="Selecione uma data"
-                    disabled={isLoading}
-                    defaultMonth={monthStartDate}
-                    showNavigation
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Categoria - apenas para entrada e saída */}
-          {currentType !== 'reserva' && (
+      <form onSubmit={form.handleSubmit(onSubmit)} className={layout === 'inline' ? 'flex flex-col gap-6' : undefined}>
+        <Body className={layout === 'dialog' ? 'gap-6' : 'contents'}>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Tipo de transação */}
             <FormField
               control={form.control}
-              name="category"
+              name="type"
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                  <FormLabel>Categoria</FormLabel>
-                  <Input
-                    type="text"
-                    enterKeyHint="search"
-                    icon="search"
-                    aria-label="Buscar categoria"
-                    placeholder="Buscar categoria"
-                    autoComplete="off"
-                    value={categorySearch}
-                    onChange={event => setCategorySearch(event.target.value)}
-                    onKeyDown={event => {
-                      if (event.key !== 'Enter') return
-                      // Enter não envia o formulário; com um só resultado, escolhe-o.
-                      event.preventDefault()
-                      if (visibleCategories.length === 1) field.onChange(visibleCategories[0])
-                    }}
-                    disabled={isLoading}
-                    className="sm:max-w-80"
-                    action={
-                      categorySearch ? (
-                        <IconButton
-                          icon="x"
-                          label="Limpar busca"
-                          size="sm"
-                          onClick={() => setCategorySearch('')}
-                          disabled={isLoading}
-                        />
-                      ) : undefined
-                    }
-                  />
-                  {visibleCategories.length === 0 && (
-                    <p className="text-muted-foreground text-sm" role="status">
-                      Nenhuma categoria encontrada para "{categorySearch.trim()}".
-                    </p>
-                  )}
-                  <div role="group" aria-label="Categoria" className="flex flex-wrap gap-2">
-                    {visibleCategories.map((category, index) => {
-                      const button = (
-                        <SelectionButton
-                          key={category}
-                          ref={index === 0 ? field.ref : undefined}
-                          aria-label={category}
-                          selected={field.value === category}
-                          onClick={() => field.onChange(category)}
-                          onBlur={field.onBlur}
-                          disabled={isLoading}>
-                          <CategoryIcon name={category} size={18} />
-                          <span>{category}</span>
-                        </SelectionButton>
-                      )
-
-                      return index === 0 ? <FormControl key={category}>{button}</FormControl> : button
-                    })}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* Reserva - apenas para tipo reserva */}
-          {currentType === 'reserva' && (
-            <FormField
-              control={form.control}
-              name="reserveId"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Reserva</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione uma reserva" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {activeReserves.length === 0 ? (
-                        <div className="text-muted-foreground px-3 py-2 text-sm">Nenhuma reserva ativa</div>
-                      ) : (
-                        activeReserves.map(reserve => (
-                          <SelectItem key={reserve.id} value={reserve.id}>
-                            {reserve.name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* Tags - seleção apenas das cadastradas */}
-          <FormField
-            control={form.control}
-            name="tags"
-            render={({ field }) => (
-              <FormItem className="md:col-span-2">
-                <FormLabel>Tags (opcional)</FormLabel>
-                {existingTags.length === 0 ? (
-                  <FormDescription>Nenhuma tag cadastrada. Cadastre tags na página de tags.</FormDescription>
-                ) : (
+                  <FormLabel>Tipo</FormLabel>
                   <FormControl>
-                    <Combobox
-                      multiple
-                      options={tagOptions}
-                      value={field.value ?? []}
-                      onChange={field.onChange}
-                      placeholder="Selecione as tags"
-                      searchPlaceholder="Buscar tag"
-                      emptyText="Nenhuma tag encontrada"
+                    <ToggleGroup
+                      type="single"
+                      fullWidth
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isLoading}
+                      aria-label="Tipo de transação">
+                      <ToggleGroupItem value="entrada" icon="arrow-up-circle" tone="success">
+                        Entrada
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="saida" icon="arrow-down-circle" tone="error">
+                        Saída
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="reserva" icon="piggy-bank" tone="info">
+                        Reserva
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Valor */}
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor</FormLabel>
+                  <FormControl>
+                    <CurrencyInput
+                      ref={field.ref}
+                      name={field.name}
+                      value={field.value}
+                      onBlur={field.onBlur}
+                      onChange={handleAmountChange}
+                      disabled={isLoading}
+                      className="max-lg:text-xl max-lg:font-semibold"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Descrição */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Ex.: Compra no mercado"
+                      autoComplete="off"
+                      autoCapitalize="sentences"
+                      enterKeyHint="next"
                       disabled={isLoading}
                     />
                   </FormControl>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        {/* Erro global */}
-        {submitError && (
-          <p role="alert" className="text-error-text flex items-start gap-1.5 text-[13px]/[18px]">
-            <Icon name="alert-circle" size={14} className="mt-0.5" />
-            <span className="min-w-0">{submitError}</span>
-          </p>
-        )}
+            {/* Categoria - apenas para entrada e saída */}
+            {currentType !== 'reserva' && (
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Categoria</FormLabel>
+                    {hasCategorySearch && (
+                      <Input
+                        type="text"
+                        enterKeyHint="search"
+                        icon="search"
+                        aria-label="Buscar categoria"
+                        placeholder="Buscar categoria"
+                        autoComplete="off"
+                        value={categorySearch}
+                        onChange={event => setCategorySearch(event.target.value)}
+                        onKeyDown={event => {
+                          if (event.key !== 'Enter') return
+                          // Enter não envia o formulário; com um só resultado, escolhe-o.
+                          event.preventDefault()
+                          if (visibleCategories.length === 1) field.onChange(visibleCategories[0])
+                        }}
+                        disabled={isLoading}
+                        className="sm:max-w-80"
+                        action={
+                          categorySearch ? (
+                            <IconButton
+                              icon="x"
+                              label="Limpar busca"
+                              size="sm"
+                              onClick={() => setCategorySearch('')}
+                              disabled={isLoading}
+                            />
+                          ) : undefined
+                        }
+                      />
+                    )}
+                    {visibleCategories.length === 0 && (
+                      <p className="text-muted-foreground text-sm" role="status">
+                        Nenhuma categoria encontrada para "{categorySearch.trim()}".
+                      </p>
+                    )}
+                    <div role="group" aria-label="Categoria" className="flex flex-wrap gap-2">
+                      {visibleCategories.map((category, index) => {
+                        const button = (
+                          <SelectionButton
+                            key={category}
+                            ref={index === 0 ? field.ref : undefined}
+                            aria-label={category}
+                            selected={field.value === category}
+                            onClick={() => field.onChange(category)}
+                            onBlur={field.onBlur}
+                            disabled={isLoading}>
+                            <CategoryIcon name={category} size={18} />
+                            <span>{category}</span>
+                          </SelectionButton>
+                        )
+
+                        return index === 0 ? <FormControl key={category}>{button}</FormControl> : button
+                      })}
+                      {isCategoryListCollapsed && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          iconRight="chevron-down"
+                          onClick={() => setShowAllCategories(true)}
+                          disabled={isLoading}>
+                          Ver todas
+                        </Button>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Reserva - apenas para tipo reserva */}
+            {currentType === 'reserva' && (
+              <FormField
+                control={form.control}
+                name="reserveId"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Reserva</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione uma reserva" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {activeReserves.length === 0 ? (
+                          <div className="text-muted-foreground px-3 py-2 text-sm">Nenhuma reserva ativa</div>
+                        ) : (
+                          activeReserves.map(reserve => (
+                            <SelectItem key={reserve.id} value={reserve.id}>
+                              {reserve.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Data */}
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      date={field.value}
+                      onSelect={field.onChange}
+                      placeholder="Selecione uma data"
+                      disabled={isLoading}
+                      defaultMonth={monthStartDate}
+                      showNavigation
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Tags - seleção apenas das cadastradas */}
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Tags (opcional)</FormLabel>
+                  {existingTags.length === 0 ? (
+                    <FormDescription>Nenhuma tag cadastrada. Cadastre tags na página de tags.</FormDescription>
+                  ) : (
+                    <FormControl>
+                      <Combobox
+                        multiple
+                        options={tagOptions}
+                        value={field.value ?? []}
+                        onChange={field.onChange}
+                        placeholder="Selecione as tags"
+                        searchPlaceholder="Buscar tag"
+                        emptyText="Nenhuma tag encontrada"
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Erro global */}
+          {submitError && (
+            <p role="alert" className="text-error-text flex items-start gap-1.5 text-[13px]/[18px]">
+              <Icon name="alert-circle" size={14} className="mt-0.5" />
+              <span className="min-w-0">{submitError}</span>
+            </p>
+          )}
+
+          {/* Ao criar: continuar lançando sem fechar */}
+          {!isEditing && (
+            <label className="flex min-h-11 cursor-pointer items-center justify-between gap-4 text-sm leading-5">
+              <span className="flex min-w-0 flex-col">
+                <span className="font-medium">Adicionar outra em seguida</span>
+                <span className="text-muted-foreground text-[13px] leading-[18px]">
+                  Depois de salvar, mantém tipo, data e categoria.
+                </span>
+              </span>
+              <Switch checked={addAnother} onCheckedChange={setAddAnother} disabled={isLoading} />
+            </label>
+          )}
+        </Body>
 
         {/* Ações */}
-        <div className="flex flex-wrap justify-end gap-2">
+        <Footer className={layout === 'inline' ? 'flex flex-wrap justify-end gap-2' : undefined}>
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
               Cancelar
@@ -449,7 +538,7 @@ export function TransactionForm({
           <Button type="submit" variant="primary" loading={isLoading}>
             {isLoading ? 'Salvando' : isEditing ? 'Salvar alterações' : 'Salvar transação'}
           </Button>
-        </div>
+        </Footer>
       </form>
     </Form>
   )

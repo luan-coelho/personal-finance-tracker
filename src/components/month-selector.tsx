@@ -30,6 +30,7 @@ const shortMonthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago',
 /**
  * Seletor de mês Radar: controle de 40px com anterior/próximo e o rótulo do mês,
  * que abre um popover com o ano e a grade de meses. Fica à esquerda do `PageActions`.
+ * Abaixo de `lg` ocupa a linha inteira, com 48px e setas de 40px nas pontas.
  */
 export function MonthSelector({
   onMonthChange,
@@ -68,11 +69,11 @@ export function MonthSelector({
   const label = `${monthSelector.monthName} de ${monthSelector.selectedYear}`
 
   return (
-    <div data-slot="month-selector" className={cn('flex flex-wrap items-center gap-2', className)}>
+    <div data-slot="month-selector" className={cn('flex flex-wrap items-center gap-2 max-lg:w-full', className)}>
       <div
         role="group"
         aria-label="Mês"
-        className="border-input bg-card h-control-md inline-flex items-center gap-0.5 rounded-full border p-[3px]">
+        className="border-input bg-card h-control-md inline-flex items-center gap-0.5 rounded-full border p-[3px] max-lg:flex max-lg:w-full">
         <IconButton icon="chevron-left" label="Mês anterior" size="sm" onClick={monthSelector.goToPreviousMonth} />
 
         <Popover open={open} onOpenChange={handleOpenChange}>
@@ -80,7 +81,7 @@ export function MonthSelector({
             <button
               type="button"
               aria-label={`Escolher mês, atual: ${label}`}
-              className="hover:bg-accent data-[state=open]:bg-accent focus-visible:shadow-focus-ring text-foreground h-control-sm inline-flex min-w-40 items-center justify-center gap-2 rounded-full px-3 text-sm leading-5 font-medium whitespace-nowrap transition-colors duration-150 outline-none">
+              className="hover:bg-accent data-[state=open]:bg-accent focus-visible:shadow-focus-ring text-foreground h-control-sm inline-flex min-w-40 items-center justify-center gap-2 rounded-full px-3 text-sm leading-5 font-medium whitespace-nowrap transition-colors duration-150 outline-none max-lg:flex-1">
               <Icon name="calendar" size={16} className="text-muted-foreground" />
               <span className="tabular-nums">{label}</span>
             </button>

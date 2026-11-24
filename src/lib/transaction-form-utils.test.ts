@@ -61,6 +61,37 @@ describe('getTransactionFormContextDefaults', () => {
     assert.equal(existingTransactions[0], transaction)
   })
 
+  it('defaults a new transaction to today when the selected month is the current one', () => {
+    const today = new Date('2026-10-17T03:00:00.000Z')
+    const existingTransactions = [{ ...transaction, date: new Date('2026-10-20T03:00:00.000Z') }]
+    const defaults = getTransactionFormContextDefaults({
+      ...context,
+      existingTransactions,
+      today,
+      isCurrentMonth: true,
+    })
+
+    assert.equal(defaults.date, today)
+  })
+
+  it('ignores today outside the current month and keeps the page-based default', () => {
+    const today = new Date('2026-11-24T03:00:00.000Z')
+    const defaults = getTransactionFormContextDefaults({ ...context, today, isCurrentMonth: false })
+
+    assert.equal(defaults.date, monthStartDate)
+  })
+
+  it('prefers an explicit initial date over today', () => {
+    const defaults = getTransactionFormContextDefaults({
+      ...context,
+      initialValues: { date: initialDate },
+      today: new Date('2026-10-17T03:00:00.000Z'),
+      isCurrentMonth: true,
+    })
+
+    assert.equal(defaults.date, initialDate)
+  })
+
   it('keeps transaction fields and original author when editing another member transaction', () => {
     const defaults = getTransactionFormContextDefaults({
       ...context,

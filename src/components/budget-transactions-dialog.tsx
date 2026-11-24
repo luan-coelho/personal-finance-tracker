@@ -74,7 +74,7 @@ export function BudgetTransactionsDialog({ budget, onClose, onCloseAutoFocus }: 
 
   useEffect(() => {
     if (editor) {
-      contentRef.current?.querySelector('textarea')?.focus()
+      contentRef.current?.querySelector<HTMLInputElement>('input[name="amount"]')?.focus()
     } else if (restoreFocusRef.current) {
       restoreFocusRef.current = false
       const editButton = Array.from(

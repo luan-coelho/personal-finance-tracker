@@ -1,14 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
 import { MonthSelector } from '@/components/month-selector'
 import { QueryErrorCard } from '@/components/query-error-card'
-import { TransactionForm } from '@/components/transaction-form'
+import { useTransactionComposer } from '@/components/transaction-composer'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PageActions } from '@/components/ui/page-actions'
 import { PageHeader } from '@/components/ui/page-header'
@@ -18,9 +15,8 @@ import { useSelectedSpace } from '@/hooks/use-selected-space'
 
 import { parseMonthString, toMonthString } from '@/lib/date-utils'
 
-import { useMonthSelectorContext } from '@/providers/month-selector-provider'
-
 import InicioLoading from './loading'
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 function greeting(hour: number) {
   if (hour < 12) return 'Bom dia'
@@ -31,7 +27,7 @@ function greeting(hour: number) {
 export default function InicioPage() {
   const { selectedSpace, isLoading: isSpaceLoading } = useSelectedSpace()
   const monthSelector = useMonthSelectorContext()
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const { openComposer } = useTransactionComposer()
 
   const month = toMonthString(monthSelector.selectedYear, monthSelector.selectedMonth)
   const { data: overview, isLoading, isError, refetch, isPlaceholderData } = useDashboard(selectedSpace?.id, month)
@@ -68,25 +64,10 @@ export default function InicioPage() {
 
       <PageActions
         actions={
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button variant="primary" icon="plus">
-                Nova transação
-              </Button>
-            </DialogTrigger>
-            <DialogContent size="md" onInteractOutside={event => event.preventDefault()}>
-              <DialogHeader>
-                <DialogTitle>Nova transação</DialogTitle>
-              </DialogHeader>
-              <DialogBody>
-                <TransactionForm
-                  mode="create"
-                  onSuccess={() => setIsCreateOpen(false)}
-                  onCancel={() => setIsCreateOpen(false)}
-                />
-              </DialogBody>
-            </DialogContent>
-          </Dialog>
+          // No mobile a mesma ação é o FAB.
+          <Button variant="primary" icon="plus" className="max-lg:hidden" onClick={() => openComposer()}>
+            Nova transação
+          </Button>
         }>
         <MonthSelector />
       </PageActions>
@@ -99,11 +80,13 @@ export default function InicioPage() {
         // Ao trocar de mês, o painel anterior fica visível e esmaecido até os novos dados chegarem
         <div
           aria-busy={isPlaceholderData || undefined}
-          className={isPlaceholderData ? 'opacity-60 transition-opacity duration-200' : 'transition-opacity duration-200'}>
+          className={
+            isPlaceholderData ? 'opacity-60 transition-opacity duration-200' : 'transition-opacity duration-200'
+          }>
           <DashboardView
             overview={overview}
             onSelectMonth={handleSelectMonth}
-            onCreateTransaction={() => setIsCreateOpen(true)}
+            onCreateTransaction={() => openComposer()}
           />
         </div>
       )}

@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { Fragment } from 'react'
 
 import { useSignOut } from '@/components/auth/sign-out-button'
 import { UserAvatar } from '@/components/auth/user-avatar'
+import { isActivePath, navGroups } from '@/components/layout/navigation'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { IconButton } from '@/components/ui/button'
 import {
@@ -17,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Icon, type IconName } from '@/components/ui/icon'
+import { Icon } from '@/components/ui/icon'
 import {
   Sidebar,
   SidebarContent,
@@ -39,47 +41,6 @@ import { useSpaces } from '@/hooks/use-spaces'
 import { useSession } from '@/lib/auth-client'
 import { routes } from '@/lib/routes'
 import { cn } from '@/lib/utils'
-
-interface NavItem {
-  label: string
-  href: string
-  icon: IconName
-}
-
-interface NavGroup {
-  title: string
-  items: NavItem[]
-}
-
-const navGroups: NavGroup[] = [
-  {
-    title: 'Finanças',
-    items: [
-      { label: 'Início', href: routes.frontend.admin.home.index, icon: 'home' },
-      { label: 'Transações', href: routes.frontend.admin.transactions.index, icon: 'credit-card' },
-      { label: 'Orçamentos', href: routes.frontend.admin.budgets.index, icon: 'target' },
-      { label: 'Reservas', href: routes.frontend.admin.reserves.index, icon: 'piggy-bank' },
-    ],
-  },
-  {
-    title: 'Cadastros',
-    items: [
-      { label: 'Categorias', href: routes.frontend.admin.categories.index, icon: 'folder-tree' },
-      { label: 'Tags', href: routes.frontend.admin.tags.index, icon: 'tag' },
-    ],
-  },
-  {
-    title: 'Administração',
-    items: [
-      { label: 'Espaços', href: routes.frontend.admin.spaces.index, icon: 'building-2' },
-      { label: 'Usuários', href: routes.frontend.admin.users.index, icon: 'users' },
-    ],
-  },
-]
-
-function isActivePath(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`)
-}
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -163,7 +124,7 @@ function SidebarBrand({ collapsed }: { collapsed: boolean }) {
         Família Coelho
       </Link>
       {isMobile ? (
-        <IconButton icon="x" label="Fechar menu" size="sm" onClick={() => setOpenMobile(false)} />
+        <IconButton icon="x" label="Fechar menu" onClick={() => setOpenMobile(false)} />
       ) : (
         <IconButton icon="sidebar-collapse" label="Recolher menu" size="sm" onClick={toggleSidebar} />
       )}
@@ -180,6 +141,8 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
   const { data: spaces, isLoading: spacesLoading } = useSpaces()
   const { signOut, isPending: signingOut } = useSignOut()
   const { isMobile, setOpenMobile } = useSidebar()
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
 
   if (status === 'loading') {
     return collapsed ? (
@@ -262,6 +225,8 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
                   key={space.id}
                   onSelect={() => {
                     if (!isCurrent) setSelectedSpace(space)
+                    // No drawer, trocar de espaço já volta para a tela.
+                    if (isMobile) setOpenMobile(false)
                   }}
                   aria-current={isCurrent ? 'true' : undefined}
                   className={cn(menuItemClass, 'px-2.5 py-2', isCurrent && 'bg-accent')}>
@@ -299,6 +264,14 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator className="bg-border mx-0 my-1 h-px" />
+
+        {/* No mobile o tema sai da AppBar e fica aqui. */}
+        {isMobile && (
+          <DropdownMenuItem onSelect={() => setTheme(isDark ? 'light' : 'dark')} className={menuItemClass}>
+            <Icon name={isDark ? 'sun' : 'moon'} size={20} />
+            {isDark ? 'Usar tema claro' : 'Usar tema escuro'}
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuItem
           onSelect={signOut}

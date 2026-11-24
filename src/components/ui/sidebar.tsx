@@ -187,7 +187,7 @@ function Sidebar({
             data-side={side}
             aria-describedby={undefined}
             className={cn(
-              'bg-card text-foreground border-border fixed inset-y-0 z-50 flex h-full w-(--sidebar-width) max-w-[calc(100vw-48px)] flex-col gap-4 px-3 py-5 text-sm leading-5 duration-200 outline-none',
+              'bg-card text-foreground border-border pt-[calc(var(--safe-top)+--spacing(5))] pb-[calc(var(--safe-bottom)+--spacing(5))] fixed inset-y-0 z-50 flex h-full w-(--sidebar-width) max-w-[calc(100vw-48px)] flex-col gap-4 px-3 text-sm leading-5 duration-200 outline-none',
               'data-[state=open]:animate-in data-[state=closed]:animate-out',
               side === 'left'
                 ? 'data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left left-0 border-r'
