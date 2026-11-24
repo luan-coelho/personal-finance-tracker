@@ -5,7 +5,7 @@ import { Icon, type IconProps } from '@/components/ui/icon'
 import type { IconName } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
-export type CategoryTone = 'primary' | 'success' | 'warning' | 'error' | 'info' | 'ai'
+export type CategoryTone = 'primary' | 'success' | 'warning' | 'error' | 'info' | 'ai' | 'neutral'
 
 const categoryIcons: Array<{ keywords: string[]; icon: IconName; tone: CategoryTone }> = [
   { keywords: ['salario', 'remuneracao'], icon: 'banknote', tone: 'success' },
@@ -25,7 +25,29 @@ const categoryIcons: Array<{ keywords: string[]; icon: IconName; tone: CategoryT
   { keywords: ['telefone', 'celular', 'internet'], icon: 'smartphone', tone: 'primary' },
   { keywords: ['viagem', 'ferias'], icon: 'plane', tone: 'info' },
   { keywords: ['conta', 'fatura', 'boleto'], icon: 'receipt', tone: 'error' },
+  { keywords: ['cartao', 'credito'], icon: 'credit-card', tone: 'primary' },
+  { keywords: ['seguro'], icon: 'shield-check', tone: 'info' },
+  { keywords: ['imposto', 'tributo', 'taxa', 'iptu', 'ipva'], icon: 'landmark', tone: 'error' },
+  { keywords: ['emprestimo', 'financiamento', 'divida'], icon: 'hand-coins', tone: 'warning' },
+  { keywords: ['dividendo', 'juros', 'jcp'], icon: 'pie-chart', tone: 'success' },
+  { keywords: ['premio', 'premiacao', 'bonus', 'bonificacao', 'plr'], icon: 'trophy', tone: 'warning' },
+  { keywords: ['mesada'], icon: 'coins', tone: 'warning' },
+  { keywords: ['reembolso', 'estorno', 'restituicao', 'devolucao'], icon: 'undo', tone: 'info' },
+  { keywords: ['academia', 'ginastica', 'esporte', 'pilates', 'crossfit'], icon: 'dumbbell', tone: 'success' },
+  { keywords: ['streaming', 'netflix', 'spotify'], icon: 'tv', tone: 'error' },
+  { keywords: ['assinatura'], icon: 'repeat', tone: 'ai' },
+  { keywords: ['beleza', 'cabelo', 'salao', 'barbearia', 'estetica', 'manicure'], icon: 'scissors', tone: 'error' },
+  { keywords: ['estacionamento'], icon: 'square-parking', tone: 'primary' },
+  { keywords: ['manutencao', 'conserto', 'reparo', 'reforma', 'oficina'], icon: 'wrench', tone: 'warning' },
+  { keywords: ['medicamento', 'remedio'], icon: 'pill', tone: 'error' },
+  { keywords: ['pet', 'veterinari', 'racao', 'animal'], icon: 'paw', tone: 'warning' },
+  { keywords: ['vestuario', 'roupa', 'calcado', 'sapato'], icon: 'shirt', tone: 'primary' },
+  // Por último: "Outros Recebimentos" e "Outros Gastos" são sobra, não informação (tom neutro).
+  { keywords: ['outro', 'diverso'], icon: 'circle-ellipsis', tone: 'neutral' },
 ]
+
+/** Palavras-chave curtas (até 3 letras) só casam no começo de uma palavra: "pet" não pega "carpete". */
+const SHORT_KEYWORD_LENGTH = 3
 
 const FALLBACK_CATEGORY_ICON: IconName = 'folder-open'
 
@@ -39,6 +61,7 @@ const toneClasses: Record<CategoryTone, { text: string; tile: string }> = {
   error: { text: 'text-error-text', tile: 'bg-error-soft text-error-text' },
   info: { text: 'text-info-text', tile: 'bg-info-soft text-info-text' },
   ai: { text: 'text-ai-text', tile: 'bg-ai-soft text-ai-text' },
+  neutral: { text: 'text-muted-foreground', tile: 'bg-muted text-muted-foreground' },
 }
 
 /** Nome sem acento e em minúsculas, para casar palavras-chave e buscas. */
@@ -49,9 +72,16 @@ export function normalizeCategoryName(name: string) {
     .toLowerCase()
 }
 
+function matchesKeyword(normalizedName: string, words: string[], keyword: string) {
+  return keyword.length <= SHORT_KEYWORD_LENGTH
+    ? words.some(word => word.startsWith(keyword))
+    : normalizedName.includes(keyword)
+}
+
 function findCategoryEntry(name: string) {
   const normalizedName = normalizeCategoryName(name)
-  return categoryIcons.find(({ keywords }) => keywords.some(keyword => normalizedName.includes(keyword)))
+  const words = normalizedName.split(/[^a-z0-9]+/).filter(Boolean)
+  return categoryIcons.find(({ keywords }) => keywords.some(keyword => matchesKeyword(normalizedName, words, keyword)))
 }
 
 /** Resolve o ícone Radar de uma categoria pelo nome (palavras-chave sem acento). */
