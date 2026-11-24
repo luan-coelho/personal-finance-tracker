@@ -12,15 +12,22 @@ const categoryIcons: Array<{ keywords: string[]; icon: IconName; tone: CategoryT
   { keywords: ['freelance', 'trabalho', 'servico'], icon: 'briefcase', tone: 'info' },
   { keywords: ['investimento', 'poupanca', 'rendimento'], icon: 'trending-up', tone: 'success' },
   { keywords: ['venda'], icon: 'store', tone: 'warning' },
+  // Antes de "doacao": "Igreja (Dízimo+Oferta+Doação)" é a igreja, não presente.
+  { keywords: ['igreja', 'dizimo', 'oferta'], icon: 'church', tone: 'primary' },
   { keywords: ['presente', 'doacao'], icon: 'gift', tone: 'ai' },
   { keywords: ['alimentacao', 'mercado', 'restaurante', 'comida'], icon: 'utensils', tone: 'warning' },
   { keywords: ['transporte', 'combustivel', 'gasolina', 'uber', 'onibus'], icon: 'car', tone: 'info' },
+  // Antes de "casa": "Saída em casal" contém "casa"; "Manutenção da casa" é conserto, não moradia.
+  { keywords: ['casal', 'namoro', 'encontro'], icon: 'heart', tone: 'error' },
+  { keywords: ['manutencao', 'conserto', 'reparo', 'reforma', 'oficina'], icon: 'wrench', tone: 'warning' },
+  { keywords: ['apartamento', 'condominio', 'predio'], icon: 'building-2', tone: 'info' },
   { keywords: ['moradia', 'casa', 'aluguel', 'habitacao'], icon: 'home', tone: 'primary' },
   { keywords: ['saude', 'medico', 'farmacia'], icon: 'heart-pulse', tone: 'error' },
-  { keywords: ['educacao', 'escola', 'curso', 'faculdade'], icon: 'graduation-cap', tone: 'ai' },
+  { keywords: ['educacao', 'escola', 'curso', 'faculdade', 'estud'], icon: 'graduation-cap', tone: 'ai' },
   { keywords: ['lazer', 'entretenimento', 'diversao'], icon: 'gamepad', tone: 'ai' },
   { keywords: ['compra', 'shopping'], icon: 'shopping-bag', tone: 'primary' },
   { keywords: ['energia', 'luz', 'eletricidade'], icon: 'zap', tone: 'warning' },
+  { keywords: ['gas', 'botijao'], icon: 'flame', tone: 'error' },
   { keywords: ['agua'], icon: 'droplets', tone: 'info' },
   { keywords: ['telefone', 'celular', 'internet'], icon: 'smartphone', tone: 'primary' },
   { keywords: ['viagem', 'ferias'], icon: 'plane', tone: 'info' },
@@ -38,15 +45,18 @@ const categoryIcons: Array<{ keywords: string[]; icon: IconName; tone: CategoryT
   { keywords: ['assinatura'], icon: 'repeat', tone: 'ai' },
   { keywords: ['beleza', 'cabelo', 'salao', 'barbearia', 'estetica', 'manicure'], icon: 'scissors', tone: 'error' },
   { keywords: ['estacionamento'], icon: 'square-parking', tone: 'primary' },
-  { keywords: ['manutencao', 'conserto', 'reparo', 'reforma', 'oficina'], icon: 'wrench', tone: 'warning' },
   { keywords: ['medicamento', 'remedio'], icon: 'pill', tone: 'error' },
   { keywords: ['pet', 'veterinari', 'racao', 'animal'], icon: 'paw', tone: 'warning' },
+  { keywords: ['desenvolvimento', 'programacao', 'software', 'codigo'], icon: 'code', tone: 'ai' },
   { keywords: ['vestuario', 'roupa', 'calcado', 'sapato'], icon: 'shirt', tone: 'primary' },
   // Por último: "Outros Recebimentos" e "Outros Gastos" são sobra, não informação (tom neutro).
   { keywords: ['outro', 'diverso'], icon: 'circle-ellipsis', tone: 'neutral' },
 ]
 
-/** Palavras-chave curtas (até 3 letras) só casam no começo de uma palavra: "pet" não pega "carpete". */
+/**
+ * Palavras-chave curtas (até 3 letras) só casam com a palavra inteira, aceitando o plural com "s":
+ * "pet" pega "Pets" mas não "carpete"; "gas" pega "Gás" mas não "Outros Gastos".
+ */
 const SHORT_KEYWORD_LENGTH = 3
 
 const FALLBACK_CATEGORY_ICON: IconName = 'folder-open'
@@ -74,7 +84,7 @@ export function normalizeCategoryName(name: string) {
 
 function matchesKeyword(normalizedName: string, words: string[], keyword: string) {
   return keyword.length <= SHORT_KEYWORD_LENGTH
-    ? words.some(word => word.startsWith(keyword))
+    ? words.some(word => word === keyword || word === `${keyword}s`)
     : normalizedName.includes(keyword)
 }
 

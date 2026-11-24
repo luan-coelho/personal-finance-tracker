@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike } from 'drizzle-orm'
+import { and, asc, eq, ilike } from 'drizzle-orm'
 
 import { db } from '@/app/db'
 import {
@@ -7,6 +7,8 @@ import {
   type CategoryType,
   categoriesTable,
 } from '@/app/db/schemas/category-schema'
+
+import { compareCategoryNames } from '@/lib/category-names'
 
 export interface CategoryFilters {
   spaceId?: string
@@ -57,9 +59,10 @@ export class CategoryService {
       .select()
       .from(categoriesTable)
       .where(whereClause)
-      .orderBy(desc(categoriesTable.createdAt))
+      .orderBy(asc(categoriesTable.name))
 
-    return categories
+    // O collation do banco pode pôr acentuadas no fim ("Água" depois de "Z"); a ordem final é pt-BR.
+    return categories.sort((a, b) => compareCategoryNames(a.name, b.name))
   }
 
   // Atualizar categoria

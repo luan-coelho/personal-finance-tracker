@@ -4,6 +4,8 @@ import { describe, it } from 'node:test'
 
 import { DefaultCategories } from '@/app/db/schemas/transaction-schema'
 
+import { compareCategoryNames } from '@/lib/category-names'
+
 import { getCategoryIconName, getCategoryTone } from './category-icon'
 
 /** Categorias criadas pelo seed (`scripts/seed-categories.ts`). */
@@ -51,13 +53,57 @@ describe('getCategoryIconName', () => {
     }
   })
 
-  it('matches short keywords only at the start of a word', () => {
+  it('maps the categories in use in the app', () => {
+    const expected: Record<string, string> = {
+      'Alimentação/Mercado': 'utensils',
+      'Apartamento/condominio': 'building-2',
+      Assinaturas: 'repeat',
+      'Bônus celular': 'smartphone',
+      'Cabelo e sobrancelha': 'scissors',
+      'Desenvolvimento e Programação': 'code',
+      'Energia Elétrica': 'zap',
+      'Estuda Ester': 'graduation-cap',
+      Gás: 'flame',
+      'Igreja (Dizimo+Oferta+Doação)': 'church',
+      'Manutenção da casa': 'wrench',
+      'Saída em casal': 'heart',
+      Transporte: 'car',
+    }
+
+    for (const [name, icon] of Object.entries(expected)) {
+      assert.equal(getCategoryIconName(name), icon, name)
+    }
+  })
+
+  it('keeps gasoline on the car and bills at home', () => {
+    assert.equal(getCategoryIconName('Gasolina'), 'car')
+    assert.equal(getCategoryIconName('Contas de Casa'), 'home')
+  })
+
+  it('matches short keywords only as whole words (or their plural)', () => {
     assert.equal(getCategoryIconName('Pets'), 'paw')
     assert.equal(getCategoryIconName('Carpete'), 'folder-open')
+    assert.equal(getCategoryIconName('Gás de cozinha'), 'flame')
+    assert.equal(getCategoryIconName('Outros Gastos'), 'circle-ellipsis')
   })
 
   it('keeps the folder for names it does not recognize', () => {
     assert.equal(getCategoryIconName('Xyz'), 'folder-open')
+  })
+})
+
+describe('compareCategoryNames', () => {
+  it('sorts names alphabetically in pt-BR, ignoring accents and case', () => {
+    const names = ['Transporte', 'água', 'Gás', 'Alimentação/Mercado', 'Bônus celular', 'apartamento/condominio']
+
+    assert.deepEqual(names.sort(compareCategoryNames), [
+      'água',
+      'Alimentação/Mercado',
+      'apartamento/condominio',
+      'Bônus celular',
+      'Gás',
+      'Transporte',
+    ])
   })
 })
 

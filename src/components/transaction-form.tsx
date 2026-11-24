@@ -31,7 +31,7 @@ import { useTags } from '@/hooks/use-tags'
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transactions'
 
 import { useSession } from '@/lib/auth-client'
-import { readRecentCategories, rememberRecentCategory, sortCategoriesByRecency } from '@/lib/recent-categories'
+import { compareCategoryNames } from '@/lib/category-names'
 import { getTransactionFormContextDefaults, type TransactionInitialValues } from '@/lib/transaction-form-utils'
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
@@ -40,8 +40,6 @@ type TransactionFormValues = Omit<z.infer<typeof insertTransactionSchema>, 'tags
 const EMPTY_TRANSACTIONS: Transaction[] = []
 /** Com mais categorias que isso, o campo ganha busca. */
 const CATEGORY_SEARCH_THRESHOLD = 8
-/** Categorias visíveis antes de "Ver todas" (as recentes vêm primeiro). */
-const CATEGORY_COLLAPSED_COUNT = 9
 
 interface TransactionFormProps {
   transaction?: Transaction
@@ -142,14 +140,8 @@ export function TransactionForm({
   // Buscar categorias do espaço baseado no tipo selecionado
   const currentType = useWatch({ control: form.control, name: 'type' })
   const [categorySearch, setCategorySearch] = React.useState('')
-  const [showAllCategories, setShowAllCategories] = React.useState(false)
   // Ao criar: continuar lançando depois de salvar, sem fechar o formulário.
   const [addAnother, setAddAnother] = React.useState(false)
-  // Categorias usadas por último neste espaço e tipo, para aparecerem primeiro.
-  const [recentCategories, setRecentCategories] = React.useState<string[]>([])
-  React.useEffect(() => {
-    setRecentCategories(readRecentCategories(selectedSpaceId, currentType))
-  }, [selectedSpaceId, currentType])
   const { data: customCategories = [] } = useCategories(
     selectedSpaceId,
     currentType === 'reserva' ? undefined : currentType,
@@ -173,24 +165,15 @@ export function TransactionForm({
     availableCategories.push(contextCategory)
   }
 
-  const selectedCategory = useWatch({ control: form.control, name: 'category' })
-  const sortedCategories = sortCategoriesByRecency(availableCategories, recentCategories)
+  // Sempre em ordem alfabética (sem acento nem caixa), todas visíveis.
+  const sortedCategories = [...availableCategories].sort(compareCategoryNames)
   const hasCategorySearch = availableCategories.length > CATEGORY_SEARCH_THRESHOLD
 
   // Busca de categoria: ignora acentos e maiúsculas
   const categoryQuery = hasCategorySearch ? normalizeCategoryName(categorySearch.trim()) : ''
-  const isCategoryListCollapsed =
-    !categoryQuery && !showAllCategories && sortedCategories.length > CATEGORY_COLLAPSED_COUNT + 1
-  let visibleCategories = sortedCategories
-  if (categoryQuery) {
-    visibleCategories = sortedCategories.filter(category => normalizeCategoryName(category).includes(categoryQuery))
-  } else if (isCategoryListCollapsed) {
-    // Recolhida: as primeiras (recentes na frente) e sempre a selecionada.
-    visibleCategories = sortedCategories.slice(0, CATEGORY_COLLAPSED_COUNT)
-    if (selectedCategory && !visibleCategories.includes(selectedCategory)) {
-      visibleCategories = [...visibleCategories, selectedCategory]
-    }
-  }
+  const visibleCategories = categoryQuery
+    ? sortedCategories.filter(category => normalizeCategoryName(category).includes(categoryQuery))
+    : sortedCategories
 
   // Máscara de real para o campo amount: o CurrencyInput já entrega o valor mascarado
   // por formatBrazilianAmountInput.
@@ -221,10 +204,6 @@ export function TransactionForm({
         })
       } else {
         await createMutation.mutateAsync(formData)
-      }
-      if (formData.category) {
-        rememberRecentCategory(selectedSpace.id, formData.type, formData.category)
-        setRecentCategories(readRecentCategories(selectedSpace.id, formData.type))
       }
       if (!isEditing && addAnother) {
         // Mantém tipo, data, categoria e reserva; limpa só o que muda a cada lançamento.
@@ -406,16 +385,6 @@ export function TransactionForm({
 
                         return index === 0 ? <FormControl key={category}>{button}</FormControl> : button
                       })}
-                      {isCategoryListCollapsed && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          iconRight="chevron-down"
-                          onClick={() => setShowAllCategories(true)}
-                          disabled={isLoading}>
-                          Ver todas
-                        </Button>
-                      )}
                     </div>
                     <FormMessage />
                   </FormItem>
