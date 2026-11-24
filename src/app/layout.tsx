@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Outfit } from 'next/font/google'
+import { DM_Mono, DM_Sans } from 'next/font/google'
 
 import { InstallPromptCapture } from '@/components/pwa/install-prompt-capture'
 import { ServiceWorkerRegister } from '@/components/pwa/sw-register'
@@ -14,16 +14,24 @@ import { ThemeProvider } from '@/providers/theme-provider'
 
 import './globals.css'
 
-const outfit = Outfit({
-  variable: '--font-outfit',
+const dmSans = DM_Sans({
+  variable: '--font-dm-sans',
   subsets: ['latin'],
+  axes: ['opsz'],
+  display: 'swap',
+})
+
+const dmMono = DM_Mono({
+  variable: '--font-dm-mono',
+  subsets: ['latin'],
+  weight: ['400', '500'],
   display: 'swap',
 })
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+    { media: '(prefers-color-scheme: light)', color: '#fafaf9' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f0e0d' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -54,8 +62,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${outfit.variable} antialiased`}>
+    <html lang="pt-BR" suppressHydrationWarning className={`${dmSans.variable} ${dmMono.variable}`}>
+      <body className="antialiased">
         <InstallPromptCapture />
         <ServiceWorkerRegister />
         <ThemeProvider
