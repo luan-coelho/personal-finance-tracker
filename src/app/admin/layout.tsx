@@ -1,17 +1,15 @@
-import { cookies } from 'next/headers'
-
 import { AppLayout } from '@/components/layout/app-layout'
 
-// Mesmo nome usado em `src/components/ui/sidebar.tsx` para persistir o estado da sidebar.
-const SIDEBAR_COOKIE_NAME = 'sidebar_state'
-
-export default async function AdminLayout({
+/**
+ * Sem APIs dinâmicas (`cookies()`, `headers()`): as telas do admin são client components que buscam
+ * dados pelo React Query, então o layout fica estático. Assim o Next pré-carrega a rota inteira e a
+ * guarda no cache do roteador, e a navegação não espera o servidor nem mostra o `loading.tsx`.
+ * O estado da sidebar (recolhida ou expandida) é lido do cookie no navegador, em `SidebarProvider`.
+ */
+export default function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const cookieStore = await cookies()
-  const defaultOpen = cookieStore.get(SIDEBAR_COOKIE_NAME)?.value !== 'false'
-
-  return <AppLayout defaultOpen={defaultOpen}>{children}</AppLayout>
+  return <AppLayout>{children}</AppLayout>
 }

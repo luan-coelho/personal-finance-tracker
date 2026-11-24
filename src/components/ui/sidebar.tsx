@@ -20,8 +20,10 @@ import { cn } from '@/lib/utils'
  * < 1024px: drawer sobre o scrim `overlay`, sempre expandido.
  */
 
-// Lido em `src/app/admin/layout.tsx` (server) para o estado inicial; mantenha os dois em sincronia.
+// Também lido pelo script inline de `src/app/layout.tsx` (antes da hidratação); mantenha os dois em sincronia.
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
+// Marca posta no <html> por aquele script quando a sidebar foi recolhida; ver `globals.css`.
+const SIDEBAR_COLLAPSED_ATTRIBUTE = 'data-sidebar-collapsed'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = 'var(--sidebar-expanded)'
 const SIDEBAR_WIDTH_ICON = 'var(--sidebar-collapsed)'
@@ -87,6 +89,16 @@ function SidebarProvider({
     },
     [setOpenProp, open],
   )
+
+  // O HTML é estático (sempre expandido); o estado salvo no cookie é aplicado antes da primeira pintura
+  // pós-hidratação. Até lá, a marca no <html> mantém a sidebar recolhida via CSS.
+  React.useLayoutEffect(() => {
+    if (openProp === undefined && document.cookie.split('; ').includes(`${SIDEBAR_COOKIE_NAME}=false`)) {
+      _setOpen(false)
+    }
+    document.documentElement.removeAttribute(SIDEBAR_COLLAPSED_ATTRIBUTE)
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lê o cookie só na montagem
+  }, [])
 
   const toggleSidebar = React.useCallback(() => {
     return isMobile ? setOpenMobile(value => !value) : setOpen(value => !value)

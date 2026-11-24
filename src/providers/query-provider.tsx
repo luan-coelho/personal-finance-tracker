@@ -1,7 +1,7 @@
 'use client'
 
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
-import { MutationCache, QueryClient, useQueryClient } from '@tanstack/react-query'
+import { environmentManager, MutationCache, QueryClient, useQueryClient } from '@tanstack/react-query'
 import { PersistQueryClientProvider, removeOldestQuery } from '@tanstack/react-query-persist-client'
 import { useEffect, useState } from 'react'
 
@@ -47,29 +47,43 @@ function QueryCacheOwnerGuard() {
   return null
 }
 
+function makeQueryClient() {
+  return new QueryClient({
+    mutationCache: new MutationCache({ onError: describeNetworkError }),
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000, // 1 minuto
+        retry: 1,
+        // Precisa cobrir o `maxAge` do cache persistido, senão o dado é descartado antes de ser restaurado.
+        gcTime: QUERY_CACHE_MAX_AGE,
+      },
+      mutations: {
+        networkMode: 'always',
+      },
+    },
+  })
+}
+
+let browserQueryClient: QueryClient | undefined
+
+/**
+ * No servidor, um client por requisição (nada vaza entre usuários). No navegador, um único client
+ * para a vida da aba: se o React suspender na primeira renderização, um `useState` seria descartado
+ * junto e o cache recomeçaria do zero (recomendação do guia "Advanced SSR" do TanStack Query).
+ */
+function getQueryClient() {
+  if (environmentManager.isServer()) return makeQueryClient()
+  browserQueryClient ??= makeQueryClient()
+  return browserQueryClient
+}
+
 /**
  * React Query com o cache guardado no aparelho: ao abrir o app os últimos dados aparecem na hora
  * (inclusive sem conexão) e são atualizados em seguida. Criar e editar exigem conexão e falham
  * na hora, com mensagem clara, em vez de ficarem pendentes.
  */
 export function QueryProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        mutationCache: new MutationCache({ onError: describeNetworkError }),
-        defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000, // 1 minuto
-            retry: 1,
-            // Precisa cobrir o `maxAge` do cache persistido, senão o dado é descartado antes de ser restaurado.
-            gcTime: QUERY_CACHE_MAX_AGE,
-          },
-          mutations: {
-            networkMode: 'always',
-          },
-        },
-      }),
-  )
+  const queryClient = getQueryClient()
 
   const [persister] = useState(() =>
     createSyncStoragePersister({

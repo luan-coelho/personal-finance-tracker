@@ -60,6 +60,9 @@ export const metadata: Metadata = {
   },
 }
 
+// Mesmo cookie de `src/components/ui/sidebar.tsx`.
+const SIDEBAR_STATE_SCRIPT = `try{if(document.cookie.split('; ').includes('sidebar_state=false'))document.documentElement.setAttribute('data-sidebar-collapsed','')}catch(e){}`
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -67,6 +70,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`${dmSans.variable} ${dmMono.variable}`}>
+      <head>
+        {/* Sidebar recolhida já na primeira pintura (o HTML é estático); ver `SidebarProvider`. */}
+        <script
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: script fixo, sem dados de entrada
+          dangerouslySetInnerHTML={{ __html: SIDEBAR_STATE_SCRIPT }}
+        />
+      </head>
       <body className="antialiased">
         <InstallPromptCapture />
         <KeyboardInset />

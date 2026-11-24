@@ -22,6 +22,11 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['ws'],
+  experimental: {
+    // Rotas ainda dinâmicas (ex.: `[id]`) reaproveitam o cache do roteador por 30s ao voltar a elas,
+    // em vez de pedir de novo ao servidor e mostrar o `loading.tsx`. O padrão desde o Next 15 é 0.
+    staleTimes: { dynamic: 30 },
+  },
   redirects: async () => [
     {
       source: routes.frontend.home,

@@ -411,6 +411,16 @@
   }
 }
 
+/*
+ * Sidebar recolhida antes da hidratação: o HTML estático vem expandido e o script inline de
+ * `app/layout.tsx` marca o <html> a partir do cookie. `SidebarProvider` remove a marca ao montar.
+ */
+html[data-sidebar-collapsed] [data-slot='sidebar-gap'],
+html[data-sidebar-collapsed] [data-slot='sidebar-container'] {
+  width: var(--sidebar-width-icon);
+  transition: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
