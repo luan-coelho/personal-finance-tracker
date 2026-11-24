@@ -63,7 +63,7 @@ export function PageHeader({
       className={cn(
         'text-foreground flex items-start justify-between gap-4 pt-5',
         // Radar AppBar (mobile): fixa no topo, 56px mais a safe area, `card` com borda inferior, sangrando o padding do conteúdo.
-        'max-lg:border-border max-lg:bg-card max-lg:pt-safe-top max-lg:sticky max-lg:top-0 max-lg:z-30 max-lg:-mx-4 max-lg:items-center max-lg:gap-1 max-lg:border-b max-lg:px-4 sm:max-lg:-mx-8 sm:max-lg:px-8 print:static',
+        'max-lg:border-border max-lg:bg-card max-lg:pt-safe-top max-lg:sticky max-lg:top-(--offline-banner) max-lg:z-30 max-lg:-mx-4 max-lg:items-center max-lg:gap-1 max-lg:border-b max-lg:px-4 max-lg:in-data-[offline=true]:pt-0 sm:max-lg:-mx-8 sm:max-lg:px-8 print:static',
         className,
       )}
       {...props}>

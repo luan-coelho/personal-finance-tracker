@@ -134,6 +134,8 @@
   --safe-left: env(safe-area-inset-left, 0px);
   /* Height covered by the on-screen keyboard; kept up to date by <KeyboardInset />. */
   --keyboard-inset: 0px;
+  /* Height of the OfflineBanner above the app bar; set while <html data-offline>. */
+  --offline-banner: 0px;
 
   /* Base radius kept for shadcn components that read var(--radius) (= radius-md) */
   --radius: 14px;
@@ -159,6 +161,10 @@
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-fg);
   --sidebar-ring: var(--ring);
+}
+
+:root[data-offline='true'] {
+  --offline-banner: calc(40px + var(--safe-top));
 }
 
 /*

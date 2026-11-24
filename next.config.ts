@@ -3,11 +3,20 @@ import type { NextConfig } from 'next'
 
 import { routes } from '@/lib/routes'
 
+// Muda a cada build: a página de fallback offline é buscada de novo quando o app é atualizado.
+const buildRevision = process.env.VERCEL_GIT_COMMIT_SHA ?? Date.now().toString()
+
 const withSerwist = withSerwistInit({
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
   cacheOnNavigation: true,
-  reloadOnOnline: true,
+  // Recarregar ao reconectar apagaria um formulário pela metade; o React Query já refaz as consultas.
+  reloadOnOnline: false,
+  // O registro é feito por `ServiceWorkerRegister`; sem isto o worker seria registrado duas vezes.
+  register: false,
+  // Sem esta entrada `/~offline` nunca entra no precache e o fallback offline do `sw.ts` não acha a página.
+  // Definir a lista substitui o precache automático de `public/` (só ícones, que o cache de imagens cobre).
+  additionalPrecacheEntries: [{ url: '/~offline', revision: buildRevision }],
   disable: process.env.NODE_ENV === 'development',
 })
 

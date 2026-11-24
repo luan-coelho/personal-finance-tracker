@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { Button } from '@/components/ui/button'
+import { Button, IconButton } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -24,12 +24,18 @@ declare global {
 
 interface InstallPromptProps {
   className?: string
+  /** Mostra o × e lembra neste aparelho que o convite foi dispensado (usado no Início). */
+  dismissible?: boolean
 }
 
-/** Card compacto da sidebar (acima da conta) para instalar o PWA. */
-export function InstallPrompt({ className }: InstallPromptProps) {
+const DISMISSED_KEY = 'install-prompt-dismissed'
+
+/** Card compacto para instalar o PWA: na sidebar (acima da conta) e, dispensável, no Início do mobile. */
+export function InstallPrompt({ className, dismissible = false }: InstallPromptProps) {
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
+  // Começa dispensado para o card não piscar antes de ler o armazenamento.
+  const [isDismissed, setIsDismissed] = useState(dismissible)
   // biome-ignore lint/suspicious/noExplicitAny: BeforeInstallPromptEvent não tem tipo no DOM lib
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
 
@@ -37,6 +43,13 @@ export function InstallPrompt({ className }: InstallPromptProps) {
     // biome-ignore lint/suspicious/noExplicitAny: MSStream só existe no IE
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream)
     setIsStandalone(window.matchMedia('(display-mode: standalone)').matches)
+    if (dismissible) {
+      try {
+        setIsDismissed(window.localStorage.getItem(DISMISSED_KEY) === 'true')
+      } catch {
+        setIsDismissed(false)
+      }
+    }
 
     // O evento pode ter disparado antes da montagem (capturado em InstallPromptCapture).
     if (window.deferredPrompt) {
@@ -55,10 +68,19 @@ export function InstallPrompt({ className }: InstallPromptProps) {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     }
-  }, [])
+  }, [dismissible])
 
-  if (isStandalone || (!isIOS && !deferredPrompt)) {
+  if (isStandalone || isDismissed || (!isIOS && !deferredPrompt)) {
     return null
+  }
+
+  const handleDismiss = () => {
+    setIsDismissed(true)
+    try {
+      window.localStorage.setItem(DISMISSED_KEY, 'true')
+    } catch {
+      // Sem armazenamento o card só volta na próxima visita.
+    }
   }
 
   const handleInstallClick = async () => {
@@ -87,6 +109,9 @@ export function InstallPrompt({ className }: InstallPromptProps) {
             Abra as finanças direto da tela inicial.
           </span>
         </div>
+        {dismissible && (
+          <IconButton icon="x" label="Dispensar" size="sm" className="-mt-1 -mr-1 ml-auto" onClick={handleDismiss} />
+        )}
       </div>
       {action}
     </div>

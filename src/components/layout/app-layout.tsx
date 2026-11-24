@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { isPrimaryRootPath, isRootPath } from '@/components/layout/navigation'
+import { OfflineBanner } from '@/components/layout/offline-banner'
 import { TransactionComposerFab, TransactionComposerProvider } from '@/components/transaction-composer'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
@@ -38,6 +39,7 @@ export function AppLayout({ children, defaultOpen = true }: AppLayoutProps) {
         <TransactionComposerProvider>
           <AppSidebar />
           <SidebarInset>
+            <OfflineBanner />
             <div
               data-slot="app-content"
               className={cn(

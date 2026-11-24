@@ -3,6 +3,7 @@
 import { DashboardSkeleton } from '@/components/dashboard/dashboard-skeleton'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
 import { MonthSelector } from '@/components/month-selector'
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { QueryErrorCard } from '@/components/query-error-card'
 import { useTransactionComposer } from '@/components/transaction-composer'
 import { Button } from '@/components/ui/button'
@@ -71,6 +72,9 @@ export default function InicioPage() {
         }>
         <MonthSelector />
       </PageActions>
+
+      {/* No celular o convite para instalar aparece aqui; no desktop ele mora na sidebar. */}
+      <InstallPrompt dismissible className="lg:hidden" />
 
       {isError && !overview ? (
         <QueryErrorCard message="Não foi possível carregar o resumo do mês." onRetry={() => refetch()} />

@@ -11,7 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     orientation: 'portrait',
     background_color: '#fafaf9',
-    theme_color: '#1570ef',
+    // Mesma cor da AppBar (`card`), para a barra de status continuar o app.
+    theme_color: '#ffffff',
     lang: 'pt-BR',
     dir: 'ltr',
     categories: ['finance', 'productivity'],
@@ -28,8 +29,29 @@ export default function manifest(): MetadataRoute.Manifest {
         type: 'image/png',
         purpose: 'any',
       },
+      // O desenho ocupa o centro sobre fundo cheio (dentro da zona segura de 80%), então os mesmos
+      // arquivos servem de ícone adaptável no Android.
+      {
+        src: '/icon-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icon-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
     ],
     shortcuts: [
+      {
+        name: 'Nova transação',
+        short_name: 'Nova',
+        // `?new=1` abre o formulário (ver `TransactionComposerProvider`).
+        url: '/admin/home?new=1',
+        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
+      },
       {
         name: 'Início',
         url: '/admin/home',
@@ -43,11 +65,6 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: 'Orçamentos',
         url: '/admin/budgets',
-        icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
-      },
-      {
-        name: 'Categorias',
-        url: '/admin/categories',
         icons: [{ src: '/icon-192x192.png', sizes: '192x192' }],
       },
       {
