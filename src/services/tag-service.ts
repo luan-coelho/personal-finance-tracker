@@ -1,7 +1,7 @@
 import { and, desc, eq, ilike } from 'drizzle-orm'
 
 import { db } from '@/app/db'
-import { tagsTable, type Tag, type TagFormValues } from '@/app/db/schemas/tag-schema'
+import { type Tag, type TagFormValues, tagsTable } from '@/app/db/schemas/tag-schema'
 
 export interface TagFilters {
   spaceId?: string

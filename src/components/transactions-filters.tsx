@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import { TransactionType } from '@/app/db/schemas'
+import type { TransactionType } from '@/app/db/schemas'
 
 import { CategoryIcon } from '@/components/category-icon'
 import { Badge } from '@/components/ui/badge'
@@ -495,7 +495,7 @@ export function TransactionsFilters({
                           mode="single"
                           selected={draftFilters.dateFrom}
                           onSelect={handleDraftDateFromChange}
-                          initialFocus
+                          autoFocus
                         />
                       </PopoverContent>
                     </Popover>
@@ -521,7 +521,7 @@ export function TransactionsFilters({
                           mode="single"
                           selected={draftFilters.dateTo}
                           onSelect={handleDraftDateToChange}
-                          initialFocus
+                          autoFocus
                         />
                       </PopoverContent>
                     </Popover>

@@ -9,6 +9,8 @@ import {
   GraduationCap,
   HeartPulse,
   House,
+  type LucideIcon,
+  type LucideProps,
   Plane,
   ReceiptText,
   ShoppingBag,
@@ -17,8 +19,6 @@ import {
   TrendingUp,
   Utensils,
   Zap,
-  type LucideIcon,
-  type LucideProps,
 } from 'lucide-react'
 
 const categoryIcons: Array<{ keywords: string[]; icon: LucideIcon }> = [

@@ -1,6 +1,6 @@
 import { AlertCircle } from 'lucide-react'
 import * as React from 'react'
-import { FieldError } from 'react-hook-form'
+import type { FieldError } from 'react-hook-form'
 
 import { cn } from '@/lib/utils'
 

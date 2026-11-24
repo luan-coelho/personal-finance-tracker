@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale'
 import { ArrowDownIcon, ArrowUpIcon, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { ReserveMovementWithReserve } from '@/app/db/schemas/reserve-movement-schema'
+import type { ReserveMovementWithReserve } from '@/app/db/schemas/reserve-movement-schema'
 
 import {
   AlertDialog,

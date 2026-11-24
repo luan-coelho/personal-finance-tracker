@@ -2,11 +2,10 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/app/db'
 import {
-  budgetsTable,
   type Budget,
   type BudgetFormValues,
-  type BudgetWithSpending,
   type BudgetWithSpendingAndUser,
+  budgetsTable,
 } from '@/app/db/schemas/budget-schema'
 import { transactionsTable } from '@/app/db/schemas/transaction-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'

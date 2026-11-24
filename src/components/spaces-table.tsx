@@ -2,11 +2,11 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Edit, MoreHorizontal, Trash2, UserCheck, Users } from 'lucide-react'
+import { Edit, MoreHorizontal, Trash2, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
-import { Space } from '@/app/db/schemas/space-schema'
+import type { Space } from '@/app/db/schemas/space-schema'
 
 import {
   AlertDialog,
@@ -18,7 +18,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -29,7 +28,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 import { useDeleteSpace, useSpaces } from '@/hooks/use-spaces'
 

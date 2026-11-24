@@ -1,15 +1,9 @@
 'use client'
 
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
-
 import { ReserveForm } from '@/components/reserve-form'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
-
-import { routes } from '@/lib/routes'
 
 export default function NewReservePage() {
   const { selectedSpace } = useSelectedSpace()

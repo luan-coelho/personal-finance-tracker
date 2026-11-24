@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 
-import { BudgetSummary as BudgetSummaryType } from '@/hooks/use-budgets'
+import type { BudgetSummary as BudgetSummaryType } from '@/hooks/use-budgets'
 
 import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'

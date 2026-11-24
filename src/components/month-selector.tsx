@@ -1,6 +1,5 @@
 'use client'
 
-import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect } from 'react'
 
@@ -8,9 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-import { UseMonthSelectorReturn } from '@/hooks/use-month-selector'
+import type { UseMonthSelectorReturn } from '@/hooks/use-month-selector'
 
 import { cn } from '@/lib/utils'
+
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 export interface MonthSelectorProps {
   onMonthChange?: (state: UseMonthSelectorReturn) => void

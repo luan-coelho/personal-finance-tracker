@@ -1,11 +1,11 @@
-import { and, eq } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { eq } from 'drizzle-orm'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/app/db'
 import {
   insertReserveMovementSchema,
+  type ReserveMovementWithReserve,
   reserveMovementsTable,
-  ReserveMovementWithReserve,
 } from '@/app/db/schemas/reserve-movement-schema'
 import { reservesTable } from '@/app/db/schemas/reserve-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'

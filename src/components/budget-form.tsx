@@ -1,12 +1,12 @@
 'use client'
 
-import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Calendar } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import type React from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
-import { Budget, CreateBudgetFormValues, createBudgetSchema } from '@/app/db/schemas/budget-schema'
+import { type Budget, type CreateBudgetFormValues, createBudgetSchema } from '@/app/db/schemas/budget-schema'
 
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCreateBudget, useUpdateBudget } from '@/hooks/use-budgets'
 import { useCategories } from '@/hooks/use-categories'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
+
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 interface BudgetFormProps {
   budget?: Budget

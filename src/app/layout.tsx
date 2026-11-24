@@ -1,8 +1,3 @@
-import { QueryProvider } from '@/providers/query-provider'
-import { SessionProvider } from '@/providers/session-provider'
-import { SpaceProvider } from '@/providers/space-provider'
-import { ThemeConfigProvider } from '@/providers/theme-config-provider'
-import { ThemeProvider } from '@/providers/theme-provider'
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Outfit } from 'next/font/google'
@@ -10,6 +5,12 @@ import { Outfit } from 'next/font/google'
 import { InstallPromptCapture } from '@/components/pwa/install-prompt-capture'
 import { ServiceWorkerRegister } from '@/components/pwa/sw-register'
 import { Toaster } from '@/components/ui/sonner'
+
+import { QueryProvider } from '@/providers/query-provider'
+import { SessionProvider } from '@/providers/session-provider'
+import { SpaceProvider } from '@/providers/space-provider'
+import { ThemeConfigProvider } from '@/providers/theme-config-provider'
+import { ThemeProvider } from '@/providers/theme-provider'
 
 import './globals.css'
 

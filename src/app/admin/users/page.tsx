@@ -3,7 +3,7 @@
 import { Loader2, MoreHorizontal, Pencil, Plus, Search, UserCheck, UserX, X } from 'lucide-react'
 import { useState } from 'react'
 
-import { User } from '@/app/db/schemas/user-schema'
+import type { User } from '@/app/db/schemas/user-schema'
 
 import {
   AlertDialog,

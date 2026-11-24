@@ -3,9 +3,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import type { z } from 'zod'
 
-import { insertTagSchema, Tag } from '@/app/db/schemas/tag-schema'
+import { insertTagSchema, type Tag } from '@/app/db/schemas/tag-schema'
 
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'

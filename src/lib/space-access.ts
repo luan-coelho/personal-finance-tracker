@@ -1,7 +1,7 @@
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/app/db'
-import { MemberRole, spaceMembersTable } from '@/app/db/schemas/space-member-schema'
+import { type MemberRole, spaceMembersTable } from '@/app/db/schemas/space-member-schema'
 import { spacesTable } from '@/app/db/schemas/space-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 

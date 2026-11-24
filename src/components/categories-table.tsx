@@ -3,7 +3,7 @@
 import { ArrowDownCircle, ArrowUpCircle, Edit, Loader2, MoreVertical, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { Category } from '@/app/db/schemas/category-schema'
+import type { Category } from '@/app/db/schemas/category-schema'
 
 import {
   AlertDialog,

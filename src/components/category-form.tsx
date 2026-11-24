@@ -3,9 +3,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowDownCircle, ArrowUpCircle, Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import type { z } from 'zod'
 
-import { Category, insertCategorySchema } from '@/app/db/schemas/category-schema'
+import { type Category, insertCategorySchema } from '@/app/db/schemas/category-schema'
 
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'

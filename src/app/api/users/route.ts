@@ -1,5 +1,5 @@
-import { asc, eq, inArray, sql } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { asc, eq, inArray } from 'drizzle-orm'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/app/db'
 import { spaceMembersTable } from '@/app/db/schemas/space-member-schema'

@@ -2,7 +2,7 @@
 
 import { TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'

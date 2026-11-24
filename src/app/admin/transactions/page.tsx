@@ -3,13 +3,13 @@
 import { ArrowDownCircle, ArrowUpCircle, Hash, Plus, Wallet } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
-import { Transaction } from '@/app/db/schemas'
+import type { Transaction } from '@/app/db/schemas'
 
 import { MonthSelector } from '@/components/month-selector'
 import { QueryErrorCard } from '@/components/query-error-card'
 import { TransactionForm } from '@/components/transaction-form'
 import { TransactionSummary } from '@/components/transaction-summary'
-import { TransactionFilters, TransactionsFilters } from '@/components/transactions-filters'
+import { type TransactionFilters, TransactionsFilters } from '@/components/transactions-filters'
 import { TransactionsTable } from '@/components/transactions-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -27,7 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useSpaceMembers } from '@/hooks/use-space-members'
-import { useTransactions, useTransactionSummary } from '@/hooks/use-transactions'
+import { useTransactionSummary, useTransactions } from '@/hooks/use-transactions'
 
 import { formatCurrency } from '@/lib/currency'
 import { getBrazilCurrentYearMonth, getMonthRangeBrazil } from '@/lib/date-utils'

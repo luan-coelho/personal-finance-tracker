@@ -1,6 +1,5 @@
 'use client'
 
-import { handleGoogleSignIn } from '@/actions/auth-actions'
 import { Lightbulb, Loader2 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useActionState } from 'react'
@@ -9,6 +8,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 
 import { routes } from '@/lib/routes'
+
+import { handleGoogleSignIn } from '@/actions/auth-actions'
 
 export function SignInForm() {
   const searchParams = useSearchParams()

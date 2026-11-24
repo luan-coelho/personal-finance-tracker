@@ -1,12 +1,11 @@
 import { and, eq } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/app/db'
 import {
   insertSpaceMemberSchema,
+  type SpaceMemberWithUser,
   spaceMembersTable,
-  SpaceMemberWithUser,
-  updateSpaceMemberSchema,
 } from '@/app/db/schemas/space-member-schema'
 import { spacesTable } from '@/app/db/schemas/space-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'

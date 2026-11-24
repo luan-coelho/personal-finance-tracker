@@ -4,7 +4,7 @@ import { Edit2, List, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { useRef, useState } from 'react'
 
-import { BudgetWithSpendingAndUser } from '@/app/db/schemas/budget-schema'
+import type { BudgetWithSpendingAndUser } from '@/app/db/schemas/budget-schema'
 
 import {
   AlertDialog,

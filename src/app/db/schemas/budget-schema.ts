@@ -1,6 +1,5 @@
-import { relations } from 'drizzle-orm'
 import { decimal, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
+import { createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import { spacesTable } from './space-schema'

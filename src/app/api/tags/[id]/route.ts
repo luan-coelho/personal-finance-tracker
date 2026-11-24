@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/app/db'
 import { updateTagSchema } from '@/app/db/schemas/tag-schema'

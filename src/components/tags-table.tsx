@@ -3,7 +3,7 @@
 import { Edit, Loader2, MoreVertical, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { Tag } from '@/app/db/schemas/tag-schema'
+import type { Tag } from '@/app/db/schemas/tag-schema'
 
 import {
   AlertDialog,

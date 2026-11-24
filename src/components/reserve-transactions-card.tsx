@@ -2,9 +2,9 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Calendar, User, Wallet } from 'lucide-react'
+import { Calendar, Wallet } from 'lucide-react'
 
-import { TransactionWithUser } from '@/app/db/schemas'
+import type { TransactionWithUser } from '@/app/db/schemas'
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

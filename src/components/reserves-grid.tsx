@@ -1,6 +1,6 @@
 'use client'
 
-import { Reserve } from '@/app/db/schemas/reserve-schema'
+import type { Reserve } from '@/app/db/schemas/reserve-schema'
 
 import { ReserveCard } from '@/components/reserve-card'
 

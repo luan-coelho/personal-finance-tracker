@@ -2,11 +2,11 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/app/db'
 import {
-  transactionsTable,
   type Transaction,
   type TransactionFormValues,
   type TransactionType,
   type TransactionWithUser,
+  transactionsTable,
 } from '@/app/db/schemas'
 import { reservesTable } from '@/app/db/schemas/reserve-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
@@ -161,10 +161,7 @@ export class TransactionService {
       .offset((page - 1) * limit)
 
     // Contar total de registros
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(transactionsTable)
-      .where(whereClause)
+    const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(transactionsTable).where(whereClause)
 
     // Mapear resultados para incluir informações do usuário
     const transactionsWithUser: TransactionWithUser[] = transactions.map(({ transaction, user }) => ({

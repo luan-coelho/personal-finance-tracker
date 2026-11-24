@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { getCurrentSession } from '@/lib/auth'
 import { canViewSpace } from '@/lib/space-access'

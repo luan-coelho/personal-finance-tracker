@@ -1,14 +1,13 @@
 'use client'
 
-import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { Grid3X3, Plus, Table2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
+import type { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
 
 import { BudgetCard } from '@/components/budget-card'
 import { BudgetComparisonCard } from '@/components/budget-comparison-card'
-import { BudgetFilters, BudgetFilters as BudgetFiltersType } from '@/components/budget-filters'
+import { BudgetFilters, type BudgetFilters as BudgetFiltersType } from '@/components/budget-filters'
 import { BudgetForm } from '@/components/budget-form'
 import { BudgetSummary } from '@/components/budget-summary'
 import { BudgetTransactionsDialog } from '@/components/budget-transactions-dialog'
@@ -23,6 +22,8 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { useBudgetSummary, useBudgetsWithSpending } from '@/hooks/use-budgets'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
+
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 export default function OrcamentosPage() {
   const isMobile = useIsMobile()

@@ -2,7 +2,7 @@
 
 import { ArrowDownIcon, ArrowUpIcon, PiggyBank, Target } from 'lucide-react'
 
-import { Reserve } from '@/app/db/schemas/reserve-schema'
+import type { Reserve } from '@/app/db/schemas/reserve-schema'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { SpaceFormValues } from '@/app/db/schemas/space-schema'
+import type { SpaceFormValues } from '@/app/db/schemas/space-schema'
 
 import {
   createSpace,

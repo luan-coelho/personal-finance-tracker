@@ -1,15 +1,6 @@
 'use client'
 
-import {
-  Building2,
-  CreditCard,
-  FolderTree,
-  PiggyBank,
-  Rabbit,
-  Tag,
-  Target,
-  Users,
-} from 'lucide-react'
+import { Building2, CreditCard, FolderTree, PiggyBank, Rabbit, Tag, Target, Users } from 'lucide-react'
 import Link from 'next/link'
 
 import { InstallPrompt } from '@/components/pwa/install-prompt'

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { UserFormValues } from '@/app/db/schemas/user-schema'
+import type { UserFormValues } from '@/app/db/schemas/user-schema'
 
 import {
   createUser,

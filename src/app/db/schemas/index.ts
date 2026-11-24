@@ -12,6 +12,7 @@ import { usersTable } from './user-schema'
 // Export all schemas and types
 export * from './budget-schema'
 export * from './category-schema'
+export * from './relations'
 export * from './reserve-movement-schema'
 export * from './reserve-schema'
 export * from './space-member-schema'
@@ -19,7 +20,6 @@ export * from './space-schema'
 export * from './tag-schema'
 export * from './transaction-schema'
 export * from './user-schema'
-export * from './relations'
 
 export const schema = {
   budgetsTable,

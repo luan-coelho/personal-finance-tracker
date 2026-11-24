@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 
 import type {
   Budget,
-  BudgetWithSpending,
   BudgetWithSpendingAndUser,
   CreateBudgetFormValues,
   UpdateBudgetFormValues,

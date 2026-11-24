@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { Reserve, ReserveFormValues } from '@/app/db/schemas/reserve-schema'
+import type { Reserve, ReserveFormValues } from '@/app/db/schemas/reserve-schema'
 
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'

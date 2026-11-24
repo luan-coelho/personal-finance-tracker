@@ -3,7 +3,7 @@
 import { Edit2, List, MoreVertical, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
+import type { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
 
 import {
   AlertDialog,

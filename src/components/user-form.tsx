@@ -6,7 +6,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { insertUserSchema, User, UserFormValues } from '@/app/db/schemas/user-schema'
+import { insertUserSchema, type User, type UserFormValues } from '@/app/db/schemas/user-schema'
 
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'

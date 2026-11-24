@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale'
 import { ArrowDownIcon, ArrowUpIcon, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { TransactionWithUser } from '@/app/db/schemas/transaction-schema'
+import type { TransactionWithUser } from '@/app/db/schemas/transaction-schema'
 
 import {
   AlertDialog,

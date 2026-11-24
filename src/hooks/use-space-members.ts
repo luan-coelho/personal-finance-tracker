@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { MemberRole, SpaceMemberFormValues } from '@/app/db/schemas/space-member-schema'
+import type { MemberRole, SpaceMemberFormValues } from '@/app/db/schemas/space-member-schema'
 
 import {
   addSpaceMember,

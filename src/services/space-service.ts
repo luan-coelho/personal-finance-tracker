@@ -1,4 +1,4 @@
-import { Space, SpaceFormValues } from '@/app/db/schemas/space-schema'
+import type { Space, SpaceFormValues } from '@/app/db/schemas/space-schema'
 
 import { routes } from '@/lib/routes'
 

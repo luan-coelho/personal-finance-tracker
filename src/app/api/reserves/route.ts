@@ -1,9 +1,8 @@
 import { eq } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/app/db'
 import { insertReserveSchema, reservesTable } from '@/app/db/schemas/reserve-schema'
-import { usersTable } from '@/app/db/schemas/user-schema'
 
 import { getCurrentSession } from '@/lib/auth'
 import { canEditSpace } from '@/lib/space-access'

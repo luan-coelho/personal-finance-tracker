@@ -2,10 +2,10 @@ import { and, desc, eq, ilike } from 'drizzle-orm'
 
 import { db } from '@/app/db'
 import {
-  categoriesTable,
   type Category,
   type CategoryFormValues,
   type CategoryType,
+  categoriesTable,
 } from '@/app/db/schemas/category-schema'
 
 export interface CategoryFilters {

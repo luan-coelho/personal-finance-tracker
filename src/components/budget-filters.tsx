@@ -191,12 +191,7 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={filters.monthFrom}
-                        onSelect={handleMonthFromChange}
-                        initialFocus
-                      />
+                      <Calendar mode="single" selected={filters.monthFrom} onSelect={handleMonthFromChange} autoFocus />
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -219,7 +214,7 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={filters.monthTo} onSelect={handleMonthToChange} initialFocus />
+                      <Calendar mode="single" selected={filters.monthTo} onSelect={handleMonthToChange} autoFocus />
                     </PopoverContent>
                   </Popover>
                 </div>

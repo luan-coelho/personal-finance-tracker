@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale'
 import { MoreHorizontal, Trash2, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 
-import { MemberRole, SpaceMemberWithUser } from '@/app/db/schemas/space-member-schema'
+import type { MemberRole, SpaceMemberWithUser } from '@/app/db/schemas/space-member-schema'
 
 import {
   AlertDialog,
@@ -32,7 +32,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'

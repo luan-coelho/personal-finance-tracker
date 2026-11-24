@@ -2,7 +2,7 @@
 
 import { AlertCircle, Check, ChevronsUpDown, Plus } from 'lucide-react'
 import * as React from 'react'
-import { FieldError } from 'react-hook-form'
+import type { FieldError } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'

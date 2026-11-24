@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale'
 import { ArrowDownCircle, ArrowUpCircle, BarChart3, Copy, Edit, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 
-import { TransactionType, TransactionWithUser } from '@/app/db/schemas'
+import type { TransactionType, TransactionWithUser } from '@/app/db/schemas'
 
 import {
   AlertDialog,

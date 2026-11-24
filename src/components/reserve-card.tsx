@@ -1,13 +1,11 @@
 'use client'
 
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { Edit, MoreHorizontal, Plus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
+import { Edit, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
-import { Reserve } from '@/app/db/schemas/reserve-schema'
+import type { Reserve } from '@/app/db/schemas/reserve-schema'
 
 import {
   AlertDialog,

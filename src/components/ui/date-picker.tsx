@@ -3,8 +3,8 @@
 import { addDays, format, subDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { AlertCircle, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
-import * as React from 'react'
-import { FieldError } from 'react-hook-form'
+import type * as React from 'react'
+import type { FieldError } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -95,10 +95,10 @@ export function DatePicker({
             mode="single"
             selected={date}
             onSelect={onSelect}
-            initialFocus
+            autoFocus
             locale={ptBR}
-            fromDate={fromDate}
-            toDate={toDate}
+            startMonth={fromDate}
+            endMonth={toDate}
             defaultMonth={defaultMonth ?? date}
             disabled={[...(fromDate ? [{ before: fromDate }] : []), ...(toDate ? [{ after: toDate }] : [])]}
           />

@@ -1,14 +1,13 @@
 'use client'
 
-import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowDownCircle, ArrowUpCircle, Loader2, Wallet, X } from 'lucide-react'
 import React, { useCallback } from 'react'
-import { useForm, useWatch, type Resolver } from 'react-hook-form'
+import { type Resolver, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
-import { z } from 'zod'
+import type { z } from 'zod'
 
-import { DefaultCategories, Transaction } from '@/app/db/schemas'
+import { DefaultCategories, type Transaction } from '@/app/db/schemas'
 import { insertTransactionSchema } from '@/app/db/schemas/transaction-schema'
 
 import { CategoryIcon } from '@/components/category-icon'
@@ -31,6 +30,8 @@ import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transact
 import { formatBrazilianAmountInput } from '@/lib/amount-utils'
 import { useSession } from '@/lib/auth-client'
 import { getTransactionFormContextDefaults, type TransactionInitialValues } from '@/lib/transaction-form-utils'
+
+import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 type TransactionFormValues = Omit<z.infer<typeof insertTransactionSchema>, 'tags'> & { tags?: string[] }
 const EMPTY_TRANSACTIONS: Transaction[] = []

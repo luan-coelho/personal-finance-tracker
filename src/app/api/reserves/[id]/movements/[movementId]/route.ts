@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/app/db'
 import { reserveMovementsTable } from '@/app/db/schemas/reserve-movement-schema'

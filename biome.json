@@ -1,0 +1,91 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.9/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["**", "!public", "!drizzle", "!src/generated", "!**/*.lock", "!pnpm-lock.yaml", "!.idea", "!.cursor"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 120,
+    "bracketSameLine": true
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all",
+      "arrowParentheses": "asNeeded"
+    }
+  },
+  "css": {
+    "parser": { "tailwindDirectives": true },
+    "formatter": { "quoteStyle": "single" }
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "next": "recommended",
+      "react": "recommended"
+    },
+    "rules": {
+      "preset": "recommended",
+      "a11y": {
+        "noLabelWithoutControl": "warn",
+        "noRedundantRoles": "warn",
+        "noSvgWithoutTitle": "warn",
+        "useButtonType": "warn",
+        "useSemanticElements": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "warn",
+        "useIterableCallbackReturn": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noUnusedImports": { "level": "warn", "fix": "safe" },
+        "noComponentHookFactories": "warn",
+        "useExhaustiveDependencies": "warn"
+      },
+      "nursery": {
+        "useTailwindSortedClasses": { "level": "warn", "fix": "safe" }
+      }
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ":NODE:",
+              ":BLANK_LINE:",
+              [":PACKAGE:", ":PACKAGE_WITH_PROTOCOL:"],
+              ":BLANK_LINE:",
+              "@/app/**",
+              ":BLANK_LINE:",
+              "@/components/**",
+              ":BLANK_LINE:",
+              "@/hooks/**",
+              ":BLANK_LINE:",
+              "@/lib/**",
+              ":BLANK_LINE:",
+              "@/services/**",
+              ":BLANK_LINE:",
+              "@/types/**",
+              ":BLANK_LINE:",
+              ":PATH:"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

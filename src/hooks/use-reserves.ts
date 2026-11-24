@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { ReserveFormValues } from '@/app/db/schemas/reserve-schema'
+import type { ReserveFormValues } from '@/app/db/schemas/reserve-schema'
 
 import {
   createReserve,

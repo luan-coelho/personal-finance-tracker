@@ -1,6 +1,5 @@
 'use client'
 
-import { handleSignOut } from '@/actions/auth-actions'
 import { LogOut } from 'lucide-react'
 import { useActionState } from 'react'
 import { toast } from 'sonner'
@@ -8,6 +7,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 
 import { routes } from '@/lib/routes'
+
+import { handleSignOut } from '@/actions/auth-actions'
 
 interface SignOutButtonProps {
   variant?: 'default' | 'outline' | 'ghost'

@@ -1,11 +1,11 @@
 'use client'
 
-import { MonthSelectorProvider } from '@/providers/month-selector-provider'
-
 import { AppFooter } from '@/components/layout/app-footer'
 import { AppHeader } from '@/components/layout/app-header'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+
+import { MonthSelectorProvider } from '@/providers/month-selector-provider'
 
 interface AppLayoutProps {
   children: React.ReactNode

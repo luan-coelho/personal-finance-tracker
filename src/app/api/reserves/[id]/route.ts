@@ -1,5 +1,5 @@
-import { and, eq } from 'drizzle-orm'
-import { NextRequest, NextResponse } from 'next/server'
+import { eq } from 'drizzle-orm'
+import { type NextRequest, NextResponse } from 'next/server'
 
 import { db } from '@/app/db'
 import { reservesTable, updateReserveSchema } from '@/app/db/schemas/reserve-schema'

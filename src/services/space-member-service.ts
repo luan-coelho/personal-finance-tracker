@@ -1,9 +1,8 @@
-import {
+import type {
   MemberRole,
   SpaceMember,
   SpaceMemberFormValues,
   SpaceMemberWithUser,
-  UpdateSpaceMemberFormValues,
 } from '@/app/db/schemas/space-member-schema'
 
 import { routes } from '@/lib/routes'

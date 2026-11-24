@@ -3,7 +3,7 @@
 import { ArrowDownCircle, ArrowUpCircle, Plus, Search } from 'lucide-react'
 import { useState } from 'react'
 
-import { Category, CategoryType } from '@/app/db/schemas/category-schema'
+import type { Category, CategoryType } from '@/app/db/schemas/category-schema'
 
 import { CategoriesTable } from '@/components/categories-table'
 import { CategoryForm } from '@/components/category-form'

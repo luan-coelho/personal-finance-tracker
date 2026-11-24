@@ -3,7 +3,7 @@
 import { Plus, Search } from 'lucide-react'
 import { useState } from 'react'
 
-import { Tag } from '@/app/db/schemas/tag-schema'
+import type { Tag } from '@/app/db/schemas/tag-schema'
 
 import { TagForm } from '@/components/tag-form'
 import { TagsTable } from '@/components/tags-table'

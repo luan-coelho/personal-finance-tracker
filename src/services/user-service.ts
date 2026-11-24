@@ -1,4 +1,4 @@
-import { User, UserFormValues } from '@/app/db/schemas/user-schema'
+import type { User, UserFormValues } from '@/app/db/schemas/user-schema'
 
 import { routes } from '@/lib/routes'
 

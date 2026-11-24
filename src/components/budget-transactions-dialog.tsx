@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 
-import { useTransactions, useTransactionSummary } from '@/hooks/use-transactions'
+import { useTransactionSummary, useTransactions } from '@/hooks/use-transactions'
 
 import { getBudgetTransactionFilters } from '@/lib/budget-transaction-utils'
 import { formatCurrency } from '@/lib/currency'

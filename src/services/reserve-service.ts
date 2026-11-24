@@ -1,4 +1,4 @@
-import { Reserve, ReserveFormValues } from '@/app/db/schemas/reserve-schema'
+import type { Reserve, ReserveFormValues } from '@/app/db/schemas/reserve-schema'
 
 import { routes } from '@/lib/routes'
 

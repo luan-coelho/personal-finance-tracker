@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
-import { Space } from '@/app/db/schemas/space-schema'
+import type { Space } from '@/app/db/schemas/space-schema'
 
 import { useSpaces } from '@/hooks/use-spaces'
 
