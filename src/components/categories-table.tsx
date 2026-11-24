@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 import type { Category } from '@/app/db/schemas/category-schema'
 
-import { CategoryIcon } from '@/components/category-icon'
+import { CategoryIconTile } from '@/components/category-icon'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -131,9 +131,7 @@ export function CategoriesTable({ categories, isLoading, isFiltered = false, onE
             <TableRow key={category.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
-                  <span className="bg-muted text-muted-foreground inline-flex size-8 shrink-0 items-center justify-center rounded-sm">
-                    <CategoryIcon name={category.name} />
-                  </span>
+                  <CategoryIconTile name={category.name} />
                   <span className="font-medium whitespace-nowrap">{category.name}</span>
                 </div>
               </TableCell>

@@ -546,6 +546,35 @@ export function FormsSection() {
               <ToggleGroupItem value="shared">Compartilhadas</ToggleGroupItem>
             </ToggleGroup>
           </div>
+          <div className="max-w-md" data-demo="segmented-tone-icons">
+            <ToggleGroup type="single" defaultValue="entrada" fullWidth aria-label="Tipo de transação">
+              <ToggleGroupItem value="entrada" icon="arrow-up-circle" tone="success">
+                Entrada
+              </ToggleGroupItem>
+              <ToggleGroupItem value="saida" icon="arrow-down-circle" tone="error">
+                Saída
+              </ToggleGroupItem>
+              <ToggleGroupItem value="reserva" icon="piggy-bank" tone="info">
+                Reserva
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+          <div className="w-[312px]" data-demo="segmented-tone-dots">
+            <ToggleGroup type="single" defaultValue="saida" fullWidth aria-label="Filtro de tipo">
+              <ToggleGroupItem value="all" className="px-2">
+                Todos
+              </ToggleGroupItem>
+              <ToggleGroupItem value="entrada" tone="success" className="px-2">
+                Entrada
+              </ToggleGroupItem>
+              <ToggleGroupItem value="saida" tone="error" className="px-2">
+                Saída
+              </ToggleGroupItem>
+              <ToggleGroupItem value="reserva" tone="info" className="px-2">
+                Reserva
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </div>
       </Block>
 
@@ -571,6 +600,29 @@ export function FormsSection() {
           ))}
           <Chip icon="calendar">Novembro</Chip>
           <Chip disabled>Desabilitado</Chip>
+        </div>
+        <div className="flex flex-wrap items-center gap-2" data-demo="chip-tone">
+          <Chip size="lg" icon="arrow-up-circle" tone="success">
+            Entradas
+          </Chip>
+          <Chip size="lg" icon="arrow-down-circle" tone="error">
+            Saídas
+          </Chip>
+          <Chip size="lg" icon="piggy-bank" tone="info">
+            Reservas
+          </Chip>
+          <Chip size="lg" icon="arrow-up-circle" tone="success" selected>
+            Entradas
+          </Chip>
+          <Chip size="lg" icon="arrow-down-circle" tone="error" selected>
+            Saídas
+          </Chip>
+          <Chip size="lg" icon="piggy-bank" tone="info" selected>
+            Reservas
+          </Chip>
+          <Chip size="sm" icon="arrow-down-circle" tone="error" onRemove={() => {}}>
+            Tipo: Saídas
+          </Chip>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {chips.map(item => (

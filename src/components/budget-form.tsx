@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 
 import { type Budget, type CreateBudgetFormValues, createBudgetSchema } from '@/app/db/schemas/budget-schema'
 
-import { getCategoryIconName } from '@/components/category-icon'
+import { getCategoryIconClassName, getCategoryIconName } from '@/components/category-icon'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { CardContent, CardFooter } from '@/components/ui/card'
@@ -133,6 +133,7 @@ export function BudgetForm({ budget, onSuccess, onCancel, layout = 'card' }: Bud
       value: category.name,
       label: category.name,
       icon: getCategoryIconName(category.name),
+      iconClassName: getCategoryIconClassName(category.name),
     })),
     { value: CUSTOM_CATEGORY, label: 'Nova categoria', icon: 'plus' as const },
   ]

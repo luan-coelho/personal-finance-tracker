@@ -110,10 +110,10 @@ export default function CategoriasPage() {
           <ToggleGroupItem value="all">
             Todas <FilterCount value={allCategories.length} />
           </ToggleGroupItem>
-          <ToggleGroupItem value="entrada">
+          <ToggleGroupItem value="entrada" tone="success">
             Entradas <FilterCount value={entradaCount} />
           </ToggleGroupItem>
-          <ToggleGroupItem value="saida">
+          <ToggleGroupItem value="saida" tone="error">
             Saídas <FilterCount value={saidaCount} />
           </ToggleGroupItem>
         </ToggleGroup>

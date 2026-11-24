@@ -94,10 +94,10 @@ export function CategoryForm({ category, onSuccess, onCancel }: CategoryFormProp
                     onValueChange={field.onChange}
                     disabled={isLoading || isEditing}
                     aria-label="Tipo da categoria">
-                    <ToggleGroupItem value="entrada" icon="arrow-up-circle">
+                    <ToggleGroupItem value="entrada" icon="arrow-up-circle" tone="success">
                       Entrada
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="saida" icon="arrow-down-circle">
+                    <ToggleGroupItem value="saida" icon="arrow-down-circle" tone="error">
                       Saída
                     </ToggleGroupItem>
                   </ToggleGroup>

@@ -9,14 +9,15 @@ import type { z } from 'zod'
 import { DefaultCategories, type Transaction } from '@/app/db/schemas'
 import { insertTransactionSchema } from '@/app/db/schemas/transaction-schema'
 
-import { CategoryIcon } from '@/components/category-icon'
-import { Button } from '@/components/ui/button'
+import { CategoryIcon, normalizeCategoryName } from '@/components/category-icon'
+import { Button, IconButton } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Combobox } from '@/components/ui/combobox'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Icon } from '@/components/ui/icon'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SelectionButton } from '@/components/ui/selection-button'
 import { Textarea } from '@/components/ui/textarea'
@@ -113,6 +114,7 @@ export function TransactionForm({
 
   // Buscar categorias do espaço baseado no tipo selecionado
   const currentType = useWatch({ control: form.control, name: 'type' })
+  const [categorySearch, setCategorySearch] = React.useState('')
   const { data: customCategories = [] } = useCategories(
     selectedSpaceId,
     currentType === 'reserva' ? undefined : currentType,
@@ -135,6 +137,12 @@ export function TransactionForm({
   if (contextCategory && !availableCategories.includes(contextCategory)) {
     availableCategories.push(contextCategory)
   }
+
+  // Busca de categoria: ignora acentos e maiúsculas
+  const categoryQuery = normalizeCategoryName(categorySearch.trim())
+  const visibleCategories = categoryQuery
+    ? availableCategories.filter(category => normalizeCategoryName(category).includes(categoryQuery))
+    : availableCategories
 
   // Máscara de real para o campo amount: o CurrencyInput já entrega o valor mascarado
   // por formatBrazilianAmountInput.
@@ -214,13 +222,13 @@ export function TransactionForm({
                     onValueChange={field.onChange}
                     disabled={isLoading}
                     aria-label="Tipo de transação">
-                    <ToggleGroupItem value="entrada" icon="arrow-up-circle">
+                    <ToggleGroupItem value="entrada" icon="arrow-up-circle" tone="success">
                       Entrada
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="saida" icon="arrow-down-circle">
+                    <ToggleGroupItem value="saida" icon="arrow-down-circle" tone="error">
                       Saída
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="reserva" icon="piggy-bank">
+                    <ToggleGroupItem value="reserva" icon="piggy-bank" tone="info">
                       Reserva
                     </ToggleGroupItem>
                   </ToggleGroup>
@@ -303,8 +311,42 @@ export function TransactionForm({
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
                   <FormLabel>Categoria</FormLabel>
+                  <Input
+                    type="text"
+                    enterKeyHint="search"
+                    icon="search"
+                    aria-label="Buscar categoria"
+                    placeholder="Buscar categoria"
+                    autoComplete="off"
+                    value={categorySearch}
+                    onChange={event => setCategorySearch(event.target.value)}
+                    onKeyDown={event => {
+                      if (event.key !== 'Enter') return
+                      // Enter não envia o formulário; com um só resultado, escolhe-o.
+                      event.preventDefault()
+                      if (visibleCategories.length === 1) field.onChange(visibleCategories[0])
+                    }}
+                    disabled={isLoading}
+                    className="sm:max-w-80"
+                    action={
+                      categorySearch ? (
+                        <IconButton
+                          icon="x"
+                          label="Limpar busca"
+                          size="sm"
+                          onClick={() => setCategorySearch('')}
+                          disabled={isLoading}
+                        />
+                      ) : undefined
+                    }
+                  />
+                  {visibleCategories.length === 0 && (
+                    <p className="text-muted-foreground text-sm" role="status">
+                      Nenhuma categoria encontrada para "{categorySearch.trim()}".
+                    </p>
+                  )}
                   <div role="group" aria-label="Categoria" className="flex flex-wrap gap-2">
-                    {availableCategories.map((category, index) => {
+                    {visibleCategories.map((category, index) => {
                       const button = (
                         <SelectionButton
                           key={category}

@@ -126,7 +126,7 @@ export function BudgetComparisonCard({
               <li key={comparison.category} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
                 <div className="flex items-center justify-between gap-3">
                   <h4 className="flex min-w-0 items-center gap-2.5 text-sm font-semibold">
-                    <CategoryIcon name={comparison.category} size={16} className="text-muted-foreground shrink-0" />
+                    <CategoryIcon name={comparison.category} size={16} className="shrink-0" />
                     <span className="truncate">{comparison.category}</span>
                   </h4>
                   {hasComparison && (

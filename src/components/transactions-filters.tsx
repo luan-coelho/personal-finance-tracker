@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 import type { TransactionType } from '@/app/db/schemas'
 
-import { getCategoryIconName } from '@/components/category-icon'
+import { getCategoryIconClassName, getCategoryIconName } from '@/components/category-icon'
 import { Button } from '@/components/ui/button'
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
 import { CurrencyInput } from '@/components/ui/currency-input'
@@ -39,6 +39,7 @@ import { useTransactionCategories } from '@/hooks/use-transactions'
 import { useSession } from '@/lib/auth-client'
 import { formatCurrency } from '@/lib/currency'
 import { getActiveTransactionFiltersCount, parseAmountFilterParam } from '@/lib/transaction-filter-utils'
+import { transactionTypeMeta, transactionTypes } from '@/lib/transaction-type-meta'
 
 export interface TransactionFilters {
   search?: string
@@ -61,17 +62,6 @@ interface TransactionsFiltersProps {
 
 const ALL = 'all'
 
-const typeLabels: Record<TransactionType, string> = {
-  entrada: 'Entradas',
-  saida: 'Saídas',
-  reserva: 'Reservas',
-}
-
-const typeQuickFilters = [
-  { value: 'entrada', label: 'Entradas', icon: 'arrow-up-circle' },
-  { value: 'saida', label: 'Saídas', icon: 'arrow-down-circle' },
-  { value: 'reserva', label: 'Reservas', icon: 'piggy-bank' },
-] as const
 
 function formatAmountFilterValue(value: number | undefined) {
   if (value === undefined) {
@@ -125,7 +115,12 @@ export function TransactionsFilters({
 
   const categoryOptions: ComboboxOption[] = [
     { value: ALL, label: 'Todas as categorias', icon: 'grid' },
-    ...categories.map(category => ({ value: category, label: category, icon: getCategoryIconName(category) })),
+    ...categories.map(category => ({
+      value: category,
+      label: category,
+      icon: getCategoryIconName(category),
+      iconClassName: getCategoryIconClassName(category),
+    })),
   ]
   const userOptions: ComboboxOption[] = [
     { value: ALL, label: 'Todos os usuários', icon: 'users' },
@@ -249,13 +244,14 @@ export function TransactionsFilters({
         />
 
         {/* Filtros rápidos de tipo */}
-        {typeQuickFilters.map(({ value, label, icon }) => (
+        {transactionTypes.map(type => (
           <FilterBarQuick
-            key={value}
-            icon={icon}
-            selected={filters.type === value}
-            onClick={() => handleTypeChange(filters.type === value ? ALL : value)}>
-            {label}
+            key={type}
+            icon={transactionTypeMeta[type].icon}
+            tone={transactionTypeMeta[type].tone}
+            selected={filters.type === type}
+            onClick={() => handleTypeChange(filters.type === type ? ALL : type)}>
+            {transactionTypeMeta[type].pluralLabel}
           </FilterBarQuick>
         ))}
 
@@ -289,10 +285,14 @@ export function TransactionsFilters({
                   aria-labelledby="filter-type-label"
                   value={draftFilters.type ?? ALL}
                   onValueChange={handleDraftTypeChange}>
-                  <ToggleGroupItem value={ALL}>Todos</ToggleGroupItem>
-                  <ToggleGroupItem value="entrada">Entrada</ToggleGroupItem>
-                  <ToggleGroupItem value="saida">Saída</ToggleGroupItem>
-                  <ToggleGroupItem value="reserva">Reserva</ToggleGroupItem>
+                  <ToggleGroupItem value={ALL} className="px-2">
+                    Todos
+                  </ToggleGroupItem>
+                  {transactionTypes.map(type => (
+                    <ToggleGroupItem key={type} value={type} tone={transactionTypeMeta[type].tone} className="px-2">
+                      {transactionTypeMeta[type].label}
+                    </ToggleGroupItem>
+                  ))}
                 </ToggleGroup>
               </div>
 
@@ -397,8 +397,11 @@ export function TransactionsFilters({
       {!hideBadges && (
         <FilterBarApplied onClear={onClearFilters}>
           {filters.type && (
-            <FilterBarAppliedChip onRemove={() => handleTypeChange(ALL)}>
-              {`Tipo: ${typeLabels[filters.type]}`}
+            <FilterBarAppliedChip
+              icon={transactionTypeMeta[filters.type].icon}
+              tone={transactionTypeMeta[filters.type].tone}
+              onRemove={() => handleTypeChange(ALL)}>
+              {`Tipo: ${transactionTypeMeta[filters.type].pluralLabel}`}
             </FilterBarAppliedChip>
           )}
           {filters.category && (

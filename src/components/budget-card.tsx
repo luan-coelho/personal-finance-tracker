@@ -5,7 +5,7 @@ import { useState } from 'react'
 
 import type { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
 
-import { CategoryIcon } from '@/components/category-icon'
+import { CategoryIconTile } from '@/components/category-icon'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -98,9 +98,7 @@ export function BudgetCard({ budget, onEdit, onView, className }: BudgetCardProp
       )}>
       <CardHeader>
         <CardTitle className="flex min-w-0 items-center gap-2.5">
-          <span className="bg-muted text-muted-foreground rounded-control inline-flex size-8 shrink-0 items-center justify-center">
-            <CategoryIcon name={budget.category} size={16} />
-          </span>
+          <CategoryIconTile name={budget.category} />
           <Link
             href={`/admin/budgets/${budget.id}`}
             data-slot="budget-card-link"

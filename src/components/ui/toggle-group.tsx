@@ -40,16 +40,31 @@ function ToggleGroup({ className, fullWidth = false, ...props }: ToggleGroupProp
   )
 }
 
+type ToggleGroupItemTone = 'success' | 'warning' | 'error' | 'info' | 'ai'
+
+const ITEM_TONE: Record<ToggleGroupItemTone, { text: string; active: string; dot: string }> = {
+  success: { text: 'text-success-text', active: 'data-[state=on]:text-success-text', dot: 'bg-success' },
+  warning: { text: 'text-warning-text', active: 'data-[state=on]:text-warning-text', dot: 'bg-warning' },
+  error: { text: 'text-error-text', active: 'data-[state=on]:text-error-text', dot: 'bg-error' },
+  info: { text: 'text-info-text', active: 'data-[state=on]:text-info-text', dot: 'bg-info' },
+  ai: { text: 'text-ai-text', active: 'data-[state=on]:text-ai-text', dot: 'bg-ai' },
+}
+
 interface ToggleGroupItemProps extends React.ComponentProps<typeof ToggleGroupPrimitive.Item> {
   /** Ícone Radar de 16px antes do rótulo (use em todas as opções ou em nenhuma). */
   icon?: IconName
+  /**
+   * Tom semântico da opção: pinta o ícone (ou, sem ícone, um ponto de 6px antes do rótulo)
+   * e o texto da opção ativa.
+   */
+  tone?: ToggleGroupItemTone
 }
 
 /**
  * Opção do Segmented (`.sst-segmented__option`): 34px, padding 14, 13/20 500 em `muted-fg`;
  * a ativa sobe para `card` + `sh-sm` + `fg`.
  */
-function ToggleGroupItem({ className, icon, children, ...props }: ToggleGroupItemProps) {
+function ToggleGroupItem({ className, icon, tone, children, ...props }: ToggleGroupItemProps) {
   return (
     <ToggleGroupPrimitive.Item
       data-slot="toggle-group-item"
@@ -59,16 +74,21 @@ function ToggleGroupItem({ className, icon, children, ...props }: ToggleGroupIte
         'hover:not-disabled:data-[state=off]:text-foreground',
         'focus-visible:shadow-focus-ring',
         'disabled:cursor-not-allowed disabled:opacity-45',
-        'data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sh-sm data-[state=on]:focus-visible:shadow-[var(--sh-sm),var(--focus-ring)]',
+        'data-[state=on]:bg-card data-[state=on]:shadow-sh-sm data-[state=on]:focus-visible:shadow-[var(--sh-sm),var(--focus-ring)]',
+        tone ? ITEM_TONE[tone].active : 'data-[state=on]:text-foreground',
         '[&_svg]:pointer-events-none [&_svg]:shrink-0',
         className,
       )}
       {...props}>
-      {icon ? <Icon name={icon} size={16} /> : null}
+      {icon ? (
+        <Icon name={icon} size={16} className={tone ? ITEM_TONE[tone].text : undefined} />
+      ) : tone ? (
+        <span aria-hidden="true" className={cn('size-1.5 shrink-0 rounded-full', ITEM_TONE[tone].dot)} />
+      ) : null}
       {children}
     </ToggleGroupPrimitive.Item>
   )
 }
 
-export type { ToggleGroupItemProps, ToggleGroupProps }
+export type { ToggleGroupItemProps, ToggleGroupItemTone, ToggleGroupProps }
 export { ToggleGroup, ToggleGroupItem }

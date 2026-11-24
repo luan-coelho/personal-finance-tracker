@@ -30,6 +30,8 @@ export interface ComboboxOption {
   value: string
   label: string
   icon?: IconName
+  /** Classe extra do ícone (ex.: cor da categoria). */
+  iconClassName?: string
   disabled?: boolean
 }
 
@@ -183,7 +185,9 @@ export function Combobox(props: ComboboxProps) {
       const option = selectedOptions[0]
       return (
         <span className="flex min-w-0 flex-1 items-center gap-2.5">
-          {option.icon && <Icon name={option.icon} size={18} className="text-muted-foreground" />}
+          {option.icon && (
+            <Icon name={option.icon} size={18} className={option.iconClassName ?? 'text-muted-foreground'} />
+          )}
           <span className="truncate">{option.label}</span>
         </span>
       )
@@ -296,7 +300,7 @@ export function Combobox(props: ComboboxProps) {
                         )}
                       </span>
                     )}
-                    {option.icon && <Icon name={option.icon} size={18} />}
+                    {option.icon && <Icon name={option.icon} size={18} className={option.iconClassName} />}
                     <span className="min-w-0 flex-1 truncate">{highlightMatch(option.label, query)}</span>
                   </CommandItem>
                 )

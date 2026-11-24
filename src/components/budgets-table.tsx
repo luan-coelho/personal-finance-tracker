@@ -6,7 +6,7 @@ import { useRef, useState } from 'react'
 import type { BudgetWithSpendingAndUser } from '@/app/db/schemas/budget-schema'
 
 import { BudgetStatusBadge, budgetStatusMeta, getBudgetStatus } from '@/components/budget-card'
-import { CategoryIcon } from '@/components/category-icon'
+import { CategoryIconTile } from '@/components/category-icon'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -143,9 +143,7 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
               <TableRow key={budget.id}>
                 <TableCell>
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="bg-muted text-muted-foreground rounded-control inline-flex size-8 shrink-0 items-center justify-center">
-                      <CategoryIcon name={budget.category} size={16} />
-                    </span>
+                    <CategoryIconTile name={budget.category} />
                     <Link
                       href={`/admin/budgets/${budget.id}`}
                       className="focus-visible:shadow-focus-ring rounded-xs font-medium outline-none hover:underline hover:underline-offset-4">

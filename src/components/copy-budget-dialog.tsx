@@ -126,7 +126,7 @@ export function CopyBudgetDialog({ currentMonth }: CopyBudgetDialogProps) {
                 {sourceBudgets.slice(0, 5).map(budget => (
                   <li key={budget.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
                     <span className="flex min-w-0 items-center gap-2.5">
-                      <CategoryIcon name={budget.category} size={16} className="text-muted-foreground shrink-0" />
+                      <CategoryIcon name={budget.category} size={16} className="shrink-0" />
                       <span className="truncate">{budget.category}</span>
                     </span>
                     <span className="font-medium tabular-nums">{formatCurrency(Number(budget.amount))}</span>

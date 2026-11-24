@@ -8,6 +8,16 @@ import { cn } from '@/lib/utils'
 
 type ChipSize = 'sm' | 'md' | 'lg'
 
+type ChipTone = 'success' | 'warning' | 'error' | 'info' | 'ai'
+
+const CHIP_TONE: Record<ChipTone, { icon: string; selected: string }> = {
+  success: { icon: 'text-success-text', selected: 'border-success bg-success-soft text-success-text' },
+  warning: { icon: 'text-warning-text', selected: 'border-warning bg-warning-soft text-warning-text' },
+  error: { icon: 'text-error-text', selected: 'border-error bg-error-soft text-error-text' },
+  info: { icon: 'text-info-text', selected: 'border-info bg-info-soft text-info-text' },
+  ai: { icon: 'text-ai-text', selected: 'border-ai bg-ai-soft text-ai-text' },
+}
+
 const CHIP_SIZE: Record<ChipSize, string> = {
   sm: 'h-7',
   md: 'h-control-sm',
@@ -27,6 +37,11 @@ interface ChipProps extends Omit<React.ComponentProps<'button'>, 'children'> {
   iconRight?: IconName
   /** md 32 (padrão, faixa de filtros) · sm 28 (linha de aplicados) · lg 40 (filtros rápidos). */
   size?: ChipSize
+  /**
+   * Tom semântico: pinta o ícone e, quando `selected`, troca a família `primary` pela do tom
+   * (fundo `-soft`, borda e texto). Sem `tone` o chip segue neutro/`primary`.
+   */
+  tone?: ChipTone
   children?: React.ReactNode
 }
 
@@ -42,6 +57,7 @@ function Chip({
   icon,
   iconRight,
   size = 'md',
+  tone,
   disabled,
   className,
   children,
@@ -55,14 +71,16 @@ function Chip({
     'border-input bg-card text-foreground inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 align-middle text-[13px]/4 font-medium whitespace-nowrap',
     CHIP_SIZE[size],
     removable && 'pr-2',
-    selected && 'border-primary bg-primary-soft text-primary-soft-fg',
+    selected && (tone ? CHIP_TONE[tone].selected : 'border-primary bg-primary-soft text-primary-soft-fg'),
     disabled && 'cursor-not-allowed opacity-45',
     className,
   )
 
   const content = (
     <>
-      {icon ? <Icon name={icon} size={size === 'lg' ? 16 : 14} /> : null}
+      {icon ? (
+        <Icon name={icon} size={size === 'lg' ? 16 : 14} className={tone && !selected ? CHIP_TONE[tone].icon : undefined} />
+      ) : null}
       <span className="truncate">{children}</span>
       {iconRight ? <Icon name={iconRight} size={14} /> : null}
     </>
@@ -113,5 +131,5 @@ function Chip({
   )
 }
 
-export type { ChipProps }
+export type { ChipProps, ChipTone }
 export { Chip }

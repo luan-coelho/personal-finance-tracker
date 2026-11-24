@@ -6,7 +6,7 @@ import { useState } from 'react'
 
 import type { TransactionType, TransactionWithUser } from '@/app/db/schemas'
 
-import { CategoryIcon } from '@/components/category-icon'
+import { CategoryIconTile } from '@/components/category-icon'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -51,6 +51,12 @@ const amountClassName: Record<TransactionType, string> = {
   reserva: 'text-foreground',
 }
 
+const typeTileClassName: Record<TransactionType, string> = {
+  entrada: 'bg-success-soft text-success-text',
+  saida: 'bg-error-soft text-error-text',
+  reserva: 'bg-info-soft text-info-text',
+}
+
 const amountSign: Record<TransactionType, string> = {
   entrada: '+',
   saida: '-',
@@ -58,19 +64,18 @@ const amountSign: Record<TransactionType, string> = {
 }
 
 function TransactionIcon({ transaction }: { transaction: TransactionWithUser }) {
-  const tile = 'bg-muted text-muted-foreground inline-flex size-8 shrink-0 items-center justify-center rounded-control'
-
   if (transaction.category) {
-    return (
-      <span className={tile}>
-        <CategoryIcon name={transaction.category} size={16} />
-      </span>
-    )
+    return <CategoryIconTile name={transaction.category} />
   }
 
+  // Sem categoria: o tile segue o tom do tipo (entrada verde, saída vermelha, reserva ciano).
   const fallback: IconName = transaction.type === 'reserva' ? 'piggy-bank' : 'receipt'
   return (
-    <span className={tile}>
+    <span
+      className={cn(
+        'rounded-control inline-flex size-8 shrink-0 items-center justify-center',
+        typeTileClassName[transaction.type],
+      )}>
       <Icon name={fallback} size={16} />
     </span>
   )

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 import { budgetStatusMeta } from '@/components/budget-card'
-import { getCategoryIconName } from '@/components/category-icon'
+import { getCategoryIconClassName, getCategoryIconName } from '@/components/category-icon'
 import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import { CurrencyInput } from '@/components/ui/currency-input'
@@ -71,7 +71,12 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
 
   const categoryOptions = [
     { value: 'all', label: 'Todas as categorias' },
-    ...categories.map(category => ({ value: category, label: category, icon: getCategoryIconName(category) })),
+    ...categories.map(category => ({
+      value: category,
+      label: category,
+      icon: getCategoryIconName(category),
+      iconClassName: getCategoryIconClassName(category),
+    })),
   ]
 
   const handleSearchChange = (search: string) => {
@@ -118,6 +123,7 @@ export function BudgetFilters({ filters, onFiltersChange, onClearFilters }: Budg
               key={status}
               selected={selected}
               icon={budgetStatusMeta[status].icon}
+              tone={budgetStatusMeta[status].tone}
               onClick={() => handleStatusChange(selected ? 'all' : status)}>
               {budgetStatusMeta[status].label}
             </FilterBarQuick>
