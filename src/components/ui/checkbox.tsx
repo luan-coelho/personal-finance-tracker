@@ -1,29 +1,37 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { cn } from "cn"
-import { Checkbox as CheckboxPrimitive } from "radix-ui"
-import { CheckIcon } from "lucide-react"
+import { Checkbox as CheckboxPrimitive } from 'radix-ui'
+import type * as React from 'react'
 
-function Checkbox({
-  className,
-  ...props
-}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+import { Icon } from '@/components/ui/icon'
+
+import { cn } from '@/lib/utils'
+
+/**
+ * Radar Checkbox (`.sst-checkbox`): caixa 20px, raio 6, borda 1,5px `border-strong` sobre `card`.
+ * Hover e foco trocam a borda para `primary` (foco soma `focus-ring`); marcada fica sólida em
+ * `primary` com check 14 (traço 3) em `primary-fg`; parcial mostra traço 10×2,5.
+ * Erro por `aria-invalid`; desabilitada a 45%.
+ */
+function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        "peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input shadow-xs transition-shadow outline-none group-has-disabled/field:opacity-50 group-has-[:focus-visible]/field-label:ring-0 group-has-[:focus-visible]/field-label:not-data-checked:border-input after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground group-has-[:focus-visible]/field-label:data-checked:border-primary dark:data-checked:bg-primary",
-        className
+        'group/checkbox peer border-border-strong bg-card text-primary-foreground relative inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-sm border-[1.5px] outline-none',
+        'transition-[border-color,background-color,box-shadow] duration-120',
+        'after:absolute after:-inset-x-3 after:-inset-y-2',
+        'hover:not-disabled:not-aria-invalid:border-primary focus-visible:not-aria-invalid:border-primary focus-visible:shadow-focus-ring',
+        'data-checked:not-aria-invalid:border-primary data-checked:bg-primary data-[state=indeterminate]:not-aria-invalid:border-primary data-[state=indeterminate]:bg-primary',
+        'aria-invalid:border-error',
+        'disabled:data-unchecked:border-input disabled:data-unchecked:bg-muted disabled:cursor-not-allowed disabled:opacity-45',
+        'disabled:data-checked:border-border-strong disabled:data-checked:bg-border-strong disabled:data-[state=indeterminate]:border-border-strong disabled:data-[state=indeterminate]:bg-border-strong disabled:data-checked:text-white disabled:data-[state=indeterminate]:text-white',
+        className,
       )}
-      {...props}
-    >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
-      >
-        <CheckIcon
-        />
+      {...props}>
+      <CheckboxPrimitive.Indicator data-slot="checkbox-indicator" className="grid place-content-center text-current">
+        <Icon name="check" size={14} strokeWidth={3} className="group-data-[state=indeterminate]/checkbox:hidden" />
+        <span className="hidden h-[2.5px] w-2.5 rounded-[2px] bg-current group-data-[state=indeterminate]/checkbox:block" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   )

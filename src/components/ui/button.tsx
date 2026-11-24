@@ -1,56 +1,88 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
-import { Slot } from "radix-ui"
+import { cva, type VariantProps } from 'class-variance-authority'
+import { Slot } from 'radix-ui'
+import type * as React from 'react'
 
+import { Icon, type IconName } from '@/components/ui/icon'
+import { Spinner } from '@/components/ui/spinner'
+
+import { cn } from '@/lib/utils'
+
+/**
+ * Radar Button (`.sst-btn`): cápsula, plano, 14/20 500.
+ * Hover/pressed só mudam fundo e borda (sem translate/scale); foco com `focus-ring`.
+ */
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  [
+    'group/button text-foreground inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border border-transparent bg-transparent text-sm font-medium whitespace-nowrap no-underline outline-none select-none',
+    'transition-[background-color,border-color,box-shadow,color] duration-120',
+    'focus-visible:shadow-focus-ring',
+    'disabled:not-aria-busy:cursor-not-allowed disabled:not-aria-busy:opacity-45',
+    'aria-disabled:pointer-events-none aria-disabled:opacity-45',
+    'aria-busy:cursor-progress',
+    '[&_svg]:pointer-events-none [&_svg]:shrink-0',
+  ],
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        primary:
+          'bg-primary text-primary-foreground hover:not-disabled:bg-primary-hover active:not-disabled:bg-primary-active active:not-disabled:text-white',
+        secondary: 'bg-primary-soft text-primary-soft-fg',
         outline:
-          "border-border bg-background shadow-xs hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
-        ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          'border-input bg-card text-foreground hover:not-disabled:not-active:border-border-strong hover:not-disabled:not-active:bg-accent active:not-disabled:border-border-strong active:not-disabled:bg-muted',
+        ghost: 'text-foreground hover:not-disabled:not-active:bg-accent active:not-disabled:bg-muted bg-transparent',
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+          'bg-destructive hover:not-disabled:not-active:bg-error-700 text-white focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--error)_40%,transparent)] active:not-disabled:bg-[#912018]',
+        link: 'text-primary-text active:not-disabled:text-primary-active justify-start rounded-sm border-0 bg-transparent underline-offset-4 hover:not-disabled:underline active:not-disabled:underline',
       },
       size: {
-        default:
-          "h-9 gap-1.5 px-2.5 in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),8px)] px-2 text-xs in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-1 rounded-[min(var(--radius-md),10px)] px-2.5 in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5",
-        lg: "h-10 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        icon: "size-9",
-        "icon-xs":
-          "size-6 rounded-[min(var(--radius-md),8px)] in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm":
-          "size-8 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-md",
-        "icon-lg": "size-10",
+        sm: 'h-control-sm gap-1.5 px-3 text-[13px]/5',
+        md: 'h-control-md px-4',
+        lg: 'h-control-lg px-5',
       },
     },
+    compoundVariants: [{ variant: 'link', className: 'px-1' }],
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: 'outline',
+      size: 'md',
     },
-  }
+  },
 )
+
+type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>['variant']>
+type ButtonSize = NonNullable<VariantProps<typeof buttonVariants>['size']>
+
+/** Ícone de 16px em sm/md e 20px em lg (Radar). */
+const BUTTON_ICON_SIZE: Record<ButtonSize, number> = { sm: 16, md: 16, lg: 20 }
+
+interface ButtonProps extends React.ComponentProps<'button'> {
+  /** Hierarquia: `primary` no máximo uma vez por tela; `outline` é o padrão. */
+  variant?: ButtonVariant
+  /** sm 32 · md 40 (padrão) · lg 44. */
+  size?: ButtonSize
+  /** Mostra o spinner no lugar do ícone, marca `aria-busy` e bloqueia cliques. Troque o rótulo pelo gerúndio. */
+  loading?: boolean
+  /** Ícone Radar à esquerda do rótulo. */
+  icon?: IconName
+  /** Ícone Radar à direita do rótulo. */
+  iconRight?: IconName
+  asChild?: boolean
+}
 
 function Button({
   className,
-  variant = "default",
-  size = "default",
+  variant = 'outline',
+  size = 'md',
   asChild = false,
+  loading = false,
+  icon,
+  iconRight,
+  disabled,
+  children,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot.Root : "button"
+}: ButtonProps) {
+  const Comp = asChild ? Slot.Root : 'button'
+  const iconSize = BUTTON_ICON_SIZE[size]
+  const leading = loading ? <Spinner size={16} /> : icon ? <Icon name={icon} size={iconSize} /> : null
 
   return (
     <Comp
@@ -58,9 +90,71 @@ function Button({
       data-variant={variant}
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
+      disabled={asChild ? undefined : disabled || loading}
+      aria-disabled={asChild && (disabled || loading) ? true : undefined}
+      aria-busy={loading || undefined}
+      {...props}>
+      {leading}
+      <Slot.Slottable>{children}</Slot.Slottable>
+      {iconRight ? <Icon name={iconRight} size={iconSize} /> : null}
+    </Comp>
   )
 }
 
-export { Button, buttonVariants }
+type IconButtonVariant = Exclude<ButtonVariant, 'link'>
+
+interface IconButtonProps extends Omit<React.ComponentProps<'button'>, 'children' | 'aria-label'> {
+  /** Ícone Radar. */
+  icon: IconName
+  /** Rótulo acessível obrigatório (vira `aria-label` e `title`). */
+  label: string
+  /** `ghost` (padrão: headers e células) ou `outline` (barras de ferramentas). */
+  variant?: IconButtonVariant
+  /** Quadrado com o lado do botão de texto do mesmo tamanho: sm 32 · md 40 · lg 44. */
+  size?: ButtonSize
+  loading?: boolean
+}
+
+const ICON_BUTTON_SIZE: Record<ButtonSize, string> = {
+  sm: 'w-control-sm px-0',
+  md: 'w-control-md px-0',
+  lg: 'w-control-lg px-0',
+}
+
+/** Radar IconButton (`.sst-btn--icon`): ícone de 16px em sm e 20px em md/lg. */
+function IconButton({
+  icon,
+  label,
+  variant = 'ghost',
+  size = 'md',
+  loading = false,
+  disabled,
+  className,
+  title,
+  ...props
+}: IconButtonProps) {
+  const iconSize = size === 'sm' ? 16 : 20
+
+  return (
+    <button
+      data-slot="icon-button"
+      data-variant={variant}
+      data-size={size}
+      aria-label={label}
+      title={title ?? label}
+      className={cn(
+        buttonVariants({ variant, size }),
+        ICON_BUTTON_SIZE[size],
+        variant === 'ghost' && 'text-muted-foreground hover:not-disabled:text-foreground',
+        className,
+      )}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}>
+      {loading ? <Spinner size={16} /> : <Icon name={icon} size={iconSize} />}
+    </button>
+  )
+}
+
+export type { ButtonProps, ButtonSize, ButtonVariant, IconButtonProps }
+export { Button, buttonVariants, IconButton }

@@ -1,89 +1,74 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
-import { ToggleGroup as ToggleGroupPrimitive } from "radix-ui"
+import { ToggleGroup as ToggleGroupPrimitive } from 'radix-ui'
+import type * as React from 'react'
 
-import { toggleVariants } from "@/components/ui/toggle"
+import { Icon, type IconName } from '@/components/ui/icon'
 
-const ToggleGroupContext = React.createContext<
-  VariantProps<typeof toggleVariants> & {
-    spacing?: number
-    orientation?: "horizontal" | "vertical"
-  }
->({
-  size: "default",
-  variant: "default",
-  spacing: 2,
-  orientation: "horizontal",
-})
+import { cn } from '@/lib/utils'
 
-function ToggleGroup({
-  className,
-  variant,
-  size,
-  spacing = 2,
-  orientation = "horizontal",
-  children,
-  ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Root> &
-  VariantProps<typeof toggleVariants> & {
-    spacing?: number
-    orientation?: "horizontal" | "vertical"
-  }) {
+type ToggleGroupProps = React.ComponentProps<typeof ToggleGroupPrimitive.Root> & {
+  /** Ocupa a largura toda com colunas iguais. */
+  fullWidth?: boolean
+}
+
+/**
+ * Radar Segmented (`.sst-segmented`): trilho `muted` em cápsula, padding 3, gap 2,
+ * para 2–4 opções mutuamente exclusivas. Com `type="single"` controlado, a seleção nunca fica vazia.
+ */
+function ToggleGroup({ className, fullWidth = false, ...props }: ToggleGroupProps) {
+  const rootProps =
+    props.type === 'single' && props.onValueChange
+      ? {
+          ...props,
+          onValueChange: (value: string) => {
+            if (value) props.onValueChange?.(value)
+          },
+        }
+      : props
+
   return (
     <ToggleGroupPrimitive.Root
       data-slot="toggle-group"
-      data-variant={variant}
-      data-size={size}
-      data-spacing={spacing}
-      data-orientation={orientation}
-      style={{ "--gap": spacing } as React.CSSProperties}
       className={cn(
-        "group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=0]:data-[variant=outline]:shadow-xs data-vertical:flex-col data-vertical:items-stretch",
-        className
+        'group/toggle-group bg-muted items-stretch gap-0.5 self-start rounded-full p-[3px]',
+        fullWidth ? 'grid w-full auto-cols-fr grid-flow-col self-stretch' : 'inline-flex w-fit',
+        className,
       )}
-      {...props}
-    >
-      <ToggleGroupContext.Provider
-        value={{ variant, size, spacing, orientation }}
-      >
-        {children}
-      </ToggleGroupContext.Provider>
-    </ToggleGroupPrimitive.Root>
+      {...(rootProps as React.ComponentProps<typeof ToggleGroupPrimitive.Root>)}
+    />
   )
 }
 
-function ToggleGroupItem({
-  className,
-  children,
-  variant = "default",
-  size = "default",
-  ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Item> &
-  VariantProps<typeof toggleVariants>) {
-  const context = React.useContext(ToggleGroupContext)
+interface ToggleGroupItemProps extends React.ComponentProps<typeof ToggleGroupPrimitive.Item> {
+  /** Ícone Radar de 16px antes do rótulo (use em todas as opções ou em nenhuma). */
+  icon?: IconName
+}
 
+/**
+ * Opção do Segmented (`.sst-segmented__option`): 34px, padding 14, 13/20 500 em `muted-fg`;
+ * a ativa sobe para `card` + `sh-sm` + `fg`.
+ */
+function ToggleGroupItem({ className, icon, children, ...props }: ToggleGroupItemProps) {
   return (
     <ToggleGroupPrimitive.Item
       data-slot="toggle-group-item"
-      data-variant={context.variant || variant}
-      data-size={context.size || size}
-      data-spacing={context.spacing}
       className={cn(
-        "shrink-0 group-data-[spacing=0]/toggle-group:rounded-none group-data-[spacing=0]/toggle-group:px-2 group-data-[spacing=0]/toggle-group:shadow-none focus:z-10 focus-visible:z-10 group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:pr-1.5 group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:pl-1.5 group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-md group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-md group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-md data-[state=on]:bg-muted group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t",
-        toggleVariants({
-          variant: context.variant || variant,
-          size: context.size || size,
-        }),
-        className
+        'text-muted-foreground inline-flex h-[34px] min-w-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border-0 bg-transparent px-3.5 text-[13px]/5 font-medium whitespace-nowrap outline-none',
+        'transition-[background-color,color,box-shadow] duration-120',
+        'hover:not-disabled:data-[state=off]:text-foreground',
+        'focus-visible:shadow-focus-ring',
+        'disabled:cursor-not-allowed disabled:opacity-45',
+        'data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sh-sm data-[state=on]:focus-visible:shadow-[var(--sh-sm),var(--focus-ring)]',
+        '[&_svg]:pointer-events-none [&_svg]:shrink-0',
+        className,
       )}
-      {...props}
-    >
+      {...props}>
+      {icon ? <Icon name={icon} size={16} /> : null}
       {children}
     </ToggleGroupPrimitive.Item>
   )
 }
 
+export type { ToggleGroupItemProps, ToggleGroupProps }
 export { ToggleGroup, ToggleGroupItem }

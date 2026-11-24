@@ -1,216 +1,164 @@
 'use client'
 
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button, IconButton } from '@/components/ui/button'
+import { Icon } from '@/components/ui/icon'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 import type { UseMonthSelectorReturn } from '@/hooks/use-month-selector'
 
+import { getBrazilCurrentYearMonth } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 export interface MonthSelectorProps {
   onMonthChange?: (state: UseMonthSelectorReturn) => void
+  /** Mostra o intervalo de datas do mês no popover. */
   showDateRange?: boolean
   showTodayButton?: boolean
   showAllButton?: boolean
+  /** Mantido por compatibilidade: o controle Radar já é compacto. */
   compact?: boolean
   className?: string
   onShowAll?: () => void
 }
 
+const shortMonthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+/**
+ * Seletor de mês Radar: controle de 40px com anterior/próximo e o rótulo do mês,
+ * que abre um popover com o ano e a grade de meses. Fica à esquerda do `PageActions`.
+ */
 export function MonthSelector({
   onMonthChange,
   showDateRange = true,
   showTodayButton = true,
   showAllButton = false,
-  compact = false,
   className,
   onShowAll,
 }: MonthSelectorProps) {
   const monthSelector = useMonthSelectorContext()
+  const [open, setOpen] = useState(false)
+  const [viewYear, setViewYear] = useState(monthSelector.selectedYear)
 
-  // Notify parent when month changes
+  // Avisa o pai quando o mês muda
+  // biome-ignore lint/correctness/useExhaustiveDependencies: dispara só na troca de mês/ano
   useEffect(() => {
     onMonthChange?.(monthSelector)
   }, [monthSelector.selectedMonth, monthSelector.selectedYear, onMonthChange])
 
-  const handlePreviousMonth = () => {
-    monthSelector.goToPreviousMonth()
+  const handleOpenChange = (next: boolean) => {
+    if (next) setViewYear(monthSelector.selectedYear)
+    setOpen(next)
   }
 
-  const handleNextMonth = () => {
-    monthSelector.goToNextMonth()
-  }
-
-  const handlePreviousYear = () => {
-    monthSelector.goToPreviousYear()
-  }
-
-  const handleNextYear = () => {
-    monthSelector.goToNextYear()
-  }
-
-  const handleYearChange = (year: string) => {
-    monthSelector.setYear(parseInt(year))
+  const handleSelectMonth = (month: number) => {
+    monthSelector.goToDate(new Date(viewYear, month, 1))
+    setOpen(false)
   }
 
   const handleTodayClick = () => {
     monthSelector.goToCurrentMonth()
+    setOpen(false)
   }
 
-  if (compact) {
-    return (
-      <div className={cn('flex items-center gap-2', className)}>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handlePreviousYear}
-          className="h-8 w-8 p-0"
-          aria-label="Ano anterior">
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
-        <div className="flex items-center gap-2">
-          <Select value={monthSelector.selectedYear.toString()} onValueChange={handleYearChange}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="w-40">
-              {monthSelector.yearOptions.map(year => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button variant="outline" size="sm" onClick={handleNextYear} className="h-8 w-8 p-0" aria-label="Próximo ano">
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePreviousMonth}
-            className="h-8 w-8 p-0"
-            aria-label="Mês anterior">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="min-w-24 text-center font-medium">{monthSelector.monthName}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleNextMonth}
-            className="h-8 w-8 p-0"
-            aria-label="Próximo mês">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {showTodayButton && !monthSelector.isCurrentMonth && (
-          <Button variant="ghost" size="sm" onClick={handleTodayClick} className="h-8 text-xs">
-            Mês Atual
-          </Button>
-        )}
-
-        {showAllButton && (
-          <Button variant="ghost" size="sm" onClick={onShowAll} className="h-8 text-xs">
-            Ver Todas
-          </Button>
-        )}
-      </div>
-    )
-  }
+  const today = getBrazilCurrentYearMonth()
+  const label = `${monthSelector.monthName} de ${monthSelector.selectedYear}`
 
   return (
-    <Card className={className}>
-      <CardContent className="pt-6">
-        <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:gap-3">
-          {/* Navegação - esquerda no desktop, meio no mobile */}
-          <div className="order-2 flex items-center gap-2 md:order-1 md:flex-1 md:justify-start">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousYear}
-              className="h-8 w-8 p-0"
-              aria-label="Ano anterior">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+    <div data-slot="month-selector" className={cn('flex flex-wrap items-center gap-2', className)}>
+      <div
+        role="group"
+        aria-label="Mês"
+        className="border-input bg-card inline-flex h-control-md items-center gap-0.5 rounded-full border p-[3px]">
+        <IconButton
+          icon="chevron-left"
+          label="Mês anterior"
+          size="sm"
+          onClick={monthSelector.goToPreviousMonth}
+        />
 
-            <Select value={monthSelector.selectedYear.toString()} onValueChange={handleYearChange}>
-              <SelectTrigger className="w-30">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {monthSelector.yearOptions.map(year => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextYear}
-              className="h-8 w-8 p-0"
-              aria-label="Próximo ano">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Mês e data - centro */}
-          <div className="order-1 flex flex-col items-center gap-1 md:order-2 md:flex-1">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
+        <Popover open={open} onOpenChange={handleOpenChange}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Escolher mês, atual: ${label}`}
+              className="hover:bg-accent data-[state=open]:bg-accent focus-visible:shadow-focus-ring text-foreground inline-flex h-control-sm min-w-40 items-center justify-center gap-2 rounded-full px-3 text-sm leading-5 font-medium whitespace-nowrap outline-none transition-colors duration-150">
+              <Icon name="calendar" size={16} className="text-muted-foreground" />
+              <span className="tabular-nums">{label}</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" sideOffset={8} className="flex w-72 flex-col gap-3 p-3">
+            <div className="flex items-center justify-between">
+              <IconButton
+                icon="chevron-left"
+                label="Ano anterior"
                 size="sm"
-                onClick={handlePreviousMonth}
-                className="h-8 w-8 p-0"
-                aria-label="Mês anterior">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <h2 className="min-w-32 text-center text-xl font-semibold">{monthSelector.monthName}</h2>
-              <Button
-                variant="outline"
+                      onClick={() => setViewYear(year => year - 1)}
+              />
+              <span className="text-sm leading-5 font-semibold tabular-nums">{viewYear}</span>
+              <IconButton
+                icon="chevron-right"
+                label="Próximo ano"
                 size="sm"
-                onClick={handleNextMonth}
-                className="h-8 w-8 p-0"
-                aria-label="Próximo mês">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+                      onClick={() => setViewYear(year => year + 1)}
+              />
             </div>
-            {showDateRange && (
-              <div className="text-muted-foreground text-sm">
-                {monthSelector.monthStartDate.toLocaleDateString('pt-BR')} -{' '}
-                {monthSelector.monthEndDate.toLocaleDateString('pt-BR')}
-              </div>
-            )}
-          </div>
 
-          {/* Botões de ação - direita no desktop, abaixo no mobile */}
-          <div className="order-3 flex flex-wrap items-center justify-center gap-2 md:flex-1 md:justify-end">
-            {showTodayButton && !monthSelector.isCurrentMonth && (
-              <Button variant="ghost" size="sm" onClick={handleTodayClick} className="h-7 text-xs">
-                Mês Atual
-              </Button>
+            <div className="grid grid-cols-3 gap-1">
+              {shortMonthNames.map((short, month) => {
+                const isSelected = month === monthSelector.selectedMonth && viewYear === monthSelector.selectedYear
+                const isToday = month === today.month && viewYear === today.year
+                return (
+                  <button
+                    key={short}
+                    type="button"
+                    aria-pressed={isSelected}
+                    aria-label={`${monthSelector.monthNames[month]} de ${viewYear}`}
+                    onClick={() => handleSelectMonth(month)}
+                    className={cn(
+                      'focus-visible:shadow-focus-ring inline-flex h-control-sm items-center justify-center rounded-full text-sm leading-5 font-medium outline-none transition-colors duration-150',
+                      isSelected
+                        ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
+                        : 'text-foreground hover:bg-accent',
+                      !isSelected && isToday && 'text-primary-text font-semibold',
+                    )}>
+                    {short}
+                  </button>
+                )
+              })}
+            </div>
+
+            {showDateRange && (
+              <p className="border-border text-muted-foreground border-t pt-3 text-xs leading-4 tabular-nums">
+                {monthSelector.monthStartDate.toLocaleDateString('pt-BR')} a{' '}
+                {monthSelector.monthEndDate.toLocaleDateString('pt-BR')}
+              </p>
             )}
-            {showAllButton && (
-              <Button variant="ghost" size="sm" onClick={onShowAll} className="h-7 text-xs">
-                Ver Todas
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </PopoverContent>
+        </Popover>
+
+        <IconButton
+          icon="chevron-right"
+          label="Próximo mês"
+          size="sm"
+          onClick={monthSelector.goToNextMonth}
+        />
+      </div>
+
+      {showTodayButton && !monthSelector.isCurrentMonth && (
+        <Button variant="ghost" onClick={handleTodayClick}>
+          Mês atual
+        </Button>
+      )}
+
+      {showAllButton && (
+        <Button variant="ghost" onClick={onShowAll}>
+          Ver todas
+        </Button>
+      )}
+    </div>
   )
 }

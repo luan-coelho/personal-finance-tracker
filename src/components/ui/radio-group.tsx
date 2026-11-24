@@ -1,42 +1,37 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { cn } from "cn"
-import { RadioGroup as RadioGroupPrimitive } from "radix-ui"
+import { RadioGroup as RadioGroupPrimitive } from 'radix-ui'
+import type * as React from 'react'
 
-function RadioGroup({
-  className,
-  ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
-  return (
-    <RadioGroupPrimitive.Root
-      data-slot="radio-group"
-      className={cn("grid w-full gap-3", className)}
-      {...props}
-    />
-  )
+import { cn } from '@/lib/utils'
+
+/** Grupo de rádios Radar: empilhado com `space-3`. */
+function RadioGroup({ className, ...props }: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
+  return <RadioGroupPrimitive.Root data-slot="radio-group" className={cn('grid w-full gap-3', className)} {...props} />
 }
 
-function RadioGroupItem({
-  className,
-  ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+/**
+ * Radar Radio (`.sst-radio`): círculo 20px, borda 1,5px `border-strong` sobre `card`;
+ * selecionado vira anel de 6px em `primary` (o miolo é o próprio `card`).
+ * Hover e foco trocam a borda para `primary`; erro por `aria-invalid`; desabilitado a 45%.
+ */
+function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
   return (
     <RadioGroupPrimitive.Item
       data-slot="radio-group-item"
       className={cn(
-        "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input outline-none group-has-[:focus-visible]/field-label:ring-0 group-has-[:focus-visible]/field-label:not-data-checked:border-input after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground group-has-[:focus-visible]/field-label:data-checked:border-primary dark:data-checked:bg-primary",
-        className
+        'peer border-border-strong bg-card relative size-5 shrink-0 cursor-pointer rounded-full border-[1.5px] outline-none',
+        'transition-[border-color,border-width,box-shadow] duration-120',
+        'after:absolute after:-inset-x-3 after:-inset-y-2',
+        'hover:not-disabled:not-aria-invalid:border-primary focus-visible:not-aria-invalid:border-primary focus-visible:shadow-focus-ring',
+        'data-checked:not-aria-invalid:border-primary data-checked:border-[6px]',
+        'aria-invalid:border-error',
+        'disabled:data-unchecked:border-input disabled:data-unchecked:bg-muted disabled:cursor-not-allowed disabled:opacity-45',
+        'disabled:data-checked:border-border-strong disabled:data-checked:bg-card',
+        className,
       )}
       {...props}
-    >
-      <RadioGroupPrimitive.Indicator
-        data-slot="radio-group-indicator"
-        className="flex size-4 items-center justify-center"
-      >
-        <span className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground" />
-      </RadioGroupPrimitive.Indicator>
-    </RadioGroupPrimitive.Item>
+    />
   )
 }
 

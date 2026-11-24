@@ -5,6 +5,7 @@ import { DM_Mono, DM_Sans } from 'next/font/google'
 import { InstallPromptCapture } from '@/components/pwa/install-prompt-capture'
 import { ServiceWorkerRegister } from '@/components/pwa/sw-register'
 import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 import { QueryProvider } from '@/providers/query-provider'
 import { SessionProvider } from '@/providers/session-provider'
@@ -76,15 +77,11 @@ export default function RootLayout({
             <SessionProvider>
               <QueryProvider>
                 <SpaceProvider>
-                  {children}
-                  <Analytics />
-                  <Toaster
-                    expand
-                    richColors
-                    toastOptions={{
-                      duration: 5000,
-                    }}
-                  />
+                  <TooltipProvider>
+                    {children}
+                    <Analytics />
+                    <Toaster />
+                  </TooltipProvider>
                 </SpaceProvider>
               </QueryProvider>
             </SessionProvider>

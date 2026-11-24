@@ -329,6 +329,15 @@
   --spacing-table-row: var(--table-row);
 }
 
+@keyframes sst-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 @keyframes sst-spin {
   to {
     transform: rotate(360deg);

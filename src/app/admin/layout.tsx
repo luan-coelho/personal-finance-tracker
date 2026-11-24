@@ -1,9 +1,17 @@
+import { cookies } from 'next/headers'
+
 import { AppLayout } from '@/components/layout/app-layout'
 
-export default function AdminLayout({
+// Mesmo nome usado em `src/components/ui/sidebar.tsx` para persistir o estado da sidebar.
+const SIDEBAR_COOKIE_NAME = 'sidebar_state'
+
+export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  return <AppLayout>{children}</AppLayout>
+  const cookieStore = await cookies()
+  const defaultOpen = cookieStore.get(SIDEBAR_COOKIE_NAME)?.value !== 'false'
+
+  return <AppLayout defaultOpen={defaultOpen}>{children}</AppLayout>
 }

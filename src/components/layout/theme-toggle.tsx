@@ -1,30 +1,29 @@
 'use client'
 
-import { Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { useEffect, useState } from 'react'
 
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { IconButton } from '@/components/ui/button'
 
-export function ThemeToggle() {
-  const { setTheme, theme } = useTheme()
+interface ThemeToggleProps {
+  className?: string
+}
 
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light')
-  }
+/** Utilidade global do PageHeader: `moon` no tema claro, `sun` no escuro. */
+export function ThemeToggle({ className }: ThemeToggleProps) {
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
+
+  const isDark = mounted && resolvedTheme === 'dark'
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          <Sun className="h-4 w-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-          <Moon className="absolute h-4 w-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-          <span className="sr-only">Alternar tema</span>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>Alternar tema</p>
-      </TooltipContent>
-    </Tooltip>
+    <IconButton
+      icon={isDark ? 'sun' : 'moon'}
+      label={isDark ? 'Usar tema claro' : 'Usar tema escuro'}
+      className={className}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+    />
   )
 }

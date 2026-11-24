@@ -1,7 +1,7 @@
 'use client'
 
-import { LogOut } from 'lucide-react'
-import { useActionState } from 'react'
+import type * as React from 'react'
+import { useTransition } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -10,33 +10,43 @@ import { routes } from '@/lib/routes'
 
 import { handleSignOut } from '@/actions/auth-actions'
 
+/** Encerra a sessão pela server action e redireciona para o login. */
+export function useSignOut(redirectTo?: string) {
+  const [isPending, startTransition] = useTransition()
+
+  const signOut = () => {
+    startTransition(async () => {
+      const result = await handleSignOut(redirectTo || routes.frontend.auth.signIn)
+
+      if (!result.success && result.error) {
+        toast.error(result.error)
+      }
+    })
+  }
+
+  return { signOut, isPending }
+}
+
 interface SignOutButtonProps {
-  variant?: 'default' | 'outline' | 'ghost'
-  size?: 'default' | 'sm' | 'lg'
+  variant?: React.ComponentProps<typeof Button>['variant']
+  size?: React.ComponentProps<typeof Button>['size']
   className?: string
   redirectTo?: string
 }
 
-export function SignOutButton({ variant = 'ghost', size = 'default', className, redirectTo }: SignOutButtonProps) {
-  // Server action wrapper para logout
-  const signOutAction = async () => {
-    const result = await handleSignOut(redirectTo || routes.frontend.auth.signIn)
-
-    if (!result.success && result.error) {
-      toast.error(result.error)
-    }
-
-    return result
-  }
-
-  const [, formAction, isPending] = useActionState(signOutAction, null)
+export function SignOutButton({ variant = 'ghost', size = 'md', className, redirectTo }: SignOutButtonProps) {
+  const { signOut, isPending } = useSignOut(redirectTo)
 
   return (
-    <form action={formAction} className="inline">
-      <Button type="submit" variant={variant} size={size} className={className} disabled={isPending}>
-        <LogOut className="mr-2 h-4 w-4" />
-        {isPending ? 'Saindo...' : 'Sair'}
-      </Button>
-    </form>
+    <Button
+      type="button"
+      variant={variant}
+      size={size}
+      icon="log-out"
+      loading={isPending}
+      className={className}
+      onClick={signOut}>
+      {isPending ? 'Saindo' : 'Sair'}
+    </Button>
   )
 }
