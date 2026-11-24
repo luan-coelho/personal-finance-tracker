@@ -16,21 +16,28 @@ interface CurrencyInputProps
 }
 
 /**
- * Campo de moeda Radar: Input com prefixo "R$", `inputMode="decimal"` e algarismos tabulares.
+ * Campo de moeda Radar: Input com prefixo "R$", teclado numérico e algarismos tabulares.
+ * A máscara entra pelos centavos e descarta vírgula e ponto, por isso `inputMode="numeric"`
+ * (teclas maiores no celular). O foco seleciona o valor: digitar substitui em vez de emendar.
  * A máscara é a mesma dos formulários (`formatBrazilianAmountInput`); a normalização para o
  * banco continua em `normalizeBrazilianAmount`. Compatível com `{...field}` do react-hook-form.
  */
-function CurrencyInput({ value, onChange, placeholder = '0,00', className, ...props }: CurrencyInputProps) {
+function CurrencyInput({ value, onChange, onFocus, placeholder = '0,00', className, ...props }: CurrencyInputProps) {
   return (
     <Input
       type="text"
       prefix="R$"
-      inputMode="decimal"
+      inputMode="numeric"
       autoComplete="off"
+      enterKeyHint="next"
       placeholder={placeholder}
       className={cn('tabular-nums', className)}
       value={value ?? ''}
       onChange={event => onChange?.(formatBrazilianAmountInput(event.target.value))}
+      onFocus={event => {
+        event.currentTarget.select()
+        onFocus?.(event)
+      }}
       {...props}
     />
   )

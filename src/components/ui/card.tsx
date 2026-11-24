@@ -4,7 +4,7 @@ import type * as React from 'react'
 import { cn } from '@/lib/utils'
 
 type CardProps = React.ComponentProps<'div'> & {
-  /** `default`: padding 24, gap 16. `sm`: padding 16, gap 12 (Radar `mobile`). */
+  /** `default`: padding 24 (16 abaixo de `sm`), gap 16. `sm`: padding 16, gap 12 (Radar `mobile`). */
   size?: 'default' | 'sm'
   /** Clickable card: hover/focus change only the border (`border-strong`) and shadow (`sh-md`). */
   interactive?: boolean
@@ -40,7 +40,7 @@ function Card({
       data-interactive={interactive || undefined}
       className={cn(
         'group/card border-border bg-card text-card-foreground shadow-sh-sm flex min-w-0 flex-col gap-(--card-gap) rounded-lg border py-(--card-spacing)',
-        '[--card-gap:--spacing(4)] [--card-spacing:--spacing(6)] data-[size=sm]:[--card-gap:--spacing(3)] data-[size=sm]:[--card-spacing:--spacing(4)]',
+        '[--card-gap:--spacing(4)] [--card-spacing:--spacing(6)] max-sm:[--card-spacing:--spacing(4)] data-[size=sm]:[--card-gap:--spacing(3)] data-[size=sm]:[--card-spacing:--spacing(4)]',
         interactive &&
           '[--card-gap:--spacing(3)] hover:border-border-strong hover:shadow-sh-md focus-visible:border-border-strong cursor-pointer transition-[border-color,box-shadow] duration-120 outline-none focus-visible:shadow-[var(--sh-md),var(--focus-ring)]',
         className,

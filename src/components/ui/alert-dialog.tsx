@@ -4,6 +4,7 @@ import { AlertDialog as AlertDialogPrimitive } from 'radix-ui'
 import * as React from 'react'
 
 import { Button } from '@/components/ui/button'
+import { BOTTOM_SHEET_CLASS } from '@/components/ui/dialog'
 import { Icon, type IconName } from '@/components/ui/icon'
 
 import { cn } from '@/lib/utils'
@@ -58,6 +59,8 @@ function AlertDialogContent({
             'group/alert-dialog-content fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-auto',
             'border-border-strong bg-card text-card-foreground shadow-sh-xl rounded-lg border p-6 text-left text-sm outline-none',
             'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-150',
+            BOTTOM_SHEET_CLASS,
+            'max-sm:pb-[calc(--spacing(4)+var(--safe-bottom))] max-sm:px-4 max-sm:pt-5',
             destructive ? 'max-w-[440px]' : 'max-w-[480px]',
             className,
           )}
@@ -90,7 +93,10 @@ function AlertDialogFooter({ className, ...props }: React.ComponentProps<'div'>)
   return (
     <div
       data-slot="alert-dialog-footer"
-      className={cn('flex flex-wrap items-center justify-end gap-2', className)}
+      className={cn(
+        'flex flex-wrap items-center justify-end gap-2 max-sm:flex-nowrap max-sm:*:min-w-0 max-sm:*:flex-1 max-sm:*:last:flex-2',
+        className,
+      )}
       {...props}
     />
   )

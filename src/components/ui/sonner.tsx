@@ -7,6 +7,8 @@ import { Toaster as Sonner, type ToasterProps } from 'sonner'
 import { Icon } from '@/components/ui/icon'
 import { Spinner } from '@/components/ui/spinner'
 
+import { useIsMobile } from '@/hooks/use-mobile'
+
 import { cn } from '@/lib/utils'
 
 // Radar Toast: solid background in the family's 600/700 shade with white text (same in both themes),
@@ -32,18 +34,21 @@ const toastClassNames = {
     'outline-none hover:bg-current/14 focus-visible:shadow-[0_0_0_3px_rgb(255_255_255/0.45)]',
   ),
   closeButton: cn(
-    'order-last mt-1 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border-0! bg-transparent! text-current!',
+    'order-last mt-1 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border-0! bg-transparent! text-current! max-lg:mt-0 max-lg:size-9',
     'outline-none hover:bg-current/14! focus-visible:shadow-[0_0_0_3px_rgb(255_255_255/0.45)]',
   ),
 }
 
 function Toaster({ toastOptions, style, className, ...props }: ToasterProps) {
   const { theme = 'system' } = useTheme()
+  // Radar: canto inferior direito no web, topo no mobile (embaixo ficam a BottomNav e o FAB).
+  const isMobile = useIsMobile()
 
   return (
     <Sonner
       theme={theme as ToasterProps['theme']}
-      position="bottom-right"
+      position={isMobile ? 'top-center' : 'bottom-right'}
+      mobileOffset={{ top: 'calc(var(--safe-top) + 12px)', left: 16, right: 16 }}
       visibleToasts={3}
       gap={12}
       icons={{

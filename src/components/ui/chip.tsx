@@ -19,9 +19,10 @@ const CHIP_TONE: Record<ChipTone, { icon: string; selected: string }> = {
 }
 
 const CHIP_SIZE: Record<ChipSize, string> = {
-  sm: 'h-7',
-  md: 'h-control-sm',
-  lg: 'h-control-md',
+  // Abaixo de `lg` (Radar mobile): chip 36 e filtro rápido 40, sem seguir o salto dos controles para 48.
+  sm: 'h-7 max-lg:h-9',
+  md: 'h-control-sm max-lg:h-9',
+  lg: 'h-control-md max-lg:h-10',
 }
 
 interface ChipProps extends Omit<React.ComponentProps<'button'>, 'children'> {
@@ -79,7 +80,11 @@ function Chip({
   const content = (
     <>
       {icon ? (
-        <Icon name={icon} size={size === 'lg' ? 16 : 14} className={tone && !selected ? CHIP_TONE[tone].icon : undefined} />
+        <Icon
+          name={icon}
+          size={size === 'lg' ? 16 : 14}
+          className={tone && !selected ? CHIP_TONE[tone].icon : undefined}
+        />
       ) : null}
       <span className="truncate">{children}</span>
       {iconRight ? <Icon name={iconRight} size={14} /> : null}
@@ -105,7 +110,7 @@ function Chip({
             onRemove(event)
           }}
           className={cn(
-            'inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-inherit outline-none',
+            'inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-inherit outline-none max-lg:size-7',
             'hover:not-disabled:bg-accent focus-visible:shadow-focus-ring transition-[background-color,box-shadow] duration-120 disabled:cursor-not-allowed',
           )}>
           <Icon name="x" size={12} strokeWidth={2} />

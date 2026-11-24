@@ -39,7 +39,7 @@ function PaginationLink({ className, isActive, ...props }: PaginationLinkProps) 
       data-active={isActive || undefined}
       className={cn(
         buttonVariants({ variant: isActive ? 'secondary' : 'ghost', size: 'sm' }),
-        'size-9! px-0 tabular-nums',
+        'size-9! px-0 tabular-nums max-lg:size-11!',
         isActive && 'font-semibold',
         disabledLink,
         className,
@@ -53,7 +53,7 @@ function PaginationPrevious({ className, text = 'Anterior', ...props }: React.Co
   return (
     <a
       data-slot="pagination-previous"
-      className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-9!', disabledLink, className)}
+      className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-9! max-lg:h-11!', disabledLink, className)}
       {...props}>
       <Icon name="chevron-left" size={16} />
       <span>{text}</span>
@@ -65,7 +65,7 @@ function PaginationNext({ className, text = 'Próxima', ...props }: React.Compon
   return (
     <a
       data-slot="pagination-next"
-      className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-9!', disabledLink, className)}
+      className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-9! max-lg:h-11!', disabledLink, className)}
       {...props}>
       <span>{text}</span>
       <Icon name="chevron-right" size={16} />
@@ -78,7 +78,7 @@ function PaginationEllipsis({ className, ...props }: React.ComponentProps<'span'
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
-      className={cn('text-muted-foreground flex size-9 items-center justify-center', className)}
+      className={cn('text-muted-foreground flex size-9 items-center justify-center max-lg:size-11', className)}
       {...props}>
       <Icon name="more-horizontal" size={16} />
       <span className="sr-only">Mais páginas</span>

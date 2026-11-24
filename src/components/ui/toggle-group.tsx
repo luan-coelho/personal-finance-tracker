@@ -61,7 +61,7 @@ interface ToggleGroupItemProps extends React.ComponentProps<typeof ToggleGroupPr
 }
 
 /**
- * Opção do Segmented (`.sst-segmented__option`): 34px, padding 14, 13/20 500 em `muted-fg`;
+ * Opção do Segmented (`.sst-segmented__option`): 34px (42px abaixo de `lg`, grupo de 48px), padding 14, 13/20 500 em `muted-fg`;
  * a ativa sobe para `card` + `sh-sm` + `fg`.
  */
 function ToggleGroupItem({ className, icon, tone, children, ...props }: ToggleGroupItemProps) {
@@ -69,7 +69,7 @@ function ToggleGroupItem({ className, icon, tone, children, ...props }: ToggleGr
     <ToggleGroupPrimitive.Item
       data-slot="toggle-group-item"
       className={cn(
-        'text-muted-foreground inline-flex h-[34px] min-w-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border-0 bg-transparent px-3.5 text-[13px]/5 font-medium whitespace-nowrap outline-none',
+        'text-muted-foreground inline-flex h-[34px] min-w-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border-0 bg-transparent px-3.5 text-[13px]/5 font-medium whitespace-nowrap outline-none max-lg:h-[42px]',
         'transition-[background-color,color,box-shadow] duration-120',
         'hover:not-disabled:data-[state=off]:text-foreground',
         'focus-visible:shadow-focus-ring',

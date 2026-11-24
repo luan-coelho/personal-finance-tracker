@@ -77,7 +77,7 @@ export interface ComboboxMultipleProps extends ComboboxBaseProps {
 export type ComboboxProps = ComboboxSingleProps | ComboboxMultipleProps
 
 const fieldClassName = cn(
-  'group/combobox rounded-control border-input bg-card text-foreground relative flex w-full min-w-0 cursor-pointer items-center border text-left text-sm leading-5 transition-[border-color,box-shadow] duration-[120ms] outline-none',
+  'group/combobox rounded-control border-input bg-card text-foreground relative flex w-full min-w-0 cursor-pointer items-center border text-left text-sm leading-5 transition-[border-color,box-shadow] duration-[120ms] outline-none max-lg:text-base',
   'hover:border-border-strong',
   'focus-visible:border-primary focus-visible:shadow-focus-ring has-[[data-slot=combobox-trigger]:focus-visible]:border-primary has-[[data-slot=combobox-trigger]:focus-visible]:shadow-focus-ring',
   'data-[state=open]:border-primary data-[state=open]:shadow-focus-ring',
@@ -213,14 +213,14 @@ export function Combobox(props: ComboboxProps) {
           <span
             key={option.value}
             data-slot="combobox-chip"
-            className="bg-muted text-foreground inline-flex h-[30px] max-w-full items-center gap-1 rounded-full pr-1.5 pl-2.5 text-[13px] leading-4 font-medium whitespace-nowrap">
+            className="bg-muted text-foreground inline-flex h-[30px] max-w-full items-center gap-1 rounded-full pr-1.5 pl-2.5 text-[13px] leading-4 font-medium whitespace-nowrap max-lg:h-9 max-lg:pr-1 max-lg:pl-3">
             <span className="truncate">{option.label}</span>
             <button
               type="button"
               data-slot="combobox-chip-remove"
               aria-label={`Remover ${option.label}`}
               disabled={disabled}
-              className="focus-visible:shadow-focus-ring inline-flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-transparent p-0 text-inherit outline-none disabled:cursor-not-allowed"
+              className="focus-visible:shadow-focus-ring inline-flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-transparent p-0 text-inherit outline-none disabled:cursor-not-allowed max-lg:size-7"
               onClick={() => remove(option.value)}>
               <Icon name="x" size={14} />
             </button>
@@ -231,7 +231,7 @@ export function Combobox(props: ComboboxProps) {
             type="button"
             data-slot="combobox-trigger"
             className={cn(
-              'flex h-[30px] min-w-12 flex-1 cursor-pointer items-center gap-2 bg-transparent p-0 text-left outline-none disabled:cursor-not-allowed',
+              'flex h-[30px] min-w-12 flex-1 cursor-pointer items-center gap-2 bg-transparent p-0 text-left outline-none disabled:cursor-not-allowed max-lg:h-9',
               selectedOptions.length === 0 && 'pl-2',
             )}
             {...triggerA11y}>
@@ -269,6 +269,10 @@ export function Combobox(props: ComboboxProps) {
         align="start"
         sideOffset={2}
         className={cn('w-(--radix-popover-trigger-width) min-w-60 gap-0 overflow-hidden p-0', contentClassName)}
+        // Em tela de toque a busca não recebe foco ao abrir: o teclado só sobe se a pessoa tocar nela.
+        onOpenAutoFocus={event => {
+          if (window.matchMedia('(pointer: coarse)').matches) event.preventDefault()
+        }}
         onInteractOutside={event => {
           if (anchorRef.current?.contains(event.target as Node)) event.preventDefault()
         }}>

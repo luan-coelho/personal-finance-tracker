@@ -19,7 +19,7 @@ const inputStateClasses = [
 
 /** Invólucro (`.sst-input`) quando há ícone, prefixo ou ação; o estado vem das props. */
 const shellBase =
-  'flex h-control-lg w-full min-w-0 items-center gap-2.5 rounded-control border border-input bg-card px-3.5 text-foreground text-sm transition-[border-color,box-shadow,background-color] duration-120'
+  'flex h-control-lg w-full min-w-0 items-center gap-2.5 rounded-control border border-input bg-card px-3.5 text-foreground text-sm max-lg:text-base transition-[border-color,box-shadow,background-color] duration-120'
 
 const shellState = {
   default: 'hover:not-focus-within:border-border-strong focus-within:border-primary focus-within:shadow-focus-ring',
@@ -38,7 +38,8 @@ interface InputProps extends Omit<React.ComponentProps<'input'>, 'prefix'> {
 }
 
 /**
- * Radar Input: 44px (`control-lg`), raio 10, borda `border` sobre `card`, texto 14.
+ * Radar Input: 44px (`control-lg`), raio 10, borda `border` sobre `card`, texto 14
+ * (48px e texto 16 abaixo de `lg`, a escala mobile).
  * Sem `icon`/`prefix`/`action` renderiza só o `<input>` (o `className` vai nele);
  * com eles renderiza o invólucro e o `className` vai no invólucro. `ref` e demais props
  * vão sempre para o `<input>`.
@@ -50,7 +51,7 @@ function Input({ className, type, icon, prefix, action, ...props }: InputProps) 
         type={type}
         data-slot="input"
         className={cn(
-          'h-control-lg rounded-control border-input bg-card text-foreground w-full min-w-0 border px-3.5 text-sm outline-none',
+          'h-control-lg rounded-control border-input bg-card text-foreground w-full min-w-0 border px-3.5 text-sm outline-none max-lg:text-base',
           'transition-[border-color,box-shadow,background-color] duration-120',
           'placeholder:text-muted-foreground',
           'file:text-foreground file:me-3 file:inline-flex file:h-8 file:border-0 file:bg-transparent file:text-sm file:font-medium',

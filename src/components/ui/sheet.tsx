@@ -66,6 +66,8 @@ function SheetContent({
           data-size={size}
           className={cn(
             'bg-card text-card-foreground shadow-sh-xl fixed inset-y-0 z-50 flex h-full w-full max-w-[420px] flex-col text-left text-sm outline-none data-[size=lg]:max-w-[560px]',
+            // Below `sm` the sheet is a full screen: no side border, safe areas, above the keyboard.
+            'max-sm:pt-safe-top max-sm:pb-safe-bottom max-sm:bottom-(--keyboard-inset) max-sm:h-auto max-sm:max-w-none! max-sm:border-x-0!',
             'data-open:animate-in data-closed:animate-out duration-200 ease-out',
             'data-[side=right]:border-border-strong data-[side=right]:data-open:slide-in-from-right data-[side=right]:data-closed:slide-out-to-right data-[side=right]:right-0 data-[side=right]:border-l',
             'data-[side=left]:border-border-strong data-[side=left]:data-open:slide-in-from-left data-[side=left]:data-closed:slide-out-to-left data-[side=left]:left-0 data-[side=left]:border-r',
@@ -87,14 +89,17 @@ function SheetHeader({ className, children, ...props }: React.ComponentProps<'di
   return (
     <div
       data-slot="sheet-header"
-      className={cn('border-border flex shrink-0 items-center justify-between gap-4 border-b px-6 py-5', className)}
+      className={cn(
+        'border-border flex shrink-0 items-center justify-between gap-4 border-b px-6 py-5 max-sm:px-4 max-sm:py-3',
+        className,
+      )}
       {...props}>
       <div data-slot="sheet-heading" className="flex min-w-0 flex-col gap-0.5">
         {children}
       </div>
       {showCloseButton && (
         <SheetPrimitive.Close data-slot="sheet-close" asChild>
-          <IconButton icon="x" label="Fechar" variant="ghost" className="size-9! shrink-0" />
+          <IconButton icon="x" label="Fechar" variant="ghost" className="size-9! shrink-0 max-lg:size-11!" />
         </SheetPrimitive.Close>
       )}
     </div>
@@ -106,7 +111,10 @@ function SheetBody({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="sheet-body"
-      className={cn('flex min-h-0 flex-1 flex-col gap-5 overflow-auto px-6 py-5', className)}
+      className={cn(
+        'flex min-h-0 flex-1 flex-col gap-5 overflow-auto overscroll-contain px-6 py-5 max-sm:px-4',
+        className,
+      )}
       {...props}
     />
   )
@@ -117,7 +125,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="sheet-footer"
       className={cn(
-        'border-border mt-auto flex shrink-0 items-center justify-between gap-2 border-t px-6 py-4',
+        'border-border mt-auto flex shrink-0 items-center justify-between gap-2 border-t px-6 py-4 max-sm:px-4',
         className,
       )}
       {...props}

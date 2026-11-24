@@ -40,7 +40,7 @@ function Calendar({
   const ownClassNames: Partial<typeof defaultClassNames> = {
     root: 'w-full',
     months: 'relative flex flex-col gap-6 sm:flex-row',
-    month: 'relative grid w-full min-w-0 grid-cols-[32px_1fr_32px] items-center gap-y-3',
+    month: 'relative grid w-full min-w-0 grid-cols-[var(--control-sm)_1fr_var(--control-sm)] items-center gap-y-3',
     nav: 'contents',
     month_caption: 'col-start-2 row-start-1 flex h-control-sm items-center justify-center',
     caption_label: 'font-semibold text-foreground text-sm leading-5 select-none',
@@ -139,7 +139,7 @@ function CalendarDayButton({ className, day, modifiers, ...props }: React.Compon
       data-range-end={rangeEnd || undefined}
       data-range-middle={rangeMiddle || undefined}
       className={cn(
-        'text-foreground flex h-[34px] w-full cursor-pointer items-center justify-center rounded-full border-[1.5px] border-transparent bg-transparent p-0 text-[13px] font-normal tabular-nums outline-none',
+        'text-foreground flex h-[34px] w-full cursor-pointer items-center justify-center rounded-full border-[1.5px] border-transparent bg-transparent p-0 text-[13px] font-normal tabular-nums outline-none max-lg:h-10 max-lg:text-sm',
         'hover:bg-accent focus-visible:shadow-focus-ring',
         modifiers.outside && 'text-muted-foreground',
         modifiers.today && 'border-primary text-primary-text border-dashed font-semibold',

@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils'
 
 /** Classes do gatilho de campo de data, compartilhadas com o DateRangeField. */
 export const dateFieldTriggerClassName = cn(
-  'h-control-lg rounded-control border-input bg-card text-foreground flex w-full min-w-0 cursor-pointer items-center gap-2.5 border px-3.5 text-left text-sm leading-5 transition-[border-color,box-shadow] duration-[120ms] outline-none',
+  'h-control-lg rounded-control border-input bg-card text-foreground flex w-full min-w-0 cursor-pointer items-center gap-2.5 border px-3.5 text-left text-sm leading-5 transition-[border-color,box-shadow] duration-[120ms] outline-none max-lg:text-base',
   'hover:border-border-strong',
   'focus-visible:border-primary focus-visible:shadow-focus-ring data-[state=open]:border-primary data-[state=open]:shadow-focus-ring',
   'aria-invalid:border-error aria-invalid:focus-visible:border-error aria-invalid:data-[state=open]:border-error aria-invalid:focus-visible:shadow-[0_0_0_3px_color-mix(in_srgb,var(--error)_25%,transparent)] aria-invalid:data-[state=open]:shadow-[0_0_0_3px_color-mix(in_srgb,var(--error)_25%,transparent)]',
@@ -33,7 +33,7 @@ export const dateFieldTriggerClassName = cn(
 
 /** Chip de atalho do rodapé do calendário (`.sst-cal__chip`): 28px, 12/500. */
 export const calendarChipClassName =
-  'inline-flex h-7 cursor-pointer items-center rounded-full border border-input bg-card px-2.5 font-medium text-foreground text-xs leading-4 outline-none hover:bg-accent focus-visible:shadow-focus-ring disabled:cursor-not-allowed disabled:opacity-45'
+  'inline-flex h-7 cursor-pointer items-center rounded-full border border-input bg-card px-2.5 font-medium text-foreground text-xs leading-4 max-lg:h-9 max-lg:px-3.5 max-lg:text-[13px] outline-none hover:bg-accent focus-visible:shadow-focus-ring disabled:cursor-not-allowed disabled:opacity-45'
 
 export function formatDateBR(date: Date) {
   return format(date, 'dd/MM/yyyy')
@@ -95,6 +95,7 @@ export function DatePicker({
     (min !== undefined && isBefore(startOfDay(day), min)) || (max !== undefined && isAfter(startOfDay(day), max))
 
   const today = startOfDay(new Date())
+  const yesterday = subDays(today, 1)
   const previousDay = subDays(date ?? today, 1)
   const nextDay = addDays(date ?? today, 1)
 
@@ -121,7 +122,7 @@ export function DatePicker({
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent sideOffset={6} className="w-[296px] gap-3">
+      <PopoverContent sideOffset={6} className="w-[296px] gap-3 max-lg:w-[328px]">
         <Calendar
           mode="single"
           selected={date}
@@ -139,6 +140,13 @@ export function DatePicker({
             disabled={isOutOfBounds(today)}
             onClick={() => select(today)}>
             Hoje
+          </button>
+          <button
+            type="button"
+            className={calendarChipClassName}
+            disabled={isOutOfBounds(yesterday)}
+            onClick={() => select(yesterday)}>
+            Ontem
           </button>
         </div>
       </PopoverContent>

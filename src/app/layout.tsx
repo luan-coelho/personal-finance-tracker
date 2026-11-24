@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { DM_Mono, DM_Sans } from 'next/font/google'
 
+import { KeyboardInset } from '@/components/layout/keyboard-inset'
 import { InstallPromptCapture } from '@/components/pwa/install-prompt-capture'
 import { ServiceWorkerRegister } from '@/components/pwa/sw-register'
 import { Toaster } from '@/components/ui/sonner'
@@ -29,14 +30,17 @@ const dmMono = DM_Mono({
 })
 
 export const viewport: Viewport = {
+  // Same colors as the mobile AppBar (`card`), so the status bar continues it.
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fafaf9' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f0e0d' },
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#151412' },
   ],
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // `cover` exposes env(safe-area-inset-*); the shell pads itself with the `safe-*` tokens.
+  viewportFit: 'cover',
+  // The on-screen keyboard shrinks the layout viewport, so fixed footers stay above it.
+  interactiveWidget: 'resizes-content',
 }
 
 export const metadata: Metadata = {
@@ -65,6 +69,7 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning className={`${dmSans.variable} ${dmMono.variable}`}>
       <body className="antialiased">
         <InstallPromptCapture />
+        <KeyboardInset />
         <ServiceWorkerRegister />
         <ThemeProvider
           attribute="class"
