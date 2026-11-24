@@ -1,17 +1,18 @@
 'use client'
 
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
 import { ReserveForm } from '@/components/reserve-form'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
+import { PageHeader } from '@/components/ui/page-header'
+import { Skeleton } from '@/components/ui/skeleton'
 
 import { useReserve } from '@/hooks/use-reserves'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 
 import { routes } from '@/lib/routes'
+
+const reservesCrumb = { label: 'Reservas', href: routes.frontend.admin.reserves.index }
 
 export default function EditReservePage() {
   const params = useParams()
@@ -21,65 +22,52 @@ export default function EditReservePage() {
 
   if (!selectedSpace) {
     return (
-      <div className="container py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Nenhum Espaço Selecionado</CardTitle>
-            <CardDescription>Selecione um espaço para editar uma reserva</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      <>
+        <PageHeader variant="route" breadcrumb={[reservesCrumb]} title="Editar reserva" />
+        <EmptyState
+          bordered
+          icon="layers"
+          title="Nenhum espaço selecionado"
+          description="Selecione um espaço na barra lateral para editar a reserva."
+          className="max-w-3xl"
+        />
+      </>
     )
   }
 
   if (isLoading) {
     return (
-      <div className="container max-w-2xl space-y-6 py-6">
-        <Card>
-          <CardContent className="py-10 text-center">
-            <p>Carregando reserva...</p>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <PageHeader variant="route" breadcrumb={[reservesCrumb]} title="Editar reserva" />
+        <Skeleton className="h-[560px] w-full max-w-3xl rounded-lg" />
+      </>
     )
   }
 
   if (!reserve) {
     return (
-      <div className="container max-w-2xl space-y-6 py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Reserva não encontrada</CardTitle>
-            <CardDescription>A reserva que você está procurando não existe</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      <>
+        <PageHeader variant="route" breadcrumb={[reservesCrumb]} title="Editar reserva" />
+        <EmptyState
+          bordered
+          icon="search"
+          title="Reserva não encontrada"
+          description="Ela pode ter sido excluída. Volte para Reservas e escolha outra."
+          className="max-w-3xl"
+        />
+      </>
     )
   }
 
   return (
-    <div className="container max-w-2xl space-y-6 py-6">
-      <div className="flex items-center gap-4">
-        <Link href={routes.frontend.admin.reserves.index}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Editar Reserva</h1>
-          <p className="text-muted-foreground">Atualize as informações da reserva</p>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Informações da Reserva</CardTitle>
-          <CardDescription>Edite os dados da reserva {reserve.name}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ReserveForm spaceId={selectedSpace.id} reserve={reserve} mode="edit" />
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <PageHeader
+        variant="route"
+        breadcrumb={[reservesCrumb, { label: reserve.name, href: routes.frontend.admin.reserves.movements(reserveId) }]}
+        title="Editar reserva"
+        description="Atualize nome, meta, ícone e cor"
+      />
+      <ReserveForm spaceId={selectedSpace.id} reserve={reserve} mode="edit" />
+    </>
   )
 }

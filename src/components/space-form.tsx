@@ -1,7 +1,6 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -10,6 +9,7 @@ import { z } from 'zod'
 import type { Space } from '@/app/db/schemas/space-schema'
 
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useCreateSpace, useUpdateSpace } from '@/hooks/use-spaces'
 
 import { useSession } from '@/lib/auth-client'
+import { cn } from '@/lib/utils'
 
 // Schema específico para o formulário (sem ownerId)
 const spaceFormSchema = z.object({
@@ -30,9 +31,11 @@ interface SpaceFormProps {
   space?: Space
   onSuccess?: () => void
   onCancel?: () => void
+  className?: string
 }
 
-export function SpaceForm({ space, onSuccess, onCancel }: SpaceFormProps) {
+/** Formulário de espaço já dentro do seu `Card` (máx. 768px), com ações no rodapé. */
+export function SpaceForm({ space, onSuccess, onCancel, className }: SpaceFormProps) {
   const { data: session } = useSession()
   const isEditing = !!space
   const form = useForm<SpaceFormData>({
@@ -85,62 +88,68 @@ export function SpaceForm({ space, onSuccess, onCancel }: SpaceFormProps) {
     }
   }
 
+  const mutationError = createMutation.error?.message || updateMutation.error?.message
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome do Espaço</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Casa, Trabalho, Empresa" {...field} disabled={isLoading} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <Card asChild className={cn('w-full max-w-3xl', className)}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardHeader>
+            <CardTitle>Dados do espaço</CardTitle>
+            <CardDescription>O nome aparece no seletor de espaço e nos relatórios.</CardDescription>
+          </CardHeader>
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Descreva o propósito deste espaço financeiro..."
-                  className="resize-none"
-                  rows={3}
-                  {...field}
-                  disabled={isLoading}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <CardContent className="flex flex-col gap-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex.: Casa, Trabalho, Empresa" {...field} disabled={isLoading} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div className="flex justify-end gap-3">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-              Cancelar
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição (opcional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Para que serve este espaço"
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {mutationError && <p className="text-error-text text-[13px]/[18px]">{mutationError}</p>}
+          </CardContent>
+
+          <CardFooter className="border-t">
+            {onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+                Cancelar
+              </Button>
+            )}
+
+            <Button type="submit" variant="primary" loading={isLoading}>
+              {isLoading ? 'Salvando' : isEditing ? 'Salvar alterações' : 'Criar espaço'}
             </Button>
-          )}
-
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? 'Atualizar' : 'Criar'} Espaço
-          </Button>
-        </div>
-
-        {(createMutation.error || updateMutation.error) && (
-          <div className="text-destructive text-sm">
-            {createMutation.error?.message || updateMutation.error?.message}
-          </div>
-        )}
-      </form>
+          </CardFooter>
+        </form>
+      </Card>
     </Form>
   )
 }

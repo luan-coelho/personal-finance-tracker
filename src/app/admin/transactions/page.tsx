@@ -1,6 +1,5 @@
 'use client'
 
-import { ArrowDownCircle, ArrowUpCircle, Hash, Plus, Wallet } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 
 import type { Transaction } from '@/app/db/schemas'
@@ -13,8 +12,10 @@ import { type TransactionFilters, TransactionsFilters } from '@/components/trans
 import { TransactionsTable } from '@/components/transactions-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { EmptyState } from '@/components/ui/empty-state'
+import { PageActions } from '@/components/ui/page-actions'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   Pagination,
   PaginationContent,
@@ -23,78 +24,19 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { Skeleton } from '@/components/ui/skeleton'
 
+import type { UseMonthSelectorReturn } from '@/hooks/use-month-selector'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
-import { useSpaceMembers } from '@/hooks/use-space-members'
 import { useTransactionSummary, useTransactions } from '@/hooks/use-transactions'
 
 import { formatCurrency } from '@/lib/currency'
 import { getBrazilCurrentYearMonth, getMonthRangeBrazil } from '@/lib/date-utils'
+import { cn } from '@/lib/utils'
 
-function TransactionsPageSkeleton() {
-  return (
-    <div className="container mx-auto">
-      <div className="mb-8">
-        <Skeleton className="mb-3 h-9 w-48" />
-        <Skeleton className="h-5 w-80 max-w-full" />
-      </div>
-
-      <Card className="mb-6">
-        <CardContent className="grid min-h-24 grid-cols-1 items-center gap-4 p-6 md:grid-cols-[1fr_auto_1fr]">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-32" />
-            <Skeleton className="h-10 w-10" />
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-4 w-40" />
-          </div>
-          <div className="flex justify-start md:justify-end">
-            <Skeleton className="h-8 w-20" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-4 rounded-full" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="mb-2 h-8 w-28" />
-              <Skeleton className="h-3 w-20" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
-          <Skeleton className="h-6 w-40" />
-          <div className="flex w-full items-center gap-2 md:w-auto">
-            <Skeleton className="h-10 flex-1 md:w-72 md:flex-none" />
-            <Skeleton className="h-10 w-16" />
-            <Skeleton className="h-10 w-20" />
-            <Skeleton className="hidden h-10 w-40 md:block" />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3 border-t p-0">
-          {[...Array(5)].map((_, index) => (
-            <Skeleton key={index} className="mx-0 h-16 rounded-none" />
-          ))}
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
+import TransacoesLoading from './loading'
 
 export default function TransacoesPage() {
   const { selectedSpace, isLoading: isSpaceLoading } = useSelectedSpace()
-  const { data: spaceMembers = [] } = useSpaceMembers(selectedSpace?.id || '')
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -146,7 +88,7 @@ export default function TransacoesPage() {
     setPage(1)
   }
 
-  const handleMonthChange = useCallback((monthSelectorState: any) => {
+  const handleMonthChange = useCallback((monthSelectorState: UseMonthSelectorReturn) => {
     setMonthStartDate(monthSelectorState.monthStartDate)
     setMonthEndDate(monthSelectorState.monthEndDate)
     setPage(1) // Reset página ao mudar mês
@@ -176,6 +118,11 @@ export default function TransacoesPage() {
     setPrefillTransaction(null)
   }
 
+  const handleCreateCancel = () => {
+    setIsCreateOpen(false)
+    setPrefillTransaction(null)
+  }
+
   const handleEditSuccess = () => {
     setEditingTransaction(null)
   }
@@ -183,362 +130,204 @@ export default function TransacoesPage() {
   const totalPages = data ? Math.ceil(data.total / 20) : 0
 
   if (isSpaceLoading && !selectedSpace) {
-    return <TransactionsPageSkeleton />
+    return <TransacoesLoading />
   }
 
   if (!selectedSpace) {
     return (
-      <div className="container mx-auto">
-        <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold">Transações</h1>
-          <p className="text-muted-foreground">Selecione um espaço para visualizar as transações.</p>
-        </div>
-      </div>
+      <>
+        <PageHeader title="Transações" />
+        <EmptyState
+          bordered
+          icon="wallet"
+          title="Nenhum espaço selecionado"
+          description="Selecione um espaço para visualizar as transações."
+        />
+      </>
     )
   }
 
   return (
-    <div className="container mx-auto">
-      <div className="mb-3 flex flex-col items-center justify-between md:mb-8 md:flex-row">
-        <div>
-          <h1 className="text-3xl font-bold">Transações</h1>
-          <p className="text-muted-foreground">Gerencie suas transações financeiras em {selectedSpace.name}</p>
-        </div>
-      </div>
+    <>
+      <PageHeader title="Transações" description={`Entradas, saídas e reservas de ${selectedSpace.name}`} />
 
-      {/* Seletor de Mês/Ano */}
-      {!showAllTransactions ? (
-        <MonthSelector
-          onMonthChange={handleMonthChange}
-          showAllButton={true}
-          onShowAll={handleShowAll}
-          className="mb-6"
-        />
-      ) : (
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold">Todas as Transações</h2>
-                <Badge variant="outline">Sem filtro de data</Badge>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleShowMonthly} className="h-8">
-                Filtrar por Mês
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Resumo financeiro */}
-      <div className="mb-8">
-        <TransactionSummary
-          dateFrom={showAllTransactions ? undefined : monthStartDate}
-          dateTo={showAllTransactions ? undefined : monthEndDate}
-        />
-      </div>
-
-      {/* Card principal com filtros, tabela e paginação */}
-      <Card>
-        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
-          <div className="flex items-center justify-between gap-2">
-            <CardTitle className="shrink-0">Lista de Transações</CardTitle>
-            <Button
-              size="icon"
-              className="h-10 w-10 shrink-0 md:hidden"
-              onClick={() => {
+      <PageActions
+        actions={
+          <Dialog
+            open={isCreateOpen}
+            onOpenChange={open => {
+              setIsCreateOpen(open)
+              if (!open) {
                 setPrefillTransaction(null)
-                setIsCreateOpen(true)
-              }}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex w-full min-w-0 items-center gap-2 md:w-auto">
-            <div className="min-w-0 flex-1 md:flex-none">
-              <TransactionsFilters
-                filters={filters}
-                onFiltersChange={handleFiltersChange}
-                onClearFilters={handleClearFilters}
-                hideBadges
-              />
-            </div>
-            <Dialog
-              open={isCreateOpen}
-              onOpenChange={open => {
-                setIsCreateOpen(open)
-                if (!open) {
+              }
+            }}>
+            <DialogTrigger asChild>
+              <Button
+                variant="primary"
+                icon="plus"
+                onClick={() => {
                   setPrefillTransaction(null)
-                }
-              }}>
-              <DialogTrigger asChild>
-                <Button
-                  className="hidden h-10 shrink-0 md:inline-flex"
-                  onClick={() => {
-                    setPrefillTransaction(null)
-                  }}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nova Transação
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md md:min-w-3xl" onInteractOutside={e => e.preventDefault()}>
-                <DialogHeader>
-                  <DialogTitle>Nova Transação</DialogTitle>
-                </DialogHeader>
+                }}>
+                Nova transação
+              </Button>
+            </DialogTrigger>
+            <DialogContent size="md" onInteractOutside={e => e.preventDefault()}>
+              <DialogHeader>
+                <DialogTitle>Nova transação</DialogTitle>
+              </DialogHeader>
+              <DialogBody>
                 <TransactionForm
                   transaction={prefillTransaction ?? undefined}
                   mode={prefillTransaction ? 'copy' : 'create'}
                   onSuccess={handleCreateSuccess}
+                  onCancel={handleCreateCancel}
                   existingTransactions={data?.transactions}
                 />
-              </DialogContent>
-            </Dialog>
+              </DialogBody>
+            </DialogContent>
+          </Dialog>
+        }>
+        {/* Seletor de mês/ano */}
+        {!showAllTransactions ? (
+          <MonthSelector onMonthChange={handleMonthChange} showAllButton={true} onShowAll={handleShowAll} />
+        ) : (
+          <div className="h-control-md flex flex-wrap items-center gap-2">
+            <span className="text-sm leading-5 font-medium">Todas as transações</span>
+            <Badge>Sem filtro de data</Badge>
+            <Button variant="ghost" icon="calendar" onClick={handleShowMonthly}>
+              Filtrar por mês
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {/* Badges de filtros ativos */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap gap-2 border-b px-6 py-3">
-              {filters.type && (
-                <Badge variant="secondary">
-                  Tipo: {filters.type === 'entrada' ? 'Entradas' : filters.type === 'saida' ? 'Saídas' : 'Reservas'}
-                  <button
-                    onClick={() => handleFiltersChange({ ...filters, type: undefined })}
-                    className="hover:text-destructive ml-1">
-                    ×
-                  </button>
-                </Badge>
-              )}
-              {filters.category && (
-                <Badge variant="secondary">
-                  Categoria: {filters.category}
-                  <button
-                    onClick={() => handleFiltersChange({ ...filters, category: undefined })}
-                    className="hover:text-destructive ml-1">
-                    ×
-                  </button>
-                </Badge>
-              )}
-              {filters.tags?.map(tag => (
-                <Badge key={tag} variant="secondary">
-                  Tag: {tag}
-                  <button
-                    onClick={() => {
-                      const newTags = filters.tags!.filter(t => t !== tag)
-                      handleFiltersChange({ ...filters, tags: newTags.length > 0 ? newTags : undefined })
-                    }}
-                    className="hover:text-destructive ml-1">
-                    ×
-                  </button>
-                </Badge>
-              ))}
-              {filters.userId && (
-                <Badge variant="secondary">
-                  Usuário: {spaceMembers.find(m => m.user.id === filters.userId)?.user.name || 'Desconhecido'}
-                  <button
-                    onClick={() => handleFiltersChange({ ...filters, userId: undefined })}
-                    className="hover:text-destructive ml-1">
-                    ×
-                  </button>
-                </Badge>
-              )}
-              {filters.dateFrom && (
-                <Badge variant="secondary">
-                  De: {filters.dateFrom.toLocaleDateString('pt-BR')}
-                  <button
-                    onClick={() => handleFiltersChange({ ...filters, dateFrom: undefined })}
-                    className="hover:text-destructive ml-1">
-                    ×
-                  </button>
-                </Badge>
-              )}
-              {filters.dateTo && (
-                <Badge variant="secondary">
-                  Até: {filters.dateTo.toLocaleDateString('pt-BR')}
-                  <button
-                    onClick={() => handleFiltersChange({ ...filters, dateTo: undefined })}
-                    className="hover:text-destructive ml-1">
-                    ×
-                  </button>
-                </Badge>
-              )}
-              {filters.amountFrom !== undefined && (
-                <Badge variant="secondary">
-                  Valor mínimo: {formatCurrency(filters.amountFrom)}
-                  <button
-                    onClick={() => handleFiltersChange({ ...filters, amountFrom: undefined })}
-                    className="hover:text-destructive ml-1">
-                    ×
-                  </button>
-                </Badge>
-              )}
-              {filters.amountTo !== undefined && (
-                <Badge variant="secondary">
-                  Valor máximo: {formatCurrency(filters.amountTo)}
-                  <button
-                    onClick={() => handleFiltersChange({ ...filters, amountTo: undefined })}
-                    className="hover:text-destructive ml-1">
-                    ×
-                  </button>
-                </Badge>
-              )}
+        )}
+      </PageActions>
+
+      {/* Resumo financeiro */}
+      <TransactionSummary
+        dateFrom={showAllTransactions ? undefined : monthStartDate}
+        dateTo={showAllTransactions ? undefined : monthEndDate}
+      />
+
+      {/* Filtros, resultado filtrado, tabela e paginação */}
+      <section aria-label="Lista de transações" className="flex min-w-0 flex-col gap-4">
+        <TransactionsFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onClearFilters={handleClearFilters}
+        />
+
+        {/* Resumo das transações filtradas - só aparece quando há filtros aplicados */}
+        {hasActiveFilters && filteredSummary && filteredSummary.count > 0 && (
+          <dl
+            aria-label="Resumo das transações filtradas"
+            className="flex flex-wrap items-baseline gap-x-6 gap-y-1 px-1 text-sm leading-5">
+            <div className="flex items-baseline gap-1.5">
+              <dt className="text-muted-foreground">Resultado</dt>
+              <dd className="font-medium tabular-nums">
+                {filteredSummary.count} {filteredSummary.count === 1 ? 'registro' : 'registros'}
+              </dd>
             </div>
-          )}
+            <div className="flex items-baseline gap-1.5">
+              <dt className="text-muted-foreground">Entradas</dt>
+              <dd className="text-success-text font-medium tabular-nums">
+                {formatCurrency(filteredSummary.totalEntradas)}
+              </dd>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <dt className="text-muted-foreground">Saídas</dt>
+              <dd className="text-error-text font-medium tabular-nums">
+                {formatCurrency(filteredSummary.totalSaidas)}
+              </dd>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <dt className="text-muted-foreground">Saldo</dt>
+              <dd
+                className={cn(
+                  'font-medium tabular-nums',
+                  filteredSummary.saldo >= 0 ? 'text-success-text' : 'text-error-text',
+                )}>
+                {formatCurrency(filteredSummary.saldo)}
+              </dd>
+            </div>
+          </dl>
+        )}
 
-          {/* Resumo das transações filtradas - só aparece quando há filtros aplicados */}
-          {hasActiveFilters && filteredSummary && filteredSummary.count > 0 && (
-            <div className="grid grid-cols-2 gap-3 px-6 py-4 md:grid-cols-4">
-              {/* Entradas */}
-              <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900/30 dark:bg-green-950/20">
-                <ArrowUpCircle className="h-5 w-5 text-green-600 dark:text-green-500" />
-                <div>
-                  <p className="text-xs font-medium text-green-700 dark:text-green-400">Entradas</p>
-                  <p className="text-sm font-bold text-green-600 dark:text-green-500">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      filteredSummary.totalEntradas,
-                    )}
-                  </p>
-                </div>
-              </div>
+        {/* Tabela de transações */}
+        {error ? (
+          <QueryErrorCard message="Erro ao carregar transações." onRetry={refetch} />
+        ) : (
+          <TransactionsTable
+            transactions={data?.transactions || []}
+            onEdit={handleEdit}
+            onDuplicate={handleDuplicate}
+            isLoading={isLoading}
+          />
+        )}
 
-              {/* Saídas */}
-              <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900/30 dark:bg-red-950/20">
-                <ArrowDownCircle className="h-5 w-5 text-red-600 dark:text-red-500" />
-                <div>
-                  <p className="text-xs font-medium text-red-700 dark:text-red-400">Saídas</p>
-                  <p className="text-sm font-bold text-red-600 dark:text-red-500">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      filteredSummary.totalSaidas,
-                    )}
-                  </p>
-                </div>
-              </div>
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault()
+                    if (page > 1) setPage(page - 1)
+                  }}
+                  aria-disabled={page === 1 || undefined}
+                />
+              </PaginationItem>
 
-              {/* Saldo */}
-              {(() => {
-                const saldo = filteredSummary.saldo
-                const isPositive = saldo >= 0
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pageNumber = Math.max(1, Math.min(totalPages - 4, page - 2)) + i
                 return (
-                  <div
-                    className={`flex items-center gap-3 rounded-lg border p-3 ${
-                      isPositive
-                        ? 'border-green-200 bg-green-50 dark:border-green-900/30 dark:bg-green-950/20'
-                        : 'border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-950/20'
-                    }`}>
-                    <Wallet
-                      className={`h-5 w-5 ${
-                        isPositive ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                      }`}
-                    />
-                    <div>
-                      <p
-                        className={`text-xs font-medium ${
-                          isPositive ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
-                        }`}>
-                        Saldo
-                      </p>
-                      <p
-                        className={`text-sm font-bold ${
-                          isPositive ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                        }`}>
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(saldo)}
-                      </p>
-                    </div>
-                  </div>
+                  <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                      href="#"
+                      onClick={e => {
+                        e.preventDefault()
+                        setPage(pageNumber)
+                      }}
+                      isActive={pageNumber === page}>
+                      {pageNumber}
+                    </PaginationLink>
+                  </PaginationItem>
                 )
-              })()}
+              })}
 
-              {/* Total de Transações */}
-              <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900/30 dark:bg-blue-950/20">
-                <Hash className="h-5 w-5 text-blue-600 dark:text-blue-500" />
-                <div>
-                  <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Transações</p>
-                  <p className="text-sm font-bold text-blue-600 dark:text-blue-500">
-                    {filteredSummary.count} {filteredSummary.count === 1 ? 'registro' : 'registros'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tabela de transações */}
-          {error ? (
-            <div className="px-6 py-4">
-              <QueryErrorCard message="Erro ao carregar transações." onRetry={refetch} />
-            </div>
-          ) : (
-            <TransactionsTable
-              transactions={data?.transactions || []}
-              onEdit={handleEdit}
-              onDuplicate={handleDuplicate}
-              isLoading={isLoading}
-            />
-          )}
-
-          {/* Paginação */}
-          {totalPages > 1 && (
-            <div className="flex justify-center py-4">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={e => {
-                        e.preventDefault()
-                        if (page > 1) setPage(page - 1)
-                      }}
-                      aria-disabled={page === 1}
-                      className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                    />
-                  </PaginationItem>
-
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNumber = Math.max(1, Math.min(totalPages - 4, page - 2)) + i
-                    return (
-                      <PaginationItem key={pageNumber}>
-                        <PaginationLink
-                          onClick={e => {
-                            e.preventDefault()
-                            setPage(pageNumber)
-                          }}
-                          isActive={pageNumber === page}
-                          className="cursor-pointer">
-                          {pageNumber}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  })}
-
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={e => {
-                        e.preventDefault()
-                        if (page < totalPages) setPage(page + 1)
-                      }}
-                      aria-disabled={page === totalPages}
-                      className={page === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault()
+                    if (page < totalPages) setPage(page + 1)
+                  }}
+                  aria-disabled={page === totalPages || undefined}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </section>
 
       {/* Dialog de edição */}
       <Dialog open={!!editingTransaction} onOpenChange={() => setEditingTransaction(null)}>
-        <DialogContent className="sm:max-w-md md:min-w-3xl">
+        <DialogContent size="md">
           <DialogHeader>
-            <DialogTitle>Editar Transação</DialogTitle>
+            <DialogTitle>Editar transação</DialogTitle>
           </DialogHeader>
-          {editingTransaction && (
-            <TransactionForm
-              transaction={editingTransaction}
-              onSuccess={handleEditSuccess}
-              existingTransactions={data?.transactions}
-            />
-          )}
+          <DialogBody>
+            {editingTransaction && (
+              <TransactionForm
+                transaction={editingTransaction}
+                onSuccess={handleEditSuccess}
+                onCancel={() => setEditingTransaction(null)}
+                existingTransactions={data?.transactions}
+              />
+            )}
+          </DialogBody>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }

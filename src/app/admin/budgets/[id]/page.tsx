@@ -1,24 +1,110 @@
 'use client'
 
-import { AlertTriangle, ArrowLeft, Edit2, Eye, Trash2 } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { use, useState } from 'react'
+import { use, useRef, useState } from 'react'
 
-import { BudgetCard } from '@/components/budget-card'
+import type { Budget, BudgetWithSpending } from '@/app/db/schemas/budget-schema'
+
+import { BudgetStatusBadge, budgetStatusMeta, getBudgetStatus } from '@/components/budget-card'
 import { BudgetForm } from '@/components/budget-form'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
+import { BudgetTransactionsDialog } from '@/components/budget-transactions-dialog'
+import { QueryErrorCard } from '@/components/query-error-card'
+import { TransactionsTable } from '@/components/transactions-table'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
+import { MetricCard } from '@/components/ui/metric-card'
+import { PageActions } from '@/components/ui/page-actions'
+import { PageHeader } from '@/components/ui/page-header'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { useBudget, useBudgetsWithSpending, useDeleteBudget } from '@/hooks/use-budgets'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
+import { useTransactions } from '@/hooks/use-transactions'
 
+import { getBudgetTransactionFilters } from '@/lib/budget-transaction-utils'
 import { formatCurrency } from '@/lib/currency'
+import { routes } from '@/lib/routes'
 
 interface BudgetDetailPageProps {
   params: Promise<{ id: string }>
+}
+
+const breadcrumb = [{ label: 'Orçamentos', href: routes.frontend.admin.budgets.index }]
+const PREVIEW_SIZE = 10
+
+/** Primeiras transações do orçamento; a gestão completa (paginação, criar, editar) fica no dialog. */
+function BudgetTransactionsSection({
+  budget,
+  budgetWithSpending,
+}: {
+  budget: Budget
+  budgetWithSpending: BudgetWithSpending
+}) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const transactionsQuery = useTransactions(getBudgetTransactionFilters(budget), 1, PREVIEW_SIZE, { staleTime: 0 })
+  const total = transactionsQuery.data?.total ?? 0
+
+  return (
+    <section aria-labelledby="budget-transactions-title" className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <h2 id="budget-transactions-title" className="text-base leading-6 font-semibold">
+            Transações
+          </h2>
+          <p className="text-muted-foreground text-[13px] leading-5 tabular-nums">
+            {transactionsQuery.isPending
+              ? 'Carregando'
+              : total > PREVIEW_SIZE
+                ? `${PREVIEW_SIZE} mais recentes de ${total}`
+                : total === 1
+                  ? '1 transação de saída nesta categoria'
+                  : `${total} transações de saída nesta categoria`}
+          </p>
+        </div>
+        <Button ref={triggerRef} icon="list" onClick={() => setIsDialogOpen(true)}>
+          Gerenciar transações
+        </Button>
+      </div>
+
+      {transactionsQuery.isError ? (
+        <QueryErrorCard
+          message="Erro ao carregar as transações do orçamento."
+          onRetry={() => void transactionsQuery.refetch()}
+        />
+      ) : (
+        <TransactionsTable
+          transactions={transactionsQuery.data?.transactions ?? []}
+          isLoading={transactionsQuery.isPending}
+          readOnly
+        />
+      )}
+
+      {isDialogOpen && (
+        <BudgetTransactionsDialog
+          budget={budgetWithSpending}
+          onClose={() => setIsDialogOpen(false)}
+          onCloseAutoFocus={event => {
+            event.preventDefault()
+            triggerRef.current?.focus()
+          }}
+        />
+      )}
+    </section>
+  )
 }
 
 export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
@@ -37,11 +123,7 @@ export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
   const budgetWithSpending = budgetsWithSpending.find(b => b.id === id)
 
   const handleSuccess = () => {
-    router.push('/admin/budgets')
-  }
-
-  const handleBack = () => {
-    router.back()
+    router.push(routes.frontend.admin.budgets.index)
   }
 
   const handleDelete = async () => {
@@ -50,7 +132,7 @@ export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
     setIsDeleting(true)
     deleteBudget.mutate(budget.id, {
       onSuccess: () => {
-        router.push('/admin/budgets')
+        router.push(routes.frontend.admin.budgets.index)
       },
       onError: () => {
         setIsDeleting(false)
@@ -70,270 +152,192 @@ export default function BudgetDetailPage({ params }: BudgetDetailPageProps) {
 
   if (!selectedSpace) {
     return (
-      <div className="container mx-auto">
-        <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold">Orçamento</h1>
-          <p className="text-muted-foreground">Selecione um espaço para visualizar o orçamento.</p>
-        </div>
-      </div>
+      <>
+        <PageHeader variant="route" breadcrumb={breadcrumb} title="Orçamento" />
+        <EmptyState
+          bordered
+          icon="wallet"
+          title="Nenhum espaço selecionado"
+          description="Selecione um espaço para visualizar o orçamento."
+        />
+      </>
     )
   }
 
   if (isLoading) {
     return (
-      <div className="container mx-auto max-w-4xl">
-        <div className="mb-8 flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Button>
-          <div className="flex-1">
-            <div className="bg-muted mb-2 h-8 w-48 animate-pulse rounded" />
-            <div className="bg-muted h-4 w-64 animate-pulse rounded" />
-          </div>
+      <>
+        <PageHeader
+          variant="route"
+          breadcrumb={breadcrumb}
+          title={<Skeleton className="h-8 w-48" />}
+          meta={<Skeleton className="mt-1 h-4 w-64" />}
+          aria-busy="true"
+        />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <MetricCard key={i} label="" value="" loading />
+          ))}
         </div>
-        <div className="space-y-6">
-          <div className="bg-muted h-96 animate-pulse rounded-lg" />
-        </div>
-      </div>
+        <Skeleton className="h-64 rounded-lg" />
+      </>
     )
   }
 
   if (error || !budget) {
     return (
-      <div className="container mx-auto max-w-4xl">
-        <div className="mb-8 flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Button>
-        </div>
-
-        <Alert className="border-red-200">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
-          <AlertTitle>Orçamento não encontrado</AlertTitle>
-          <AlertDescription>
-            O orçamento solicitado não foi encontrado ou você não tem permissão para acessá-lo.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <>
+        <PageHeader variant="route" breadcrumb={breadcrumb} title="Orçamento não encontrado" />
+        <EmptyState
+          bordered
+          icon="alert-circle"
+          title="Orçamento não encontrado"
+          description="O orçamento solicitado não existe mais ou você não tem permissão para acessá-lo."
+          action={
+            <Button asChild>
+              <Link href={routes.frontend.admin.budgets.index}>Ver orçamentos</Link>
+            </Button>
+          }
+        />
+      </>
     )
   }
 
+  const spending: BudgetWithSpending = budgetWithSpending || {
+    ...budget,
+    spent: 0,
+    remaining: Number(budget.amount),
+    exceededAmount: 0,
+    percentage: 0,
+  }
+  const status = getBudgetStatus(spending.percentage)
+  const isExceeded = spending.exceededAmount > 0
+
   return (
-    <div className="container mx-auto max-w-4xl">
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Orçamento - {budget.category}</h1>
-            <p className="text-muted-foreground">
-              {formatMonth(budget.month)} em {selectedSpace.name}
-            </p>
+    <>
+      <PageHeader
+        variant="route"
+        breadcrumb={breadcrumb}
+        title={budget.category}
+        status={<BudgetStatusBadge percentage={spending.percentage} />}
+        meta={`${formatMonth(budget.month)} · ${selectedSpace.name} · criado em ${new Date(budget.createdAt).toLocaleDateString('pt-BR')}`}
+      />
+
+      <Tabs defaultValue="details" className="gap-6">
+        <PageActions
+          actions={
+            <Button icon="trash" onClick={() => setShowDeleteConfirm(true)} disabled={isDeleting}>
+              Excluir
+            </Button>
+          }>
+          <TabsList>
+            <TabsTrigger value="details">Detalhes</TabsTrigger>
+            <TabsTrigger value="edit">Editar</TabsTrigger>
+          </TabsList>
+        </PageActions>
+
+        <TabsContent value="details" className="flex flex-col gap-6">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard icon="wallet" label="Orçado" value={formatCurrency(budget.amount)} />
+            <MetricCard
+              icon="trending-down"
+              label="Gasto"
+              value={formatCurrency(spending.spent)}
+              tone={status === 'exceeded' ? 'error' : 'default'}
+              note={`${((spending.spent / Number(budget.amount)) * 100).toFixed(1)}% do orçamento`}
+            />
+            <MetricCard
+              icon={isExceeded ? 'alert-circle' : 'piggy-bank'}
+              label={isExceeded ? 'Excedido' : 'Disponível'}
+              value={formatCurrency(isExceeded ? spending.exceededAmount : spending.remaining)}
+              tone={isExceeded ? 'error' : 'success'}
+              note={isExceeded ? `Excedido em ${formatCurrency(spending.exceededAmount)}` : 'Disponível para gastar'}
+              noteTone={isExceeded ? 'error' : undefined}
+            />
+            <MetricCard
+              icon="target"
+              label="Uso"
+              value={spending.percentage.toFixed(1)}
+              unit="%"
+              note={budgetStatusMeta[status].label}
+              noteTone={status === 'within' ? undefined : budgetStatusMeta[status].tone}
+            />
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">{formatCurrency(budget.amount)}</Badge>
-          <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)} disabled={isDeleting}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            {isDeleting ? 'Excluindo...' : 'Excluir'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Breadcrumb */}
-      <nav className="text-muted-foreground mb-6 flex items-center space-x-2 text-sm">
-        <a href="/admin/budgets" className="hover:text-foreground">
-          Orçamentos
-        </a>
-        <span>/</span>
-        <span className="text-foreground">{budget.category}</span>
-      </nav>
-
-      {/* Tabs */}
-      <Tabs defaultValue="details" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="details" className="flex items-center gap-2">
-            <Eye className="h-4 w-4" />
-            Detalhes
-          </TabsTrigger>
-          <TabsTrigger value="edit" className="flex items-center gap-2">
-            <Edit2 className="h-4 w-4" />
-            Editar
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details" className="space-y-6">
-          {/* Informações Básicas */}
           <Card>
             <CardHeader>
-              <CardTitle>Informações do Orçamento</CardTitle>
+              <CardTitle>Uso do orçamento</CardTitle>
+              <CardDescription>
+                Gastos de saída na categoria {budget.category} em {formatMonth(budget.month)}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-muted-foreground text-sm font-medium">Categoria</label>
-                <p className="text-lg font-semibold">{budget.category}</p>
-              </div>
-              <div>
-                <label className="text-muted-foreground text-sm font-medium">Valor Orçado</label>
-                <p className="text-lg font-semibold text-green-600">{formatCurrency(budget.amount)}</p>
-              </div>
-              <div>
-                <label className="text-muted-foreground text-sm font-medium">Período</label>
-                <p className="text-lg font-semibold">{formatMonth(budget.month)}</p>
-              </div>
-              <div>
-                <label className="text-muted-foreground text-sm font-medium">Criado em</label>
-                <p className="text-lg font-semibold">{new Date(budget.createdAt).toLocaleDateString('pt-BR')}</p>
+            <CardContent className="flex flex-col gap-3">
+              <Progress
+                value={spending.percentage}
+                tone={budgetStatusMeta[status].progressTone}
+                aria-label={`Uso do orçamento ${budget.category}`}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm tabular-nums">
+                <span>
+                  <span className="font-semibold">{formatCurrency(spending.spent)}</span>
+                  <span className="text-muted-foreground"> de {formatCurrency(budget.amount)}</span>
+                </span>
+                <span className="text-muted-foreground">Alerta a partir de 80% · estourado acima de 100%</span>
               </div>
             </CardContent>
           </Card>
 
-          {/* Preview Card */}
+          <BudgetTransactionsSection budget={budget} budgetWithSpending={spending} />
+
           <Card>
             <CardHeader>
-              <CardTitle>Status Atual do Orçamento</CardTitle>
+              <CardTitle>Como funciona</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="max-w-md">
-                <BudgetCard
-                  budget={
-                    budgetWithSpending || {
-                      ...budget,
-                      spent: 0,
-                      remaining: Number(budget.amount),
-                      exceededAmount: 0,
-                      percentage: 0,
-                    }
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Estatísticas Detalhadas */}
-          {budgetWithSpending && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Estatísticas do Mês</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <label className="text-muted-foreground text-sm font-medium">Valor Gasto</label>
-                    <p className="text-2xl font-bold">{formatCurrency(budgetWithSpending.spent)}</p>
-                    <p className="text-muted-foreground text-sm">
-                      {((budgetWithSpending.spent / Number(budget.amount)) * 100).toFixed(1)}% do orçamento
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-muted-foreground text-sm font-medium">
-                      {budgetWithSpending.exceededAmount > 0 ? 'Valor Excedido' : 'Saldo Restante'}
-                    </label>
-                    <p
-                      className={`text-2xl font-bold ${budgetWithSpending.exceededAmount > 0 ? 'text-destructive' : 'text-green-600'}`}>
-                      {formatCurrency(
-                        budgetWithSpending.exceededAmount > 0
-                          ? budgetWithSpending.exceededAmount
-                          : budgetWithSpending.remaining,
-                      )}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {budgetWithSpending.exceededAmount > 0
-                        ? `Excedido em ${formatCurrency(budgetWithSpending.exceededAmount)}`
-                        : 'Disponível para gastar'}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-muted-foreground text-sm font-medium">Percentual Usado</label>
-                    <p
-                      className={`text-2xl font-bold ${budgetWithSpending.percentage > 100 ? 'text-destructive' : budgetWithSpending.percentage >= 80 ? 'text-yellow-600' : 'text-green-600'}`}>
-                      {budgetWithSpending.percentage.toFixed(1)}%
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      {budgetWithSpending.percentage > 100
-                        ? 'Orçamento excedido'
-                        : budgetWithSpending.percentage >= 80
-                          ? 'Próximo do limite'
-                          : 'Dentro do orçamento'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Instruções */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Como Funciona</CardTitle>
-            </CardHeader>
-            <CardContent className="text-muted-foreground space-y-3 text-sm">
+            <CardContent className="text-muted-foreground flex flex-col gap-3 text-sm">
               <p>
-                Este orçamento controla os gastos da categoria <strong>{budget.category}</strong> durante o mês de{' '}
-                <strong>{formatMonth(budget.month)}</strong>.
+                Este orçamento controla os gastos da categoria{' '}
+                <strong className="text-foreground font-semibold">{budget.category}</strong> durante o mês de{' '}
+                <strong className="text-foreground font-semibold">{formatMonth(budget.month)}</strong>.
               </p>
               <p>
-                O sistema automaticamente calcula os gastos baseado nas transações de saída categorizadas como "
-                {budget.category}".
+                O sistema calcula os gastos automaticamente a partir das transações de saída com a categoria &quot;
+                {budget.category}&quot;.
               </p>
               <p>
-                Quando o gasto atingir 80% do orçamento, será exibido um alerta. Se exceder 100%, o orçamento aparecerá
-                como "Excedido".
+                Quando o gasto atinge 80% do orçamento, ele aparece como &quot;Perto do limite&quot;. Acima de 100%,
+                aparece como &quot;Estourado&quot;.
               </p>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="edit" className="space-y-6">
-          <Card>
+        <TabsContent value="edit">
+          <Card className="w-full max-w-3xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Edit2 className="h-5 w-5" />
-                Editar Orçamento
-              </CardTitle>
+              <CardTitle>Editar orçamento</CardTitle>
             </CardHeader>
-            <CardContent>
-              <BudgetForm budget={budget} onSuccess={handleSuccess} />
-            </CardContent>
+            <BudgetForm budget={budget} onSuccess={handleSuccess} />
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Confirmação de Exclusão */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <Card className="mx-4 max-w-md">
-            <CardHeader>
-              <CardTitle className="text-destructive flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Confirmar Exclusão
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>
-                Tem certeza que deseja excluir o orçamento da categoria <strong>{budget.category}</strong>?
-              </p>
-              <p className="text-muted-foreground text-sm">
-                Esta ação não pode ser desfeita. O orçamento será removido permanentemente.
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting}>
-                  Cancelar
-                </Button>
-                <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                  {isDeleting ? 'Excluindo...' : 'Excluir Orçamento'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
+      <AlertDialog open={showDeleteConfirm} onOpenChange={open => !isDeleting && setShowDeleteConfirm(open)}>
+        <AlertDialogContent destructive>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O orçamento de &quot;{budget.category}&quot; será excluído permanentemente. Essa ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting} />
+            <Button variant="destructive" loading={isDeleting} onClick={handleDelete}>
+              {isDeleting ? 'Excluindo' : 'Excluir orçamento'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

@@ -1,6 +1,4 @@
 import { eq } from 'drizzle-orm'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 
@@ -8,9 +6,8 @@ import { db } from '@/app/db'
 import { spacesTable } from '@/app/db/schemas/space-schema'
 import { usersTable } from '@/app/db/schemas/user-schema'
 
-import { SpaceMembersTable } from '@/components/space-members-table'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SpaceMembersMeta, SpaceMembersTable, SpaceMembersTableSkeleton } from '@/components/space-members-table'
+import { PageHeader } from '@/components/ui/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { getCurrentSession } from '@/lib/auth'
@@ -48,35 +45,20 @@ async function SpaceMembersContent({ spaceId }: { spaceId: string }) {
   const isOwner = space.ownerId === currentUser.id
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href={routes.frontend.admin.spaces.index}>
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <h1 className="text-3xl font-bold tracking-tight">Membros do Espaço</h1>
-          </div>
-          <p className="text-muted-foreground">Gerencie quem tem acesso ao espaço &quot;{space.name}&quot;</p>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Compartilhamento</CardTitle>
-          <CardDescription>
-            {isOwner
-              ? 'Adicione ou remova membros e configure suas permissões'
-              : 'Visualize os membros que têm acesso a este espaço'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SpaceMembersTable spaceId={spaceId} isOwner={isOwner} />
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <PageHeader
+        variant="route"
+        breadcrumb={[{ label: 'Espaços', href: routes.frontend.admin.spaces.index }]}
+        title={space.name}
+        description={
+          isOwner
+            ? 'Adicione ou remova membros e defina o que cada um pode fazer'
+            : 'Pessoas que têm acesso a este espaço'
+        }
+        meta={<SpaceMembersMeta spaceId={spaceId} isOwner={isOwner} />}
+      />
+      <SpaceMembersTable spaceId={spaceId} isOwner={isOwner} />
+    </>
   )
 }
 
@@ -92,26 +74,13 @@ export default async function SpaceMembersPage({ params }: SpaceMembersPageProps
 
 function SpaceMembersPageSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-96" />
-        </div>
+    <>
+      <div className="flex flex-col gap-2 pt-5">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-80" />
       </div>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-96" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+      <SpaceMembersTableSkeleton />
+    </>
   )
 }

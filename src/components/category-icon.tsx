@@ -1,57 +1,47 @@
-import {
-  Banknote,
-  Briefcase,
-  Car,
-  Droplets,
-  FolderOpen,
-  Gamepad2,
-  Gift,
-  GraduationCap,
-  HeartPulse,
-  House,
-  type LucideIcon,
-  type LucideProps,
-  Plane,
-  ReceiptText,
-  ShoppingBag,
-  Smartphone,
-  Store,
-  TrendingUp,
-  Utensils,
-  Zap,
-} from 'lucide-react'
+import { Icon, type IconProps } from '@/components/ui/icon'
 
-const categoryIcons: Array<{ keywords: string[]; icon: LucideIcon }> = [
-  { keywords: ['salario', 'remuneracao'], icon: Banknote },
-  { keywords: ['freelance', 'trabalho', 'servico'], icon: Briefcase },
-  { keywords: ['investimento', 'poupanca', 'rendimento'], icon: TrendingUp },
-  { keywords: ['venda'], icon: Store },
-  { keywords: ['presente', 'doacao'], icon: Gift },
-  { keywords: ['alimentacao', 'mercado', 'restaurante', 'comida'], icon: Utensils },
-  { keywords: ['transporte', 'combustivel', 'gasolina', 'uber', 'onibus'], icon: Car },
-  { keywords: ['moradia', 'casa', 'aluguel', 'habitacao'], icon: House },
-  { keywords: ['saude', 'medico', 'farmacia'], icon: HeartPulse },
-  { keywords: ['educacao', 'escola', 'curso', 'faculdade'], icon: GraduationCap },
-  { keywords: ['lazer', 'entretenimento', 'diversao'], icon: Gamepad2 },
-  { keywords: ['compra', 'shopping'], icon: ShoppingBag },
-  { keywords: ['energia', 'luz', 'eletricidade'], icon: Zap },
-  { keywords: ['agua'], icon: Droplets },
-  { keywords: ['telefone', 'celular', 'internet'], icon: Smartphone },
-  { keywords: ['viagem', 'ferias'], icon: Plane },
-  { keywords: ['conta', 'fatura', 'boleto'], icon: ReceiptText },
+import type { IconName } from '@/lib/icons'
+
+const categoryIcons: Array<{ keywords: string[]; icon: IconName }> = [
+  { keywords: ['salario', 'remuneracao'], icon: 'banknote' },
+  { keywords: ['freelance', 'trabalho', 'servico'], icon: 'briefcase' },
+  { keywords: ['investimento', 'poupanca', 'rendimento'], icon: 'trending-up' },
+  { keywords: ['venda'], icon: 'store' },
+  { keywords: ['presente', 'doacao'], icon: 'gift' },
+  { keywords: ['alimentacao', 'mercado', 'restaurante', 'comida'], icon: 'utensils' },
+  { keywords: ['transporte', 'combustivel', 'gasolina', 'uber', 'onibus'], icon: 'car' },
+  { keywords: ['moradia', 'casa', 'aluguel', 'habitacao'], icon: 'home' },
+  { keywords: ['saude', 'medico', 'farmacia'], icon: 'heart-pulse' },
+  { keywords: ['educacao', 'escola', 'curso', 'faculdade'], icon: 'graduation-cap' },
+  { keywords: ['lazer', 'entretenimento', 'diversao'], icon: 'gamepad' },
+  { keywords: ['compra', 'shopping'], icon: 'shopping-bag' },
+  { keywords: ['energia', 'luz', 'eletricidade'], icon: 'zap' },
+  { keywords: ['agua'], icon: 'droplets' },
+  { keywords: ['telefone', 'celular', 'internet'], icon: 'smartphone' },
+  { keywords: ['viagem', 'ferias'], icon: 'plane' },
+  { keywords: ['conta', 'fatura', 'boleto'], icon: 'receipt' },
 ]
 
-interface CategoryIconProps extends LucideProps {
-  name: string
-}
+const FALLBACK_CATEGORY_ICON: IconName = 'folder-open'
 
-export function CategoryIcon({ name, ...props }: CategoryIconProps) {
+/** Resolve o ícone Radar de uma categoria pelo nome (palavras-chave sem acento). */
+export function getCategoryIconName(name: string): IconName {
   const normalizedName = name
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-  const Icon =
-    categoryIcons.find(({ keywords }) => keywords.some(keyword => normalizedName.includes(keyword)))?.icon || FolderOpen
 
-  return <Icon {...props} />
+  return (
+    categoryIcons.find(({ keywords }) => keywords.some(keyword => normalizedName.includes(keyword)))?.icon ??
+    FALLBACK_CATEGORY_ICON
+  )
+}
+
+export interface CategoryIconProps extends Omit<IconProps, 'name'> {
+  /** Nome da categoria (não o nome do ícone). */
+  name: string
+}
+
+export function CategoryIcon({ name, size = 16, ...props }: CategoryIconProps) {
+  return <Icon name={getCategoryIconName(name)} size={size} {...props} />
 }

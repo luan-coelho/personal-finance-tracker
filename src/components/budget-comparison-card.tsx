@@ -1,12 +1,14 @@
 'use client'
 
-import { TrendingDown, TrendingUp } from 'lucide-react'
-
+import { budgetStatusMeta, getBudgetStatus } from '@/components/budget-card'
+import { CategoryIcon } from '@/components/category-icon'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 
 import { formatCurrency } from '@/lib/currency'
-import { cn } from '@/lib/utils'
 
 interface BudgetComparison {
   category: string
@@ -25,6 +27,35 @@ interface BudgetComparisonCardProps {
   isLoading?: boolean
 }
 
+function MonthColumn({
+  label,
+  spent,
+  percentage,
+  category,
+}: {
+  label: string
+  spent?: number
+  percentage?: number
+  category: string
+}) {
+  const hasValue = spent !== undefined
+
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <span className="text-muted-foreground text-xs leading-4 font-medium">{label}</span>
+      <span className="font-semibold tabular-nums">{hasValue ? formatCurrency(spent) : '—'}</span>
+      {hasValue && (
+        <Progress
+          size="sm"
+          value={percentage || 0}
+          tone={budgetStatusMeta[getBudgetStatus(percentage || 0)].progressTone}
+          aria-label={`${label}: uso do orçamento ${category}`}
+        />
+      )}
+    </div>
+  )
+}
+
 export function BudgetComparisonCard({
   comparisons,
   currentMonth,
@@ -40,18 +71,23 @@ export function BudgetComparisonCard({
     })
   }
 
+  const header = (
+    <CardHeader>
+      <CardTitle>Comparação com o mês anterior</CardTitle>
+      <CardDescription>
+        Gastos de {formatMonth(currentMonth)} e {formatMonth(previousMonth)}
+      </CardDescription>
+    </CardHeader>
+  )
+
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Comparação com Mês Anterior</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="bg-muted h-20 animate-pulse rounded-lg" />
-            ))}
-          </div>
+      <Card aria-busy="true">
+        {header}
+        <CardContent className="flex flex-col gap-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-md" />
+          ))}
         </CardContent>
       </Card>
     )
@@ -60,14 +96,14 @@ export function BudgetComparisonCard({
   if (comparisons.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Comparação com Mês Anterior</CardTitle>
-          <CardDescription>
-            Compare seus gastos de {formatMonth(currentMonth)} com {formatMonth(previousMonth)}
-          </CardDescription>
-        </CardHeader>
+        {header}
         <CardContent>
-          <p className="text-muted-foreground text-center text-sm">Não há dados suficientes para comparação</p>
+          <EmptyState
+            icon="chart-bar"
+            title="Sem dados para comparar"
+            description="Os orçamentos filtrados não têm correspondência no mês anterior."
+            className="py-8"
+          />
         </CardContent>
       </Card>
     )
@@ -75,14 +111,9 @@ export function BudgetComparisonCard({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Comparação com Mês Anterior</CardTitle>
-        <CardDescription>
-          Compare seus gastos de {formatMonth(currentMonth)} com {formatMonth(previousMonth)}
-        </CardDescription>
-      </CardHeader>
+      {header}
       <CardContent>
-        <div className="space-y-6">
+        <ul className="divide-border flex flex-col divide-y">
           {comparisons.map(comparison => {
             const hasComparison = comparison.previousSpent !== undefined
             const spentDiff = hasComparison ? comparison.currentSpent - (comparison.previousSpent || 0) : 0
@@ -92,58 +123,49 @@ export function BudgetComparisonCard({
             const isWorse = spentDiff > 0
 
             return (
-              <div key={comparison.category} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">{comparison.category}</h4>
+              <li key={comparison.category} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
+                <div className="flex items-center justify-between gap-3">
+                  <h4 className="flex min-w-0 items-center gap-2.5 text-sm font-semibold">
+                    <CategoryIcon name={comparison.category} size={16} className="text-muted-foreground shrink-0" />
+                    <span className="truncate">{comparison.category}</span>
+                  </h4>
                   {hasComparison && (
-                    <div
-                      className={cn(
-                        'flex items-center gap-1 text-sm font-medium',
-                        isWorse ? 'text-red-600' : 'text-green-600',
-                      )}>
-                      {isWorse ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                    <Badge
+                      tone={isWorse ? 'error' : 'success'}
+                      icon={isWorse ? 'trending-up' : 'trending-down'}
+                      className="tabular-nums">
+                      {isWorse ? 'Aumento de ' : 'Redução de '}
                       {Math.abs(percentageDiff).toFixed(1)}%
-                    </div>
+                    </Badge>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground mb-1">Mês Atual</p>
-                    <p className="font-semibold">{formatCurrency(comparison.currentSpent)}</p>
-                    <Progress
-                      value={Math.min(100, comparison.currentPercentage)}
-                      className={cn('mt-1 h-1.5', comparison.currentPercentage > 100 && '[&>div]:bg-destructive')}
-                    />
-                  </div>
-
-                  <div>
-                    <p className="text-muted-foreground mb-1">Mês Anterior</p>
-                    <p className="font-semibold">
-                      {hasComparison ? formatCurrency(comparison.previousSpent || 0) : '-'}
-                    </p>
-                    {hasComparison && (
-                      <Progress
-                        value={Math.min(100, comparison.previousPercentage || 0)}
-                        className={cn(
-                          'mt-1 h-1.5',
-                          (comparison.previousPercentage || 0) > 100 && '[&>div]:bg-destructive',
-                        )}
-                      />
-                    )}
-                  </div>
+                  <MonthColumn
+                    label="Mês atual"
+                    spent={comparison.currentSpent}
+                    percentage={comparison.currentPercentage}
+                    category={comparison.category}
+                  />
+                  <MonthColumn
+                    label="Mês anterior"
+                    spent={hasComparison ? comparison.previousSpent || 0 : undefined}
+                    percentage={comparison.previousPercentage}
+                    category={comparison.category}
+                  />
                 </div>
 
                 {hasComparison && (
-                  <p className="text-muted-foreground text-xs">
-                    {isWorse ? 'Aumento' : 'Redução'} de {formatCurrency(Math.abs(spentDiff))} em relação ao mês
+                  <p className="text-muted-foreground text-xs leading-4">
+                    {isWorse ? 'Aumento' : 'Redução'} de{' '}
+                    <span className="tabular-nums">{formatCurrency(Math.abs(spentDiff))}</span> em relação ao mês
                     anterior
                   </p>
                 )}
-              </div>
+              </li>
             )
           })}
-        </div>
+        </ul>
       </CardContent>
     </Card>
   )

@@ -1,13 +1,13 @@
 'use client'
 
-import { Copy, Plus } from 'lucide-react'
 import { useState } from 'react'
 
+import { CategoryIcon } from '@/components/category-icon'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -21,8 +21,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useBudgetsWithSpending, useCreateBudget } from '@/hooks/use-budgets'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 
+import { formatCurrency } from '@/lib/currency'
+
 interface CopyBudgetDialogProps {
   currentMonth: string
+}
+
+function formatMonth(monthStr: string) {
+  const [year, month] = monthStr.split('-')
+  const date = new Date(parseInt(year), parseInt(month) - 1)
+  return date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' })
 }
 
 export function CopyBudgetDialog({ currentMonth }: CopyBudgetDialogProps) {
@@ -70,35 +78,34 @@ export function CopyBudgetDialog({ currentMonth }: CopyBudgetDialogProps) {
       setIsOpen(false)
       setSourceMonth('')
     } catch (err) {
-      setError('Erro ao copiar orçamentos. Verifique se já existem orçamentos para este mês.')
+      setError('Não foi possível copiar os orçamentos. Verifique se o mês atual já tem orçamentos nessas categorias.')
       console.error(err)
     } finally {
       setIsCopying(false)
     }
   }
 
+  const count = sourceBudgets.length
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="h-10 shrink-0">
-          <Copy className="h-4 w-4 md:mr-2" />
-          <span className="hidden md:inline">Copiar Mês Anterior</span>
-        </Button>
+        <Button icon="copy">Copiar orçamentos</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Copiar Orçamentos de Outro Mês</DialogTitle>
+          <DialogTitle>Copiar orçamentos</DialogTitle>
           <DialogDescription>
-            Copie todos os orçamentos de um mês anterior para o mês atual, mantendo as mesmas categorias e valores.
+            Copia as categorias e os valores de um mês anterior para {formatMonth(currentMonth)}.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="source-month">Selecione o mês de origem</Label>
+        <DialogBody className="gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="source-month">Mês de origem</Label>
             <Select value={sourceMonth} onValueChange={setSourceMonth}>
-              <SelectTrigger id="source-month">
-                <SelectValue placeholder="Escolha um mês" />
+              <SelectTrigger id="source-month" className="w-full">
+                <SelectValue placeholder="Selecione o mês" />
               </SelectTrigger>
               <SelectContent>
                 {monthOptions.map(option => (
@@ -110,60 +117,60 @@ export function CopyBudgetDialog({ currentMonth }: CopyBudgetDialogProps) {
             </Select>
           </div>
 
-          {sourceMonth && sourceBudgets.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Orçamentos a serem copiados</CardTitle>
-                <CardDescription className="text-xs">
-                  {sourceBudgets.length} categoria(s) serão copiadas
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {sourceBudgets.slice(0, 5).map(budget => (
-                    <div key={budget.id} className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{budget.category}</span>
-                      <span className="font-medium">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(Number(budget.amount))}
-                      </span>
-                    </div>
-                  ))}
-                  {sourceBudgets.length > 5 && (
-                    <p className="text-muted-foreground text-xs">
-                      + {sourceBudgets.length - 5} categoria(s) adicional(is)
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+          {sourceMonth && count > 0 && (
+            <section aria-label="Orçamentos a copiar" className="border-border rounded-md border">
+              <p className="text-muted-foreground border-border border-b px-4 py-2.5 text-xs leading-4 font-medium">
+                {count === 1 ? '1 orçamento será copiado' : `${count} orçamentos serão copiados`}
+              </p>
+              <ul className="divide-border divide-y">
+                {sourceBudgets.slice(0, 5).map(budget => (
+                  <li key={budget.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <CategoryIcon name={budget.category} size={16} className="text-muted-foreground shrink-0" />
+                      <span className="truncate">{budget.category}</span>
+                    </span>
+                    <span className="font-medium tabular-nums">{formatCurrency(Number(budget.amount))}</span>
+                  </li>
+                ))}
+              </ul>
+              {count > 5 && (
+                <p className="text-muted-foreground border-border border-t px-4 py-2.5 text-xs leading-4">
+                  {count - 5 === 1 ? 'Mais 1 orçamento' : `Mais ${count - 5} orçamentos`}
+                </p>
+              )}
+            </section>
           )}
 
-          {sourceMonth && sourceBudgets.length === 0 && (
-            <Alert>
-              <AlertDescription>Nenhum orçamento encontrado para o mês selecionado.</AlertDescription>
+          {sourceMonth && count === 0 && (
+            <Alert tone="info">
+              <AlertDescription>
+                Nenhum orçamento em {formatMonth(sourceMonth)}. Escolha outro mês de origem.
+              </AlertDescription>
             </Alert>
           )}
 
           {error && (
-            <Alert variant="destructive">
+            <Alert tone="error">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-        </div>
+        </DialogBody>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row">
-          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isCopying} className="w-full sm:w-auto">
+        <DialogFooter>
+          <Button onClick={() => setIsOpen(false)} disabled={isCopying}>
             Cancelar
           </Button>
           <Button
+            variant="primary"
+            icon="copy"
+            loading={isCopying}
             onClick={handleCopy}
-            disabled={!sourceMonth || sourceBudgets.length === 0 || isCopying}
-            className="w-full sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            {isCopying ? 'Copiando...' : `Copiar ${sourceBudgets.length} Orçamento(s)`}
+            disabled={!sourceMonth || count === 0}>
+            {isCopying
+              ? 'Copiando'
+              : count > 0
+                ? `Copiar ${count === 1 ? '1 orçamento' : `${count} orçamentos`}`
+                : 'Copiar orçamentos'}
           </Button>
         </DialogFooter>
       </DialogContent>

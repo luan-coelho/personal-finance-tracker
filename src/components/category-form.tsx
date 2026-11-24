@@ -1,16 +1,16 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowDownCircle, ArrowUpCircle, Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import type { z } from 'zod'
 
 import { type Category, insertCategorySchema } from '@/app/db/schemas/category-schema'
 
 import { Button } from '@/components/ui/button'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { DialogBody, DialogFooter } from '@/components/ui/dialog'
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 import { useCreateCategory, useUpdateCategory } from '@/hooks/use-categories'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
@@ -64,72 +64,61 @@ export function CategoryForm({ category, onSuccess, onCancel }: CategoryFormProp
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {/* Nome */}
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome *</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Ex: Alimentação, Salário..." disabled={isLoading} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <DialogBody className="gap-5">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Ex.: Alimentação, Salário" disabled={isLoading} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* Tipo */}
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tipo *</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  className="flex gap-4"
-                  disabled={isLoading || isEditing}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="entrada" id="type-entrada" />
-                    <label
-                      htmlFor="type-entrada"
-                      className="flex cursor-pointer items-center gap-1 text-sm leading-none font-medium">
-                      <ArrowUpCircle className="h-4 w-4 text-green-600 dark:text-green-500" />
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo</FormLabel>
+                <FormControl>
+                  <ToggleGroup
+                    type="single"
+                    fullWidth
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={isLoading || isEditing}
+                    aria-label="Tipo da categoria">
+                    <ToggleGroupItem value="entrada" icon="arrow-up-circle">
                       Entrada
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="saida" id="type-saida" />
-                    <label
-                      htmlFor="type-saida"
-                      className="flex cursor-pointer items-center gap-1 text-sm leading-none font-medium">
-                      <ArrowDownCircle className="h-4 w-4 text-red-600 dark:text-red-500" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="saida" icon="arrow-down-circle">
                       Saída
-                    </label>
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </FormControl>
+                {isEditing && <FormDescription>O tipo não pode ser alterado depois da criação.</FormDescription>}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </DialogBody>
 
-        {/* Botões */}
-        <div className="flex justify-end gap-3">
+        <DialogFooter>
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
               Cancelar
             </Button>
           )}
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? 'Atualizar' : 'Criar'} Categoria
+          <Button type="submit" variant="primary" loading={isLoading}>
+            {isLoading ? 'Salvando' : isEditing ? 'Salvar alterações' : 'Criar categoria'}
           </Button>
-        </div>
+        </DialogFooter>
       </form>
     </Form>
   )

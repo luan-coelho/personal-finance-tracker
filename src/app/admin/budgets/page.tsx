@@ -1,6 +1,5 @@
 'use client'
 
-import { Grid3X3, Plus, Table2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
@@ -15,18 +14,19 @@ import { BudgetsTable } from '@/components/budgets-table'
 import { CopyBudgetDialog } from '@/components/copy-budget-dialog'
 import { MonthSelector } from '@/components/month-selector'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Tabs, TabsContent } from '@/components/ui/tabs'
+import { EmptyState } from '@/components/ui/empty-state'
+import { PageActions } from '@/components/ui/page-actions'
+import { PageHeader } from '@/components/ui/page-header'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 import { useBudgetSummary, useBudgetsWithSpending } from '@/hooks/use-budgets'
-import { useIsMobile } from '@/hooks/use-mobile'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
 export default function OrcamentosPage() {
-  const isMobile = useIsMobile()
   const { selectedSpace } = useSelectedSpace()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<BudgetWithSpending | null>(null)
@@ -146,143 +146,113 @@ export default function OrcamentosPage() {
 
   if (!selectedSpace) {
     return (
-      <div className="container mx-auto">
-        <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold">Orçamentos</h1>
-          <p className="text-muted-foreground">Selecione um espaço para gerenciar os orçamentos.</p>
-        </div>
+      <>
+        <PageHeader title="Orçamentos" />
+        <EmptyState
+          bordered
+          icon="wallet"
+          title="Nenhum espaço selecionado"
+          description="Selecione um espaço para gerenciar os orçamentos."
+        />
+      </>
+    )
+  }
+
+  const renderList = () => {
+    if (!budgetsLoading && filteredBudgets.length === 0) {
+      return budgets.length === 0 ? (
+        <EmptyState
+          bordered
+          icon="wallet"
+          title="Nenhum orçamento definido"
+          description="Crie o primeiro orçamento do mês para controlar os gastos por categoria."
+          action={
+            <Button variant="secondary" icon="plus" onClick={() => setIsCreateOpen(true)}>
+              Criar orçamento
+            </Button>
+          }
+        />
+      ) : (
+        <EmptyState
+          bordered
+          icon="search"
+          title="Nenhum orçamento encontrado"
+          description="Ajuste ou limpe os filtros para ver outros orçamentos."
+          action={<Button onClick={handleClearFilters}>Limpar filtros</Button>}
+        />
+      )
+    }
+
+    if (viewMode === 'table') {
+      return (
+        <BudgetsTable budgets={filteredBudgets} onEdit={handleEdit} onView={handleView} isLoading={budgetsLoading} />
+      )
+    }
+
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {budgetsLoading
+          ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-56 rounded-lg" />)
+          : filteredBudgets.map(budget => (
+              <BudgetCard key={budget.id} budget={budget} onEdit={handleEdit} onView={handleView} />
+            ))}
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto">
-      {/* Header da página */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Orçamentos</h1>
-        {!isMobile && (
-          <p className="text-muted-foreground">Gerencie os limites de gastos por categoria em {selectedSpace.name}</p>
-        )}
-      </div>
+    <>
+      <PageHeader title="Orçamentos" description={`Limites de gastos por categoria em ${selectedSpace.name}`} />
 
-      {/* Seletor de Mês/Ano */}
-      <MonthSelector onMonthChange={handleMonthChange} className="mb-6" />
-
-      {/* Resumo dos Orçamentos */}
-      <div className="mb-8">
-        <BudgetSummary summary={summary} isLoading={summaryLoading} month={currentMonthString} />
-      </div>
-
-      {/* Lista de Orçamentos */}
-      <Card>
-        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
-          <CardTitle className="shrink-0">Orçamentos por Categoria</CardTitle>
-
-          <div className="flex w-full min-w-0 items-center gap-2 md:w-auto">
-            <div className="min-w-0 flex-1 md:flex-none">
-              <BudgetFilters filters={filters} onFiltersChange={setFilters} onClearFilters={handleClearFilters} />
-            </div>
-
-            {/* Toggle de visualização */}
-            <div className="hidden h-10 shrink-0 items-center rounded-lg border p-1 md:flex">
-              <Button
-                variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                size="sm"
-                aria-label="Visualizar em cards"
-                aria-pressed={viewMode === 'cards'}
-                onClick={() => setViewMode('cards')}
-                className="h-8 px-3">
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
-                size="sm"
-                aria-label="Visualizar em tabela"
-                aria-pressed={viewMode === 'table'}
-                onClick={() => setViewMode('table')}
-                className="h-8 px-3">
-                <Table2 className="h-4 w-4" />
-              </Button>
-            </div>
-
+      <PageActions
+        actions={
+          <>
             <CopyBudgetDialog currentMonth={currentMonthString} />
-
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button className="h-10 shrink-0">
-                  <Plus className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Novo Orçamento</span>
+                <Button variant="primary" icon="plus">
+                  Novo orçamento
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Criar Novo Orçamento</DialogTitle>
+                  <DialogTitle>Novo orçamento</DialogTitle>
                 </DialogHeader>
-                <BudgetForm onSuccess={handleCreateSuccess} />
+                <BudgetForm layout="dialog" onSuccess={handleCreateSuccess} onCancel={() => setIsCreateOpen(false)} />
               </DialogContent>
             </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Tabs value={viewMode} onValueChange={value => setViewMode(value as 'cards' | 'table')}>
-            <TabsContent value="cards" className="mt-0 p-4 md:p-6">
-              {budgetsLoading ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="bg-muted h-48 animate-pulse rounded-lg" />
-                  ))}
-                </div>
-              ) : filteredBudgets.length === 0 ? (
-                <div className="py-4 text-center md:py-12">
-                  <div className="bg-muted mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full md:h-24 md:w-24">
-                    <Plus className="text-muted-foreground h-4 w-4 md:h-12 md:w-12" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-medium">
-                    {budgets.length === 0 ? 'Nenhum orçamento definido' : 'Nenhum orçamento encontrado'}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {budgets.length === 0
-                      ? 'Crie seu primeiro orçamento para começar a controlar os gastos por categoria'
-                      : 'Tente ajustar os filtros ou criar um novo orçamento'}
-                  </p>
-                  <div className="flex justify-center">
-                    <Button onClick={() => setIsCreateOpen(true)} className="w-full md:w-auto">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Criar Primeiro Orçamento
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredBudgets.map(budget => (
-                    <BudgetCard key={budget.id} budget={budget} onEdit={handleEdit} onView={handleView} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+          </>
+        }>
+        <MonthSelector onMonthChange={handleMonthChange} />
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={value => setViewMode(value as 'cards' | 'table')}
+          aria-label="Visualização dos orçamentos">
+          <ToggleGroupItem value="cards" icon="grid">
+            Cards
+          </ToggleGroupItem>
+          <ToggleGroupItem value="table" icon="table">
+            Tabela
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </PageActions>
 
-            <TabsContent value="table" className="mt-0">
-              <BudgetsTable
-                budgets={filteredBudgets}
-                onEdit={handleEdit}
-                onView={handleView}
-                isLoading={budgetsLoading}
-              />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <BudgetSummary summary={summary} isLoading={summaryLoading} month={currentMonthString} />
+
+      <section aria-label="Orçamentos por categoria" className="flex flex-col gap-4">
+        <BudgetFilters filters={filters} onFiltersChange={setFilters} onClearFilters={handleClearFilters} />
+        {renderList()}
+      </section>
 
       {/* Comparação com Mês Anterior */}
       {budgets.length > 0 && (
-        <div className="mb-8">
-          <BudgetComparisonCard
-            comparisons={budgetComparisons}
-            currentMonth={currentMonthString}
-            previousMonth={previousMonthString}
-            isLoading={budgetsLoading}
-          />
-        </div>
+        <BudgetComparisonCard
+          comparisons={budgetComparisons}
+          currentMonth={currentMonthString}
+          previousMonth={previousMonthString}
+          isLoading={budgetsLoading}
+        />
       )}
 
       {viewingBudget && (
@@ -296,13 +266,20 @@ export default function OrcamentosPage() {
 
       {/* Dialog de edição */}
       <Dialog open={!!editingBudget} onOpenChange={() => setEditingBudget(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Orçamento</DialogTitle>
+            <DialogTitle>Editar orçamento</DialogTitle>
           </DialogHeader>
-          {editingBudget && <BudgetForm budget={editingBudget} onSuccess={handleEditSuccess} />}
+          {editingBudget && (
+            <BudgetForm
+              layout="dialog"
+              budget={editingBudget}
+              onSuccess={handleEditSuccess}
+              onCancel={() => setEditingBudget(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }

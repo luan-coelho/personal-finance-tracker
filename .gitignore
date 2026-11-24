@@ -56,3 +56,7 @@ certificates
 public/sw.js
 public/sw.js.map
 public/swe-worker-*.js
+
+# editor and local agent config
+.idea/
+.cursor/mcp.json

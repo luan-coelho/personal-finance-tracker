@@ -22,14 +22,11 @@ export const routes = {
     home: '/',
     admin: {
       index: '/admin/transactions',
-      settings: '/admin/settings',
       users: {
         index: '/admin/users',
       },
       transactions: {
         index: '/admin/transactions',
-        create: '/admin/transactions/new',
-        edit: (id: string) => `/admin/transactions/${validateId(id)}/edit`,
       },
       categories: {
         index: '/admin/categories',
@@ -53,7 +50,6 @@ export const routes = {
       budgets: {
         index: '/admin/budgets',
         create: '/admin/budgets/new',
-        edit: (id: string) => `/admin/budgets/${validateId(id)}/edit`,
         bySpace: (spaceId: string) => `/admin/budgets?spaceId=${validateId(spaceId)}`,
       },
     },

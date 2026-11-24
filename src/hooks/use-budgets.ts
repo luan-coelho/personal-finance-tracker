@@ -34,26 +34,6 @@ export const budgetKeys = {
   detail: (id: string) => [...budgetKeys.details(), id] as const,
 }
 
-// Hook para listar orçamentos de um espaço
-export function useBudgets(spaceId: string, month?: string) {
-  return useQuery({
-    queryKey: budgetKeys.list(spaceId, month),
-    queryFn: async () => {
-      const params = new URLSearchParams({ spaceId })
-      if (month) params.append('month', month)
-
-      const response = await fetch(`/api/budgets?${params}`)
-      if (!response.ok) {
-        throw new Error('Erro ao buscar orçamentos')
-      }
-
-      return response.json() as Promise<Budget[]>
-    },
-    enabled: !!spaceId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-  })
-}
-
 // Hook para buscar orçamentos com informações de gastos
 export function useBudgetsWithSpending(spaceId: string, month: string) {
   return useQuery({
@@ -89,25 +69,6 @@ export function useBudgetSummary(spaceId: string, month: string) {
     },
     enabled: !!spaceId && !!month,
     staleTime: 2 * 60 * 1000, // 2 minutos
-  })
-}
-
-// Hook para buscar categorias com orçamento
-export function useBudgetCategories(spaceId: string, month: string) {
-  return useQuery({
-    queryKey: budgetKeys.categories(spaceId, month),
-    queryFn: async () => {
-      const params = new URLSearchParams({ spaceId, month })
-
-      const response = await fetch(`/api/budgets/categories?${params}`)
-      if (!response.ok) {
-        throw new Error('Erro ao buscar categorias de orçamento')
-      }
-
-      return response.json() as Promise<string[]>
-    },
-    enabled: !!spaceId && !!month,
-    staleTime: 10 * 60 * 1000, // 10 minutos
   })
 }
 

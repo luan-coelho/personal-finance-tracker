@@ -10,7 +10,6 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { QueryProvider } from '@/providers/query-provider'
 import { SessionProvider } from '@/providers/session-provider'
 import { SpaceProvider } from '@/providers/space-provider'
-import { ThemeConfigProvider } from '@/providers/theme-config-provider'
 import { ThemeProvider } from '@/providers/theme-provider'
 
 import './globals.css'
@@ -73,19 +72,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
           storageKey="nextjs-boilerplate-theme">
-          <ThemeConfigProvider>
-            <SessionProvider>
-              <QueryProvider>
-                <SpaceProvider>
-                  <TooltipProvider>
-                    {children}
-                    <Analytics />
-                    <Toaster />
-                  </TooltipProvider>
-                </SpaceProvider>
-              </QueryProvider>
-            </SessionProvider>
-          </ThemeConfigProvider>
+          <SessionProvider>
+            <QueryProvider>
+              <SpaceProvider>
+                <TooltipProvider>
+                  {children}
+                  <Analytics />
+                  <Toaster />
+                </TooltipProvider>
+              </SpaceProvider>
+            </QueryProvider>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

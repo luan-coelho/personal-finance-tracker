@@ -72,20 +72,15 @@ export function MonthSelector({
       <div
         role="group"
         aria-label="Mês"
-        className="border-input bg-card inline-flex h-control-md items-center gap-0.5 rounded-full border p-[3px]">
-        <IconButton
-          icon="chevron-left"
-          label="Mês anterior"
-          size="sm"
-          onClick={monthSelector.goToPreviousMonth}
-        />
+        className="border-input bg-card h-control-md inline-flex items-center gap-0.5 rounded-full border p-[3px]">
+        <IconButton icon="chevron-left" label="Mês anterior" size="sm" onClick={monthSelector.goToPreviousMonth} />
 
         <Popover open={open} onOpenChange={handleOpenChange}>
           <PopoverTrigger asChild>
             <button
               type="button"
               aria-label={`Escolher mês, atual: ${label}`}
-              className="hover:bg-accent data-[state=open]:bg-accent focus-visible:shadow-focus-ring text-foreground inline-flex h-control-sm min-w-40 items-center justify-center gap-2 rounded-full px-3 text-sm leading-5 font-medium whitespace-nowrap outline-none transition-colors duration-150">
+              className="hover:bg-accent data-[state=open]:bg-accent focus-visible:shadow-focus-ring text-foreground h-control-sm inline-flex min-w-40 items-center justify-center gap-2 rounded-full px-3 text-sm leading-5 font-medium whitespace-nowrap transition-colors duration-150 outline-none">
               <Icon name="calendar" size={16} className="text-muted-foreground" />
               <span className="tabular-nums">{label}</span>
             </button>
@@ -96,14 +91,14 @@ export function MonthSelector({
                 icon="chevron-left"
                 label="Ano anterior"
                 size="sm"
-                      onClick={() => setViewYear(year => year - 1)}
+                onClick={() => setViewYear(year => year - 1)}
               />
               <span className="text-sm leading-5 font-semibold tabular-nums">{viewYear}</span>
               <IconButton
                 icon="chevron-right"
                 label="Próximo ano"
                 size="sm"
-                      onClick={() => setViewYear(year => year + 1)}
+                onClick={() => setViewYear(year => year + 1)}
               />
             </div>
 
@@ -119,7 +114,7 @@ export function MonthSelector({
                     aria-label={`${monthSelector.monthNames[month]} de ${viewYear}`}
                     onClick={() => handleSelectMonth(month)}
                     className={cn(
-                      'focus-visible:shadow-focus-ring inline-flex h-control-sm items-center justify-center rounded-full text-sm leading-5 font-medium outline-none transition-colors duration-150',
+                      'focus-visible:shadow-focus-ring h-control-sm inline-flex items-center justify-center rounded-full text-sm leading-5 font-medium transition-colors duration-150 outline-none',
                       isSelected
                         ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
                         : 'text-foreground hover:bg-accent',
@@ -140,12 +135,7 @@ export function MonthSelector({
           </PopoverContent>
         </Popover>
 
-        <IconButton
-          icon="chevron-right"
-          label="Próximo mês"
-          size="sm"
-          onClick={monthSelector.goToNextMonth}
-        />
+        <IconButton icon="chevron-right" label="Próximo mês" size="sm" onClick={monthSelector.goToNextMonth} />
       </div>
 
       {showTodayButton && !monthSelector.isCurrentMonth && (

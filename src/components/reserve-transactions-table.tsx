@@ -2,14 +2,12 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowDownIcon, ArrowUpIcon, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import type { TransactionWithUser } from '@/app/db/schemas/transaction-schema'
 
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -18,21 +16,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Button, IconButton } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Icon } from '@/components/ui/icon'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
 import { useDeleteTransaction } from '@/hooks/use-transactions'
 
 import { formatCurrency } from '@/lib/currency'
+import { cn } from '@/lib/utils'
 
 interface ReserveTransactionsTableProps {
   transactions: TransactionWithUser[]
@@ -55,106 +49,98 @@ export function ReserveTransactionsTable({ transactions }: ReserveTransactionsTa
 
   if (transactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-        <p className="text-muted-foreground">Nenhuma transação registrada</p>
-        <p className="text-muted-foreground mt-2 text-sm">Adicione movimentações para acompanhar sua reserva</p>
-      </div>
+      <EmptyState
+        bordered
+        icon="arrow-left-right"
+        title="Nenhuma movimentação registrada"
+        description="Registre uma transação do tipo Reserva para acompanhar depósitos e retiradas."
+      />
     )
   }
 
   return (
     <>
-      <div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]">Usuário</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="w-[70px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.map(transaction => {
-              const amount = parseFloat(transaction.amount)
-              // Consideramos positivo como Depósito (entrada na reserva) e negativo como Retirada (saída da reserva)
-              const isDeposit = amount >= 0
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Descrição</TableHead>
+            <TableHead className="w-14">Usuário</TableHead>
+            <TableHead numeric>Data</TableHead>
+            <TableHead numeric>Valor</TableHead>
+            <TableHead className="w-14">
+              <span className="sr-only">Ações</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {transactions.map(transaction => {
+            const amount = parseFloat(transaction.amount)
+            // Consideramos positivo como Depósito (entrada na reserva) e negativo como Retirada (saída da reserva)
+            const isDeposit = amount >= 0
 
-              return (
-                <TableRow key={transaction.id}>
-                  <TableCell>
-                    <UserAvatarDisplay user={transaction.user} size="sm" />
-                  </TableCell>
-                  <TableCell>
-                    {isDeposit ? (
-                      <Badge variant="default" className="gap-1 bg-green-600 hover:bg-green-700">
-                        <ArrowUpIcon className="h-3 w-3" />
-                        Depósito
-                      </Badge>
-                    ) : (
-                      <Badge variant="destructive" className="gap-1">
-                        <ArrowDownIcon className="h-3 w-3" />
-                        Retirada
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(transaction.date), "dd 'de' MMMM 'de' yyyy", {
-                      locale: ptBR,
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {transaction.description || <span className="text-muted-foreground">Sem descrição</span>}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    <span className={isDeposit ? 'text-green-600' : 'text-red-600'}>
-                      {isDeposit ? '+' : '-'}
-                      {formatCurrency(Math.abs(parseFloat(transaction.amount)))}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Abrir menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => setTransactionToDelete(transaction.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </div>
+            return (
+              <TableRow key={transaction.id}>
+                <TableCell>
+                  {isDeposit ? (
+                    <Badge tone="success" icon="arrow-up">
+                      Depósito
+                    </Badge>
+                  ) : (
+                    <Badge tone="error" icon="arrow-down">
+                      Retirada
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell className="max-w-[320px] truncate">
+                  {transaction.description || <span className="text-muted-foreground">Sem descrição</span>}
+                </TableCell>
+                <TableCell>
+                  <UserAvatarDisplay user={transaction.user} size="sm" />
+                </TableCell>
+                <TableCell numeric className="text-muted-foreground whitespace-nowrap">
+                  {format(new Date(transaction.date), "dd 'de' MMM 'de' yyyy", {
+                    locale: ptBR,
+                  })}
+                </TableCell>
+                <TableCell
+                  numeric
+                  className={cn('font-medium whitespace-nowrap', isDeposit ? 'text-success-text' : 'text-error-text')}>
+                  {isDeposit ? '+' : '-'}
+                  {formatCurrency(Math.abs(parseFloat(transaction.amount)))}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <IconButton icon="more-horizontal" label="Ações da movimentação" size="sm" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem variant="destructive" onClick={() => setTransactionToDelete(transaction.id)}>
+                        <Icon name="trash" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
 
       <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent destructive>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir transação?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir movimentação?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. A transação será excluída e o saldo da reserva será atualizado
-              automaticamente.
+              A transação será excluída e o saldo da reserva será recalculado. Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              Excluir
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={deleteMutation.isPending} />
+            <Button variant="destructive" loading={deleteMutation.isPending} onClick={handleDelete}>
+              {deleteMutation.isPending ? 'Excluindo' : 'Excluir movimentação'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

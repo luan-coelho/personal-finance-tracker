@@ -36,21 +36,6 @@ export function useCategories(spaceId: string, type?: CategoryType, search?: str
   })
 }
 
-// Hook para buscar categoria por ID
-export function useCategory(id: string) {
-  return useQuery({
-    queryKey: categoryKeys.detail(id),
-    queryFn: async () => {
-      const response = await fetch(`/api/categories/${id}`)
-      if (!response.ok) {
-        throw new Error('Erro ao buscar categoria')
-      }
-      return response.json() as Promise<Category>
-    },
-    enabled: !!id,
-  })
-}
-
 // Hook para criar categoria
 export function useCreateCategory() {
   const queryClient = useQueryClient()

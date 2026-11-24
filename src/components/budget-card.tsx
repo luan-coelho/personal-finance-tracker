@@ -1,13 +1,13 @@
 'use client'
 
-import { Edit2, List, MoreVertical, Trash2 } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
 
 import type { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
 
+import { CategoryIcon } from '@/components/category-icon'
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -16,15 +16,55 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Button, IconButton } from '@/components/ui/button'
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Icon, type IconName } from '@/components/ui/icon'
 import { Progress } from '@/components/ui/progress'
 
 import { useDeleteBudget } from '@/hooks/use-budgets'
 
 import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+
+export type BudgetStatus = 'within' | 'near' | 'exceeded'
+
+/** Mesmos limites do filtro de status: > 100% estourado, 80–100% perto do limite. */
+export function getBudgetStatus(percentage: number): BudgetStatus {
+  if (percentage > 100) return 'exceeded'
+  if (percentage >= 80) return 'near'
+  return 'within'
+}
+
+export const budgetStatusMeta: Record<
+  BudgetStatus,
+  {
+    label: string
+    tone: 'success' | 'warning' | 'error'
+    progressTone: 'primary' | 'warning' | 'error'
+    icon: IconName
+  }
+> = {
+  within: { label: 'Dentro do orçamento', tone: 'success', progressTone: 'primary', icon: 'check-circle' },
+  near: { label: 'Perto do limite', tone: 'warning', progressTone: 'warning', icon: 'alert-triangle' },
+  exceeded: { label: 'Estourado', tone: 'error', progressTone: 'error', icon: 'alert-circle' },
+}
+
+/** Status do orçamento sempre com ícone e rótulo, nunca só cor. */
+export function BudgetStatusBadge({ percentage, className }: { percentage: number; className?: string }) {
+  const meta = budgetStatusMeta[getBudgetStatus(percentage)]
+  return (
+    <Badge tone={meta.tone} icon={meta.icon} className={className}>
+      {meta.label}
+    </Badge>
+  )
+}
 
 interface BudgetCardProps {
   budget: BudgetWithSpending
@@ -45,110 +85,107 @@ export function BudgetCard({ budget, onEdit, onView, className }: BudgetCardProp
     })
   }
 
-  const getStatusColor = (percentage: number) => {
-    if (percentage > 100) return 'bg-red-100 text-red-800 hover:bg-red-200'
-    if (percentage >= 80) return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-    return 'bg-green-100 text-green-800 hover:bg-green-200'
-  }
-
-  const getStatusText = (percentage: number) => {
-    if (percentage > 100) return 'Excedido'
-    if (percentage >= 80) return 'Próximo do limite'
-    if (percentage >= 50) return 'No meio do caminho'
-    return 'Dentro do orçamento'
-  }
-
-  const progressValue = Math.min(100, budget.percentage)
-  const isOverBudget = budget.percentage > 100
+  const status = getBudgetStatus(budget.percentage)
+  const isExceeded = budget.exceededAmount > 0
 
   return (
-    <Card className={cn('relative', className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{budget.category}</CardTitle>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">Abrir menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit?.(budget)}>
-              <Edit2 className="mr-2 h-4 w-4" />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onClick={() => setShowDeleteDialog(true)}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Excluir
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <Card
+      interactive
+      className={cn(
+        'relative',
+        'has-[[data-slot=budget-card-link]:focus-visible]:border-border-strong has-[[data-slot=budget-card-link]:focus-visible]:shadow-[var(--sh-md),var(--focus-ring)]',
+        className,
+      )}>
+      <CardHeader>
+        <CardTitle className="flex min-w-0 items-center gap-2.5">
+          <span className="bg-muted text-muted-foreground rounded-control inline-flex size-8 shrink-0 items-center justify-center">
+            <CategoryIcon name={budget.category} size={16} />
+          </span>
+          <Link
+            href={`/admin/budgets/${budget.id}`}
+            data-slot="budget-card-link"
+            className="min-w-0 truncate outline-none after:absolute after:inset-0 after:rounded-lg">
+            {budget.category}
+          </Link>
+        </CardTitle>
+        <CardDescription className="mt-2">
+          <BudgetStatusBadge percentage={budget.percentage} />
+        </CardDescription>
+        <CardAction className="relative z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton icon="more-horizontal" label={`Ações do orçamento ${budget.category}`} size="sm" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEdit?.(budget)}>
+                <Icon name="pencil" size={18} />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                <Icon name="trash" size={18} />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardAction>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Valores */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Orçamento:</span>
-            <span className="font-medium">{formatCurrency(Number(budget.amount))}</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Gasto:</span>
-            <span className={cn('font-medium', isOverBudget ? 'text-destructive' : 'text-foreground')}>
-              {formatCurrency(budget.spent)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{budget.exceededAmount > 0 ? 'Excedido:' : 'Restante:'}</span>
-            <span className={cn('font-medium', budget.exceededAmount > 0 ? 'text-destructive' : 'text-green-600')}>
-              {formatCurrency(budget.exceededAmount > 0 ? budget.exceededAmount : budget.remaining)}
-            </span>
-          </div>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <span
+            className={cn(
+              'text-xl leading-7 font-semibold tabular-nums',
+              status === 'exceeded' ? 'text-error-text' : 'text-foreground',
+            )}>
+            {formatCurrency(budget.spent)}
+          </span>
+          <span className="text-muted-foreground text-sm tabular-nums">de {formatCurrency(Number(budget.amount))}</span>
         </div>
 
-        {/* Barra de Progresso */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-xs">Progresso</span>
-            <span className="text-xs font-medium">{budget.percentage.toFixed(1)}%</span>
-          </div>
-          <Progress value={progressValue} className={cn('h-2', isOverBudget && 'progress-destructive')} />
-        </div>
+        <Progress
+          value={budget.percentage}
+          tone={budgetStatusMeta[status].progressTone}
+          aria-label={`Uso do orçamento ${budget.category}`}
+        />
 
-        {/* Status Badge */}
-        <div className="flex justify-center">
-          <Badge className={getStatusColor(budget.percentage)}>{getStatusText(budget.percentage)}</Badge>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[13px] leading-5">
+          <span className="font-medium tabular-nums">{budget.percentage.toFixed(1)}% usado</span>
+          <span className={cn('tabular-nums', isExceeded ? 'text-error-text font-medium' : 'text-muted-foreground')}>
+            {isExceeded
+              ? `Excedido em ${formatCurrency(budget.exceededAmount)}`
+              : `Restam ${formatCurrency(budget.remaining)}`}
+          </span>
         </div>
-        {onView && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            data-budget-transactions-trigger={budget.id}
-            onClick={() => onView(budget)}>
-            <List className="mr-2 h-4 w-4" />
-            Ver transações
-          </Button>
-        )}
       </CardContent>
 
+      {onView && (
+        <CardFooter className="justify-start">
+          <Button
+            size="sm"
+            icon="list"
+            className="relative z-10"
+            data-budget-transactions-trigger={budget.id}
+            onClick={() => onView(budget)}>
+            Ver transações
+          </Button>
+        </CardFooter>
+      )}
+
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent destructive>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
             <AlertDialogDescription>
-              Essa ação não pode ser desfeita. O orçamento da categoria &quot;{budget.category}&quot; será excluído
-              permanentemente.
+              O orçamento de &quot;{budget.category}&quot; será excluído permanentemente. Essa ação não pode ser
+              desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground"
-              disabled={deleteBudget.isPending}>
-              {deleteBudget.isPending ? 'Excluindo...' : 'Excluir'}
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={deleteBudget.isPending} />
+            <Button variant="destructive" loading={deleteBudget.isPending} onClick={handleDelete}>
+              {deleteBudget.isPending ? 'Excluindo' : 'Excluir orçamento'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

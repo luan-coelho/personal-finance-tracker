@@ -1,17 +1,20 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Calendar } from 'lucide-react'
-import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { type Budget, type CreateBudgetFormValues, createBudgetSchema } from '@/app/db/schemas/budget-schema'
 
+import { getCategoryIconName } from '@/components/category-icon'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { CardContent, CardFooter } from '@/components/ui/card'
+import { Combobox } from '@/components/ui/combobox'
+import { CurrencyInput } from '@/components/ui/currency-input'
+import { DialogBody, DialogFooter } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 import { useCreateBudget, useUpdateBudget } from '@/hooks/use-budgets'
 import { useCategories } from '@/hooks/use-categories'
@@ -19,12 +22,21 @@ import { useSelectedSpace } from '@/hooks/use-selected-space'
 
 import { useMonthSelectorContext } from '@/providers/month-selector-provider'
 
+const CUSTOM_CATEGORY = '__custom__'
+
 interface BudgetFormProps {
   budget?: Budget
   onSuccess?: () => void
+  /** Mostra "Cancelar" no rodapé. */
+  onCancel?: () => void
+  /**
+   * `card` (padrão): campos em `CardContent` e ações em `CardFooter`, para usar dentro de um `Card`.
+   * `dialog`: campos em `DialogBody` e ações em `DialogFooter`, para usar dentro de um `DialogContent`.
+   */
+  layout?: 'card' | 'dialog'
 }
 
-export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
+export function BudgetForm({ budget, onSuccess, onCancel, layout = 'card' }: BudgetFormProps) {
   const { selectedSpace } = useSelectedSpace()
   const monthSelector = useMonthSelectorContext()
   const createBudget = useCreateBudget()
@@ -68,19 +80,6 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
       form.setValue('month', currentMonthString)
     }
   }, [currentMonthString, isEditing, form])
-
-  // Máscara de real para o campo amount
-  function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value
-    const onlyDigits = raw.replace(/\D/g, '')
-    const number = Number(onlyDigits) / 100
-    form.setValue(
-      'amount',
-      number === 0
-        ? ''
-        : number.toLocaleString('pt-BR', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    )
-  }
 
   function handleSubmit(values: CreateBudgetFormValues) {
     // Converter valor formatado para número
@@ -129,20 +128,33 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
     month: 'long',
   })
 
+  const categoryOptions = [
+    ...categories.map(category => ({
+      value: category.name,
+      label: category.name,
+      icon: getCategoryIconName(category.name),
+    })),
+    { value: CUSTOM_CATEGORY, label: 'Nova categoria', icon: 'plus' as const },
+  ]
+
+  const Body = layout === 'dialog' ? DialogBody : CardContent
+  const Footer = layout === 'dialog' ? DialogFooter : CardFooter
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Exibir mês selecionado */}
-        {!isEditing && (
-          <div className="bg-muted rounded-lg p-4">
-            <p className="text-muted-foreground flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4" />
-              Criando orçamento para <strong className="text-foreground">{monthDisplay}</strong>
-            </p>
-          </div>
-        )}
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className={layout === 'card' ? 'flex flex-col gap-(--card-gap)' : undefined}>
+        <Body className="flex flex-col gap-4">
+          {/* Exibir mês selecionado */}
+          {!isEditing && (
+            <Alert tone="info" icon="calendar">
+              <AlertDescription>
+                Orçamento para <strong className="font-semibold">{monthDisplay}</strong>
+              </AlertDescription>
+            </Alert>
+          )}
 
-        <div className="grid gap-4 md:grid-cols-1">
           {/* Categoria */}
           <FormField
             control={form.control}
@@ -150,51 +162,50 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Categoria</FormLabel>
-                <FormControl>
-                  {!customCategory && categories.length > 0 ? (
-                    <div>
-                      <Select
-                        value={field.value}
-                        onValueChange={value => {
-                          if (value === '__custom__') {
-                            setCustomCategory(true)
-                            field.onChange('')
-                          } else {
-                            field.onChange(value)
-                          }
+                {!customCategory && categories.length > 0 ? (
+                  <FormControl>
+                    <Combobox
+                      options={categoryOptions}
+                      value={field.value}
+                      onChange={value => {
+                        if (value === CUSTOM_CATEGORY) {
+                          setCustomCategory(true)
+                          field.onChange('')
+                        } else {
+                          field.onChange(value)
+                        }
+                      }}
+                      disabled={isLoading}
+                      placeholder="Selecione a categoria"
+                      searchPlaceholder="Buscar categoria"
+                      emptyText="Nenhuma categoria encontrada"
+                    />
+                  </FormControl>
+                ) : (
+                  <>
+                    <FormControl>
+                      <Input
+                        placeholder="Nome da categoria, como Mercado"
+                        {...field}
+                        maxLength={255}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    {categories.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="self-start"
+                        onClick={() => {
+                          setCustomCategory(false)
+                          field.onChange('')
                         }}>
-                        <SelectTrigger className="h-10 w-full">
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map(category => (
-                            <SelectItem key={category.id} value={category.name}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="__custom__">+ Nova categoria</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Input placeholder="Digite o nome da categoria" {...field} maxLength={255} />
-                      {categories.length > 0 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setCustomCategory(false)
-                            field.onChange('')
-                          }}
-                          className="h-8 text-xs">
-                          Escolher categoria existente
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </FormControl>
+                        Escolher categoria existente
+                      </Button>
+                    )}
+                  </>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -206,35 +217,29 @@ export function BudgetForm({ budget, onSuccess }: BudgetFormProps) {
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Limite do Orçamento</FormLabel>
+                <FormLabel>Limite mensal</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 transform">R$</span>
-                    <Input
-                      {...field}
-                      value={field.value}
-                      onChange={handleAmountChange}
-                      placeholder="0,00"
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
-                  </div>
+                  <CurrencyInput {...field} value={String(field.value ?? '')} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
 
-        {/* Campo oculto para month - será preenchido automaticamente */}
-        <input type="hidden" {...form.register('month')} />
+          {/* Campo oculto para month - será preenchido automaticamente */}
+          <input type="hidden" {...form.register('month')} />
+        </Body>
 
-        {/* Botões */}
-        <div className="flex justify-end gap-2">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Salvando...' : isEditing ? 'Atualizar Orçamento' : 'Criar Orçamento'}
+        <Footer className={layout === 'card' ? 'border-border border-t' : undefined}>
+          {onCancel && (
+            <Button type="button" onClick={onCancel} disabled={isLoading}>
+              Cancelar
+            </Button>
+          )}
+          <Button type="submit" variant="primary" loading={isLoading}>
+            {isLoading ? 'Salvando' : isEditing ? 'Salvar alterações' : 'Criar orçamento'}
           </Button>
-        </div>
+        </Footer>
       </form>
     </Form>
   )

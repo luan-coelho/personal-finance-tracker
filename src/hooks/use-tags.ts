@@ -34,21 +34,6 @@ export function useTags(spaceId: string, search?: string) {
   })
 }
 
-// Hook para buscar tag por ID
-export function useTag(id: string) {
-  return useQuery({
-    queryKey: tagKeys.detail(id),
-    queryFn: async () => {
-      const response = await fetch(`/api/tags/${id}`)
-      if (!response.ok) {
-        throw new Error('Erro ao buscar tag')
-      }
-      return response.json() as Promise<Tag>
-    },
-    enabled: !!id,
-  })
-}
-
 // Hook para criar tag
 export function useCreateTag() {
   const queryClient = useQueryClient()

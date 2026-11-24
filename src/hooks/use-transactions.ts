@@ -81,21 +81,6 @@ export function useTransactions(
   })
 }
 
-// Hook para buscar transação por ID
-export function useTransaction(id: string) {
-  return useQuery({
-    queryKey: transactionKeys.detail(id),
-    queryFn: async () => {
-      const response = await fetch(`/api/transactions/${id}`)
-      if (!response.ok) {
-        throw new Error('Erro ao buscar transação')
-      }
-      return response.json() as Promise<Transaction>
-    },
-    enabled: !!id,
-  })
-}
-
 // Hook para resumo financeiro
 export function useTransactionSummary(filters: TransactionFilters = {}, options: TransactionQueryOptions = {}) {
   return useQuery({
@@ -164,62 +149,6 @@ export function useTransactionCategories(spaceId: string) {
     },
     enabled: !!spaceId,
     staleTime: 10 * 60 * 1000, // 10 minutos
-  })
-}
-
-// Hook para tags
-export function useTransactionTags(spaceId: string) {
-  return useQuery({
-    queryKey: transactionKeys.tags(spaceId),
-    queryFn: async () => {
-      const response = await fetch(`/api/transactions/tags?spaceId=${spaceId}`)
-      if (!response.ok) {
-        throw new Error('Erro ao buscar tags')
-      }
-      return response.json() as Promise<string[]>
-    },
-    enabled: !!spaceId,
-    staleTime: 10 * 60 * 1000, // 10 minutos
-  })
-}
-
-// Hook para gráfico de categorias
-export function useTransactionCategoryChart(spaceId: string, type?: TransactionType) {
-  return useQuery({
-    queryKey: transactionKeys.categoryChart(spaceId, type),
-    queryFn: async () => {
-      const params = new URLSearchParams({ spaceId })
-      if (type) params.append('type', type)
-
-      const response = await fetch(`/api/transactions/charts/categories?${params}`)
-      if (!response.ok) {
-        throw new Error('Erro ao buscar dados do gráfico')
-      }
-      return response.json() as Promise<Array<{ category: string; total: number }>>
-    },
-    enabled: !!spaceId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-  })
-}
-
-// Hook para gráfico mensal
-export function useTransactionMonthlyChart(spaceId: string, year: number) {
-  return useQuery({
-    queryKey: transactionKeys.monthlyChart(spaceId, year),
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        spaceId,
-        year: year.toString(),
-      })
-
-      const response = await fetch(`/api/transactions/charts/monthly?${params}`)
-      if (!response.ok) {
-        throw new Error('Erro ao buscar dados do gráfico')
-      }
-      return response.json() as Promise<Array<{ month: string; entradas: number; saidas: number }>>
-    },
-    enabled: !!spaceId && !!year,
-    staleTime: 5 * 60 * 1000, // 5 minutos
   })
 }
 

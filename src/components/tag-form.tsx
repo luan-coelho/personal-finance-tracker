@@ -1,13 +1,13 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import type { z } from 'zod'
 
 import { insertTagSchema, type Tag } from '@/app/db/schemas/tag-schema'
 
 import { Button } from '@/components/ui/button'
+import { DialogBody, DialogFooter } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 
@@ -62,34 +62,33 @@ export function TagForm({ tag, onSuccess, onCancel }: TagFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {/* Nome */}
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome *</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Ex: Urgente, Recorrente..." disabled={isLoading} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <DialogBody className="gap-5">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Ex.: Urgente, Recorrente" disabled={isLoading} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </DialogBody>
 
-        {/* Botões */}
-        <div className="flex justify-end gap-3">
+        <DialogFooter>
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
               Cancelar
             </Button>
           )}
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? 'Atualizar' : 'Criar'} Tag
+          <Button type="submit" variant="primary" loading={isLoading}>
+            {isLoading ? 'Salvando' : isEditing ? 'Salvar alterações' : 'Criar tag'}
           </Button>
-        </div>
+        </DialogFooter>
       </form>
     </Form>
   )

@@ -1,13 +1,14 @@
 'use client'
 
-import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
 
 import { SpaceForm } from '@/components/space-form'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
+import { PageHeader } from '@/components/ui/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { useSpace } from '@/hooks/use-spaces'
@@ -17,6 +18,8 @@ import { routes } from '@/lib/routes'
 interface EditSpacePageProps {
   params: Promise<{ id: string }>
 }
+
+const breadcrumb = [{ label: 'Espaços', href: routes.frontend.admin.spaces.index }]
 
 export default function EditSpacePage({ params }: EditSpacePageProps) {
   const { id } = use(params)
@@ -37,85 +40,55 @@ export default function EditSpacePage({ params }: EditSpacePageProps) {
 
   if (error || !space) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={routes.frontend.admin.spaces.index}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Erro</h1>
-            <p className="text-muted-foreground">Espaço não encontrado</p>
-          </div>
-        </div>
-
-        <Card className="max-w-2xl">
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground text-center">
-              O espaço solicitado não foi encontrado ou você não tem permissão para acessá-lo.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <PageHeader variant="route" breadcrumb={breadcrumb} title="Editar espaço" />
+        <EmptyState
+          bordered
+          icon="building-2"
+          className="max-w-3xl"
+          title="Espaço não encontrado"
+          description="O espaço não existe ou você não tem permissão para acessá-lo."
+          action={
+            <Button variant="outline" asChild>
+              <Link href={routes.frontend.admin.spaces.index}>Voltar para espaços</Link>
+            </Button>
+          }
+        />
+      </>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={routes.frontend.admin.spaces.index}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Editar Espaço</h1>
-          <p className="text-muted-foreground">Atualize as informações do espaço &quot;{space.name}&quot;</p>
-        </div>
-      </div>
-
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle>Informações do Espaço</CardTitle>
-          <CardDescription>Atualize os dados do espaço financeiro</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SpaceForm space={space} onSuccess={handleSuccess} onCancel={handleCancel} />
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <PageHeader variant="route" breadcrumb={breadcrumb} title={space.name} description="Editar espaço" />
+      <SpaceForm space={space} onSuccess={handleSuccess} onCancel={handleCancel} />
+    </>
   )
 }
 
 function EditSpacePageSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-9 w-20" />
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64" />
-        </div>
+    <>
+      <div className="flex flex-col gap-2 pt-5">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-28" />
       </div>
 
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-64" />
+      <Card className="w-full max-w-3xl">
+        <CardHeader className="gap-2">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-4 w-72" />
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <div className="flex justify-end gap-3">
-            <Skeleton className="h-9 w-20" />
-            <Skeleton className="h-9 w-24" />
-          </div>
+        <CardContent className="flex flex-col gap-4">
+          <Skeleton className="rounded-control h-control-lg w-full" />
+          <Skeleton className="rounded-control h-20 w-full" />
         </CardContent>
+        <CardFooter className="border-t">
+          <Skeleton className="h-control-md w-24 rounded-full" />
+          <Skeleton className="h-control-md w-36 rounded-full" />
+        </CardFooter>
       </Card>
-    </div>
+    </>
   )
 }

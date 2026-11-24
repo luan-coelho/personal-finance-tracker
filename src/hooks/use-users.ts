@@ -7,7 +7,6 @@ import {
   createUser,
   deleteUser,
   getAllUsers,
-  getUserById,
   toggleUserStatus,
   updateUser,
   userQueryKeys,
@@ -18,15 +17,6 @@ export function useUsers() {
   return useQuery({
     queryKey: userQueryKeys.lists(),
     queryFn: getAllUsers,
-  })
-}
-
-// Hook para buscar um usuário por ID
-export function useUser(id: string) {
-  return useQuery({
-    queryKey: userQueryKeys.detail(id),
-    queryFn: () => getUserById(id),
-    enabled: !!id,
   })
 }
 

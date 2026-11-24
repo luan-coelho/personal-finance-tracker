@@ -147,7 +147,7 @@ function SidebarBrand({ collapsed }: { collapsed: boolean }) {
           type="button"
           onClick={toggleSidebar}
           aria-label="Expandir menu"
-          className="bg-muted text-muted-foreground hover:text-foreground focus-visible:shadow-focus-ring inline-flex size-control-md shrink-0 items-center justify-center rounded-control outline-none transition-colors duration-150">
+          className="bg-muted text-muted-foreground hover:text-foreground focus-visible:shadow-focus-ring size-control-md rounded-control inline-flex shrink-0 items-center justify-center transition-colors duration-150 outline-none">
           <Icon name="sidebar-expand" size={20} />
         </button>
       </SidebarHeader>
@@ -162,19 +162,9 @@ function SidebarBrand({ collapsed }: { collapsed: boolean }) {
         Família Coelho
       </Link>
       {isMobile ? (
-        <IconButton
-          icon="x"
-          label="Fechar menu"
-          size="sm"
-          onClick={() => setOpenMobile(false)}
-        />
+        <IconButton icon="x" label="Fechar menu" size="sm" onClick={() => setOpenMobile(false)} />
       ) : (
-        <IconButton
-          icon="sidebar-collapse"
-          label="Recolher menu"
-          size="sm"
-          onClick={toggleSidebar}
-        />
+        <IconButton icon="sidebar-collapse" label="Recolher menu" size="sm" onClick={toggleSidebar} />
       )}
     </SidebarHeader>
   )
@@ -224,7 +214,7 @@ function AccountMenu({ collapsed }: { collapsed: boolean }) {
         ) : (
           <button
             type="button"
-            className="hover:bg-accent data-[state=open]:bg-accent focus-visible:shadow-focus-ring text-foreground flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left outline-none transition-colors duration-150">
+            className="hover:bg-accent data-[state=open]:bg-accent focus-visible:shadow-focus-ring text-foreground flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 outline-none">
             <UserAvatar />
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-[13px] leading-[18px] font-medium">{name}</span>

@@ -1,107 +1,76 @@
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { MetricCard } from '@/components/ui/metric-card'
+import { PageActions } from '@/components/ui/page-actions'
+import { PageHeader } from '@/components/ui/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 export default function TransacoesLoading() {
   return (
-    <div className="container mx-auto">
-      <div className="mb-3 flex flex-col items-center justify-between md:mb-8 md:flex-row">
-        <div className="w-full space-y-2 md:w-auto">
-          <Skeleton className="h-9 w-48" />
-          <Skeleton className="h-4 w-72" />
-        </div>
-      </div>
+    <>
+      <PageHeader title="Transações" />
 
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-8 w-8 rounded-md" />
-              <Skeleton className="h-6 w-40" />
-              <Skeleton className="h-8 w-8 rounded-md" />
-            </div>
-            <Skeleton className="h-8 w-32" />
-          </div>
-        </CardContent>
-      </Card>
+      <PageActions actions={<Skeleton className="h-control-md w-40 rounded-full" />}>
+        <Skeleton className="h-control-md w-64 rounded-full" />
+      </PageActions>
 
-      <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="rounded-xl border p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-9 w-32" />
-                <Skeleton className="h-3 w-28" />
-              </div>
-              <Skeleton className="h-12 w-12 rounded-full" />
-            </div>
-          </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <MetricCard key={index} label="" value="" loading />
         ))}
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-col gap-3 space-y-0 p-4 md:flex-row md:items-center md:justify-between md:gap-4 md:p-6">
-          <div className="flex items-center justify-between gap-2">
-            <Skeleton className="h-7 w-44" />
-            <Skeleton className="h-10 w-10 rounded-md md:hidden" />
-          </div>
-          <div className="flex w-full min-w-0 items-center gap-2 md:w-auto">
-            <Skeleton className="h-10 flex-1 md:w-64 md:flex-none" />
-            <Skeleton className="hidden h-10 w-40 md:inline-flex" />
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="border-b px-6 py-3">
-            <div className="grid grid-cols-12 gap-4">
-              <Skeleton className="col-span-1 h-4" />
-              <Skeleton className="col-span-3 h-4" />
-              <Skeleton className="col-span-2 h-4" />
-              <Skeleton className="col-span-2 h-4" />
-              <Skeleton className="col-span-2 h-4" />
-              <Skeleton className="col-span-2 h-4" />
-            </div>
-          </div>
+      <div className="border-border bg-background flex flex-wrap items-center gap-2 rounded-[16px] border p-4">
+        <Skeleton className="h-control-md w-full rounded-full sm:w-[280px]" />
+        <Skeleton className="h-control-md w-28 rounded-full" />
+        <Skeleton className="h-control-md w-24 rounded-full" />
+        <Skeleton className="h-control-md w-28 rounded-full" />
+        <Skeleton className="h-control-md w-24 rounded-full" />
+      </div>
 
-          <div className="divide-y">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div key={index} className="grid grid-cols-12 items-center gap-4 px-6 py-4">
-                <div className="col-span-1">
-                  <Skeleton className="h-8 w-8 rounded-full" />
+      <Table aria-busy="true">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Descrição</TableHead>
+            <TableHead className="w-[72px]">Usuário</TableHead>
+            <TableHead>Tags</TableHead>
+            <TableHead numeric>Data</TableHead>
+            <TableHead numeric>Valor</TableHead>
+            <TableHead className="w-14">
+              <span className="sr-only">Ações</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 8 }, (_, index) => (
+            <TableRow key={index}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="rounded-control size-8" />
+                  <div className="flex flex-col gap-1.5">
+                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
                 </div>
-                <div className="col-span-3">
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-                <div className="col-span-2">
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                </div>
-                <div className="col-span-2 flex gap-1">
-                  <Skeleton className="h-5 w-12 rounded-full" />
-                  <Skeleton className="h-5 w-12 rounded-full" />
-                </div>
-                <div className="col-span-2">
-                  <Skeleton className="h-4 w-24" />
-                </div>
-                <div className="col-span-1 flex justify-end">
-                  <Skeleton className="h-4 w-20" />
-                </div>
-                <div className="col-span-1 flex justify-end">
-                  <Skeleton className="h-8 w-8 rounded-md" />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-center py-4">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-9 w-24" />
-              {Array.from({ length: 5 }).map((_, index) => (
-                <Skeleton key={index} className="h-9 w-9" />
-              ))}
-              <Skeleton className="h-9 w-24" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+              </TableCell>
+              <TableCell>
+                <Skeleton className="size-6 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </TableCell>
+              <TableCell numeric>
+                <Skeleton className="ml-auto h-3.5 w-20" />
+              </TableCell>
+              <TableCell numeric>
+                <Skeleton className="ml-auto h-3.5 w-24" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="ml-auto size-8 rounded-full" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   )
 }

@@ -2,15 +2,14 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Edit, MoreHorizontal, Trash2, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
 import type { Space } from '@/app/db/schemas/space-schema'
 
+import { QueryErrorCard } from '@/components/query-error-card'
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -18,42 +17,52 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Button, IconButton } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Icon } from '@/components/ui/icon'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 import { useDeleteSpace, useSpaces } from '@/hooks/use-spaces'
 
+import { useSession } from '@/lib/auth-client'
 import { routes } from '@/lib/routes'
 
 export function SpacesTable() {
-  const { data: spaces, isLoading, error } = useSpaces()
+  const { data: spaces, isLoading, error, refetch } = useSpaces()
+  const { data: session } = useSession()
   const deleteSpaceMutation = useDeleteSpace()
   const [spaceToDelete, setSpaceToDelete] = useState<Space | null>(null)
 
   if (isLoading) {
-    return <div className="py-4 text-center">Carregando espaços...</div>
+    return <SpacesTableSkeleton />
   }
 
   if (error) {
-    return <div className="text-destructive py-4 text-center">Erro ao carregar espaços</div>
+    return <QueryErrorCard message="Não foi possível carregar os espaços. Tente novamente." onRetry={() => refetch()} />
   }
 
   if (!spaces || spaces.length === 0) {
     return (
-      <div className="py-8 text-center">
-        <p className="text-muted-foreground mb-4">Nenhum espaço encontrado</p>
-        <Button asChild>
-          <Link href={routes.frontend.admin.spaces.create}>Criar Primeiro Espaço</Link>
-        </Button>
-      </div>
+      <EmptyState
+        bordered
+        icon="building-2"
+        title="Nenhum espaço criado"
+        description="Crie um espaço para organizar transações, orçamentos e reservas."
+        action={
+          <Button variant="secondary" icon="plus" asChild>
+            <Link href={routes.frontend.admin.spaces.create}>Criar espaço</Link>
+          </Button>
+        }
+      />
     )
   }
 
@@ -71,73 +80,127 @@ export function SpacesTable() {
           <TableRow>
             <TableHead>Nome</TableHead>
             <TableHead>Descrição</TableHead>
-            <TableHead>Criado em</TableHead>
-            <TableHead className="w-[70px]">Ações</TableHead>
+            <TableHead>Papel</TableHead>
+            <TableHead numeric>Criado em</TableHead>
+            <TableHead className="w-14">
+              <span className="sr-only">Ações</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {spaces.map(space => (
-            <TableRow key={space.id}>
-              <TableCell className="font-medium">{space.name}</TableCell>
-              <TableCell className="text-muted-foreground">{space.description || 'Sem descrição'}</TableCell>
-              <TableCell className="text-muted-foreground">
-                {format(new Date(space.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Abrir menu</span>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                    <DropdownMenuItem asChild>
-                      <Link href={routes.frontend.admin.spaces.members(space.id)}>
-                        <Users className="mr-2 h-4 w-4" />
-                        Membros
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={routes.frontend.admin.spaces.edit(space.id)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive" onClick={() => setSpaceToDelete(space)}>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+          {spaces.map(space => {
+            const isOwner = !!session?.user?.id && space.ownerId === session.user.id
+
+            return (
+              <TableRow key={space.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <span
+                      aria-hidden
+                      className="bg-muted text-muted-foreground rounded-control inline-flex size-8 shrink-0 items-center justify-center">
+                      <Icon name="building-2" size={16} />
+                    </span>
+                    <span className="font-medium whitespace-nowrap">{space.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-muted-foreground max-w-[360px] truncate">
+                  {space.description || 'Sem descrição'}
+                </TableCell>
+                <TableCell>
+                  {isOwner ? <Badge tone="primary">Proprietário</Badge> : <Badge>Compartilhado</Badge>}
+                </TableCell>
+                <TableCell numeric className="text-muted-foreground">
+                  {format(new Date(space.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
+                </TableCell>
+                <TableCell className="w-14">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <IconButton icon="more-horizontal" label={`Ações de ${space.name}`} className="size-9!" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href={routes.frontend.admin.spaces.members(space.id)}>
+                          <Icon name="users" size={18} />
+                          Membros
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={routes.frontend.admin.spaces.edit(space.id)}>
+                          <Icon name="pencil" size={18} />
+                          Editar
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive" onClick={() => setSpaceToDelete(space)}>
+                        <Icon name="trash" size={18} />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
 
       <AlertDialog open={!!spaceToDelete} onOpenChange={() => setSpaceToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent destructive>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Excluir espaço</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza de que deseja excluir o espaço &quot;{spaceToDelete?.name}&quot;? Esta ação não pode ser
-              desfeita.
+              O espaço &quot;{spaceToDelete?.name}&quot; deixa de aparecer para você e para os membros. Esta ação não
+              pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteSpaceMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {deleteSpaceMutation.isPending ? 'Excluindo...' : 'Excluir'}
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={deleteSpaceMutation.isPending} />
+            <Button variant="destructive" onClick={handleDelete} loading={deleteSpaceMutation.isPending}>
+              {deleteSpaceMutation.isPending ? 'Excluindo' : 'Excluir espaço'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
+  )
+}
+
+export function SpacesTableSkeleton() {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nome</TableHead>
+          <TableHead>Descrição</TableHead>
+          <TableHead>Papel</TableHead>
+          <TableHead numeric>Criado em</TableHead>
+          <TableHead className="w-14">
+            <span className="sr-only">Ações</span>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <TableRow key={i}>
+            <TableCell>
+              <div className="flex items-center gap-3">
+                <Skeleton className="rounded-control size-8" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-4 w-48" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-6 w-24 rounded-full" />
+            </TableCell>
+            <TableCell numeric>
+              <Skeleton className="ml-auto h-4 w-20" />
+            </TableCell>
+            <TableCell className="w-14" />
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   )
 }

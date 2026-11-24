@@ -107,7 +107,7 @@ export function InstallPrompt({ className }: InstallPromptProps) {
           </DialogHeader>
           <ol className="flex flex-col gap-4">
             <li className="flex items-center gap-3">
-              <span className="bg-muted text-muted-foreground inline-flex size-control-md shrink-0 items-center justify-center rounded-control">
+              <span className="bg-muted text-muted-foreground size-control-md rounded-control inline-flex shrink-0 items-center justify-center">
                 <Icon name="share" size={20} />
               </span>
               <p className="text-sm leading-5">
@@ -115,7 +115,7 @@ export function InstallPrompt({ className }: InstallPromptProps) {
               </p>
             </li>
             <li className="flex items-center gap-3">
-              <span className="bg-muted text-muted-foreground inline-flex size-control-md shrink-0 items-center justify-center rounded-control">
+              <span className="bg-muted text-muted-foreground size-control-md rounded-control inline-flex shrink-0 items-center justify-center">
                 <Icon name="plus" size={20} />
               </span>
               <p className="text-sm leading-5">

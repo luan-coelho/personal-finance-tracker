@@ -12,7 +12,7 @@ export const reservesTable = pgTable('reserves', {
   targetAmount: decimal('target_amount', { precision: 10, scale: 2 }),
   currentAmount: decimal('current_amount', { precision: 10, scale: 2 }).notNull().default('0'),
   color: text('color').default('#3b82f6'), // Cor para identificação visual
-  icon: text('icon').default('piggy-bank'), // Nome do ícone do lucide-react
+  icon: text('icon').default('piggy-bank'), // Nome do ícone (ver src/lib/icons.ts)
   active: boolean('active').notNull().default(true),
   spaceId: uuid('space_id')
     .notNull()

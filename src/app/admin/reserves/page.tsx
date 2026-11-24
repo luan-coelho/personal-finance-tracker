@@ -1,63 +1,74 @@
 'use client'
 
-import { Plus } from 'lucide-react'
 import Link from 'next/link'
 
+import { QueryErrorCard } from '@/components/query-error-card'
 import { ReservesGrid } from '@/components/reserves-grid'
 import { ReservesSummary } from '@/components/reserves-summary'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
+import { MetricCard } from '@/components/ui/metric-card'
+import { PageActions } from '@/components/ui/page-actions'
+import { PageHeader } from '@/components/ui/page-header'
+import { Skeleton } from '@/components/ui/skeleton'
 
 import { useReserves } from '@/hooks/use-reserves'
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 
 import { routes } from '@/lib/routes'
 
+const DESCRIPTION = 'Separe o dinheiro em caixinhas para cada objetivo'
+
 export default function ReservesPage() {
   const { selectedSpace } = useSelectedSpace()
-  const { data: reserves = [], isLoading } = useReserves(selectedSpace?.id || '')
+  const { data: reserves = [], isLoading, isError, refetch } = useReserves(selectedSpace?.id || '')
 
   if (!selectedSpace) {
     return (
-      <div className="container py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Nenhum Espaço Selecionado</CardTitle>
-            <CardDescription>Selecione um espaço para visualizar as reservas</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      <>
+        <PageHeader title="Reservas" description={DESCRIPTION} />
+        <EmptyState
+          bordered
+          icon="layers"
+          title="Nenhum espaço selecionado"
+          description="Selecione um espaço na barra lateral para ver as reservas."
+        />
+      </>
     )
   }
 
   return (
-    <div className="container space-y-6 py-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reservas</h1>
-          <p className="text-muted-foreground">Organize seu dinheiro em caixinhas para diferentes objetivos</p>
-        </div>
-        <Link href={routes.frontend.admin.reserves.create}>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Reserva
+    <>
+      <PageHeader title="Reservas" description={DESCRIPTION} />
+      <PageActions
+        actions={
+          <Button variant="primary" icon="plus" asChild>
+            <Link href={routes.frontend.admin.reserves.create}>Nova reserva</Link>
           </Button>
-        </Link>
-      </div>
+        }
+      />
 
       {isLoading ? (
-        <Card>
-          <CardContent className="py-10 text-center">
-            <p>Carregando reservas...</p>
-          </CardContent>
-        </Card>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {['balance', 'target', 'progress', 'remaining'].map(key => (
+              <MetricCard key={key} label="" value="" loading />
+            ))}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {['first', 'second', 'third'].map(key => (
+              <Skeleton key={key} className="h-[188px] rounded-lg" />
+            ))}
+          </div>
+        </>
+      ) : isError ? (
+        <QueryErrorCard onRetry={() => refetch()} />
       ) : (
         <>
           {reserves.length > 0 && <ReservesSummary reserves={reserves} />}
-
           <ReservesGrid reserves={reserves} spaceId={selectedSpace.id} />
         </>
       )}
-    </div>
+    </>
   )
 }

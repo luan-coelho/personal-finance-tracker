@@ -1,14 +1,14 @@
 'use client'
 
-import { Edit2, List, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { useRef, useState } from 'react'
 
 import type { BudgetWithSpendingAndUser } from '@/app/db/schemas/budget-schema'
 
+import { BudgetStatusBadge, budgetStatusMeta, getBudgetStatus } from '@/components/budget-card'
+import { CategoryIcon } from '@/components/category-icon'
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -16,8 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, IconButton } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +24,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Icon } from '@/components/ui/icon'
 import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
@@ -67,115 +69,137 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
     })
   }
 
-  const getStatusBadge = (percentage: number) => {
-    if (percentage > 100) {
-      return (
-        <Badge variant="destructive" className="font-semibold">
-          Excedido
-        </Badge>
-      )
-    }
-    if (percentage >= 80) {
-      return (
-        <Badge variant="default" className="bg-yellow-500 font-semibold text-zinc-900 hover:bg-yellow-600">
-          Atenção
-        </Badge>
-      )
-    }
-    return (
-      <Badge variant="default" className="bg-green-500 font-semibold hover:bg-green-600">
-        Normal
-      </Badge>
-    )
-  }
+  const head = (
+    <TableHeader>
+      <TableRow>
+        <TableHead>Categoria</TableHead>
+        <TableHead numeric>Mês</TableHead>
+        <TableHead numeric>Orçado</TableHead>
+        <TableHead numeric>Gasto</TableHead>
+        <TableHead numeric>Saldo</TableHead>
+        <TableHead>Uso</TableHead>
+        <TableHead>Status</TableHead>
+        <TableHead className="w-[72px]">Criado por</TableHead>
+        <TableHead className="w-14">
+          <span className="sr-only">Ações</span>
+        </TableHead>
+      </TableRow>
+    </TableHeader>
+  )
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-muted h-16 animate-pulse rounded-lg" />
-        ))}
-      </div>
+      <Table aria-busy="true">
+        {head}
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <TableRow key={i}>
+              <TableCell>
+                <Skeleton className="h-4 w-32" />
+              </TableCell>
+              {Array.from({ length: 4 }).map((__, j) => (
+                <TableCell key={j} numeric>
+                  <Skeleton className="ml-auto h-4 w-20" />
+                </TableCell>
+              ))}
+              <TableCell>
+                <Skeleton className="h-2 w-24 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="size-6 rounded-full" />
+              </TableCell>
+              <TableCell />
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     )
   }
 
   if (budgets.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <Wallet className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-        <h3 className="mb-2 text-lg font-semibold">Nenhum orçamento encontrado</h3>
-        <p className="text-muted-foreground">Comece criando seu primeiro orçamento para controlar seus gastos.</p>
-      </div>
+      <EmptyState
+        bordered
+        icon="wallet"
+        title="Nenhum orçamento encontrado"
+        description="Crie um orçamento para controlar os gastos de uma categoria."
+      />
     )
   }
 
   return (
-    <div>
+    <>
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]">Criado por</TableHead>
-            <TableHead>Categoria</TableHead>
-            <TableHead>Mês</TableHead>
-            <TableHead className="text-right">Orçamento</TableHead>
-            <TableHead className="text-right">Gasto</TableHead>
-            <TableHead className="text-right">Saldo</TableHead>
-            <TableHead>Progresso</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
-          </TableRow>
-        </TableHeader>
+        {head}
         <TableBody>
           {budgets.map(budget => {
-            const isOverBudget = budget.percentage > 100
-            const progressValue = Math.min(100, budget.percentage)
+            const status = getBudgetStatus(budget.percentage)
+            const isOverBudget = status === 'exceeded'
 
             return (
               <TableRow key={budget.id}>
                 <TableCell>
-                  <UserAvatarDisplay user={budget.createdBy} size="sm" />
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="bg-muted text-muted-foreground rounded-control inline-flex size-8 shrink-0 items-center justify-center">
+                      <CategoryIcon name={budget.category} size={16} />
+                    </span>
+                    <Link
+                      href={`/admin/budgets/${budget.id}`}
+                      className="focus-visible:shadow-focus-ring rounded-xs font-medium outline-none hover:underline hover:underline-offset-4">
+                      {budget.category}
+                    </Link>
+                  </div>
+                </TableCell>
+                <TableCell numeric className="text-muted-foreground whitespace-nowrap">
+                  {formatMonth(budget.month)}
+                </TableCell>
+                <TableCell numeric className="whitespace-nowrap">
+                  {formatCurrency(budget.amount)}
+                </TableCell>
+                <TableCell numeric className={cn('whitespace-nowrap', isOverBudget && 'text-error-text font-medium')}>
+                  {formatCurrency(budget.spent)}
+                </TableCell>
+                <TableCell
+                  numeric
+                  className={cn(
+                    'font-medium whitespace-nowrap',
+                    budget.exceededAmount > 0 ? 'text-error-text' : 'text-success-text',
+                  )}>
+                  {budget.exceededAmount > 0
+                    ? `Excedido ${formatCurrency(budget.exceededAmount)}`
+                    : formatCurrency(budget.remaining)}
                 </TableCell>
                 <TableCell>
-                  <Link href={`/admin/budgets/${budget.id}`} className="hover:underline">
-                    <div className="font-medium">{budget.category}</div>
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <span className="text-muted-foreground">{formatMonth(budget.month)}</span>
-                </TableCell>
-                <TableCell className="text-right font-mono">{formatCurrency(budget.amount)}</TableCell>
-                <TableCell className="text-right font-mono">
-                  <span className={cn(isOverBudget && 'text-destructive font-semibold')}>
-                    {formatCurrency(budget.spent)}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  <span
-                    className={cn('font-semibold', budget.exceededAmount > 0 ? 'text-destructive' : 'text-green-600')}>
-                    {budget.exceededAmount > 0
-                      ? `Excedido: ${formatCurrency(budget.exceededAmount)}`
-                      : formatCurrency(budget.remaining)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <Progress
-                      value={progressValue}
-                      className={cn('h-2 w-24', isOverBudget && '[&>div]:bg-destructive')}
+                      value={budget.percentage}
+                      tone={budgetStatusMeta[status].progressTone}
+                      className="w-24"
+                      aria-label={`Uso do orçamento ${budget.category}`}
                     />
-                    <span className={cn('text-sm font-medium', isOverBudget && 'text-destructive')}>
+                    <span className="w-12 text-right text-[13px] font-medium tabular-nums">
                       {budget.percentage.toFixed(0)}%
                     </span>
                   </div>
                 </TableCell>
-                <TableCell>{getStatusBadge(budget.percentage)}</TableCell>
+                <TableCell>
+                  <BudgetStatusBadge percentage={budget.percentage} />
+                </TableCell>
+                <TableCell>
+                  <UserAvatarDisplay user={budget.createdBy} size="sm" />
+                </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0" data-budget-transactions-trigger={budget.id}>
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Abrir menu</span>
-                      </Button>
+                      <IconButton
+                        icon="more-horizontal"
+                        label={`Ações do orçamento ${budget.category}`}
+                        size="sm"
+                        data-budget-transactions-trigger={budget.id}
+                      />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
@@ -190,24 +214,27 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
                       }}>
                       {onView && (
                         <DropdownMenuItem onSelect={() => (pendingViewBudgetRef.current = budget)}>
-                          <List className="mr-2 h-4 w-4" />
+                          <Icon name="list" size={18} />
                           Ver transações
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/budgets/${budget.id}`}>Visualizar Detalhes</Link>
+                        <Link href={`/admin/budgets/${budget.id}`}>
+                          <Icon name="eye" size={18} />
+                          Ver detalhes
+                        </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => onEdit?.(budget)}>
-                        <Edit2 className="mr-2 h-4 w-4" />
+                        <Icon name="pencil" size={18} />
                         Editar
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
+                        variant="destructive"
                         onClick={() => setBudgetToDelete(budget)}
-                        className="text-destructive"
                         disabled={deletingId === budget.id}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {deletingId === budget.id ? 'Excluindo...' : 'Excluir'}
+                        <Icon name="trash" size={18} />
+                        {deletingId === budget.id ? 'Excluindo' : 'Excluir'}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -219,22 +246,22 @@ export function BudgetsTable({ budgets, onEdit, onView, isLoading }: BudgetsTabl
       </Table>
 
       <AlertDialog open={!!budgetToDelete} onOpenChange={() => setBudgetToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent destructive>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
             <AlertDialogDescription>
-              Essa ação não pode ser desfeita. O orçamento da categoria &quot;{budgetToDelete?.category}&quot; será
-              excluído permanentemente.
+              O orçamento de &quot;{budgetToDelete?.category}&quot; será excluído permanentemente. Essa ação não pode
+              ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              {deleteBudget.isPending ? 'Excluindo...' : 'Excluir'}
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={deleteBudget.isPending} />
+            <Button variant="destructive" loading={deleteBudget.isPending} onClick={handleDelete}>
+              {deleteBudget.isPending ? 'Excluindo' : 'Excluir orçamento'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }

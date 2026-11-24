@@ -2,14 +2,13 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowDownCircle, ArrowUpCircle, BarChart3, Copy, Edit, MoreHorizontal, Trash2, Wallet } from 'lucide-react'
 import { useState } from 'react'
 
 import type { TransactionType, TransactionWithUser } from '@/app/db/schemas'
 
+import { CategoryIcon } from '@/components/category-icon'
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -18,14 +17,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, IconButton } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Icon, type IconName } from '@/components/ui/icon'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { UserAvatarDisplay } from '@/components/user-avatar-display'
 
 import { useDeleteTransaction } from '@/hooks/use-transactions'
 
 import { formatCurrency } from '@/lib/currency'
+import { cn } from '@/lib/utils'
 
 interface TransactionsTableProps {
   transactions: TransactionWithUser[]
@@ -34,6 +37,43 @@ interface TransactionsTableProps {
   isLoading?: boolean
   readOnly?: boolean
   actions?: 'all' | 'edit'
+}
+
+const typeLabel: Record<TransactionType, string> = {
+  entrada: 'Entrada',
+  saida: 'Saída',
+  reserva: 'Reserva',
+}
+
+const amountClassName: Record<TransactionType, string> = {
+  entrada: 'text-success-text',
+  saida: 'text-error-text',
+  reserva: 'text-foreground',
+}
+
+const amountSign: Record<TransactionType, string> = {
+  entrada: '+',
+  saida: '-',
+  reserva: '',
+}
+
+function TransactionIcon({ transaction }: { transaction: TransactionWithUser }) {
+  const tile = 'bg-muted text-muted-foreground inline-flex size-8 shrink-0 items-center justify-center rounded-control'
+
+  if (transaction.category) {
+    return (
+      <span className={tile}>
+        <CategoryIcon name={transaction.category} size={16} />
+      </span>
+    )
+  }
+
+  const fallback: IconName = transaction.type === 'reserva' ? 'piggy-bank' : 'receipt'
+  return (
+    <span className={tile}>
+      <Icon name={fallback} size={16} />
+    </span>
+  )
 }
 
 export function TransactionsTable({
@@ -59,173 +99,144 @@ export function TransactionsTable({
     }
   }
 
-  const getTypeColor = (type: TransactionType) => {
-    switch (type) {
-      case 'entrada':
-        return 'bg-green-100 text-green-800 pointer-events-none'
-      case 'saida':
-        return 'bg-red-100 text-red-800 pointer-events-none'
-      case 'reserva':
-        return 'bg-blue-100 text-blue-800 pointer-events-none'
-      default:
-        return 'bg-gray-100 text-gray-800 pointer-events-none'
-    }
-  }
-
-  const getTypeIcon = (type: TransactionType) => {
-    switch (type) {
-      case 'entrada':
-        return <ArrowDownCircle className="inline h-4 w-4 text-green-600" aria-label="Entrada" />
-      case 'saida':
-        return <ArrowUpCircle className="inline h-4 w-4 text-red-600" aria-label="Saída" />
-      case 'reserva':
-        return <Wallet className="inline h-4 w-4 text-blue-600" aria-label="Reserva" />
-      default:
-        return null
-    }
-  }
-
-  const getTypeLabel = (type: TransactionType) => {
-    switch (type) {
-      case 'entrada':
-        return 'Entrada'
-      case 'saida':
-        return 'Saída'
-      case 'reserva':
-        return 'Reserva'
-      default:
-        return type
-    }
-  }
+  const head = (
+    <TableHeader>
+      <TableRow>
+        <TableHead>Descrição</TableHead>
+        <TableHead className="w-[72px]">Usuário</TableHead>
+        <TableHead>Tags</TableHead>
+        <TableHead numeric>Data</TableHead>
+        <TableHead numeric>Valor</TableHead>
+        {!readOnly && (
+          <TableHead className="w-14">
+            <span className="sr-only">Ações</span>
+          </TableHead>
+        )}
+      </TableRow>
+    </TableHeader>
+  )
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-muted h-16 animate-pulse rounded-lg" />
-        ))}
-      </div>
+      <Table aria-busy="true">
+        {head}
+        <TableBody>
+          {Array.from({ length: 5 }, (_, index) => (
+            <TableRow key={index}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="rounded-control size-8" />
+                  <div className="flex flex-col gap-1.5">
+                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Skeleton className="size-6 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </TableCell>
+              <TableCell numeric>
+                <Skeleton className="ml-auto h-3.5 w-20" />
+              </TableCell>
+              <TableCell numeric>
+                <Skeleton className="ml-auto h-3.5 w-24" />
+              </TableCell>
+              {!readOnly && <TableCell />}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     )
   }
 
   if (transactions.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <BarChart3 className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-        <h3 className="mb-2 text-lg font-semibold">Nenhuma transação encontrada</h3>
-        <p className="text-muted-foreground">
-          {readOnly
+      <EmptyState
+        bordered
+        icon="receipt"
+        title="Nenhuma transação encontrada"
+        description={
+          readOnly
             ? 'Nenhuma saída neste orçamento.'
-            : 'Comece criando sua primeira transação para acompanhar suas finanças.'}
-        </p>
-      </div>
+            : 'Comece criando sua primeira transação para acompanhar suas finanças.'
+        }
+      />
     )
   }
 
   return (
-    <div>
+    <>
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]">Usuário</TableHead>
-            {/* <TableHead>Tipo</TableHead> */}
-            <TableHead>Descrição</TableHead>
-            <TableHead>Categoria</TableHead>
-            <TableHead>Tags</TableHead>
-            <TableHead>Data</TableHead>
-            <TableHead className="text-right">Valor</TableHead>
-            {!readOnly && <TableHead className="w-[50px]"></TableHead>}
-          </TableRow>
-        </TableHeader>
+        {head}
         <TableBody>
           {transactions.map(transaction => (
             <TableRow key={transaction.id}>
               <TableCell>
+                <div className="flex min-w-0 items-center gap-3">
+                  <TransactionIcon transaction={transaction} />
+                  <div className="flex min-w-0 flex-col">
+                    <span className="text-foreground truncate font-medium">{transaction.description}</span>
+                    <span className="text-muted-foreground truncate text-[13px] leading-[18px]">
+                      {transaction.category || typeLabel[transaction.type]}
+                    </span>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
                 <UserAvatarDisplay user={transaction.user} size="sm" />
-              </TableCell>
-              {/* <TableCell>
-                <Badge
-                  className={`${getTypeColor(transaction.type)} flex flex-none items-center justify-center gap-1 py-1 text-sm`}>
-                  {getTypeIcon(transaction.type)} <span>{getTypeLabel(transaction.type)}</span>
-                </Badge>
-              </TableCell> */}
-              <TableCell>
-                <div className="font-medium">{transaction.description}</div>
-              </TableCell>
-              <TableCell>
-                {transaction.category ? (
-                  <Badge variant="outline">{transaction.category}</Badge>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
               </TableCell>
               <TableCell>
                 {transaction.tags && transaction.tags.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
                     {transaction.tags.slice(0, 2).map(tag => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
+                      <Badge key={tag}>{tag}</Badge>
                     ))}
-                    {transaction.tags.length > 2 && (
-                      <Badge variant="secondary" className="text-xs">
-                        +{transaction.tags.length - 2}
-                      </Badge>
-                    )}
+                    {transaction.tags.length > 2 && <Badge>+{transaction.tags.length - 2}</Badge>}
                   </div>
                 ) : (
-                  <span className="text-muted-foreground">-</span>
+                  <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
-              <TableCell>{format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
-              <TableCell className="text-right font-mono">
-                <span
-                  className={
-                    transaction.type === 'entrada'
-                      ? 'text-green-600'
-                      : transaction.type === 'saida'
-                        ? 'text-red-600'
-                        : 'text-blue-600'
-                  }>
-                  {transaction.type === 'entrada' ? '+' : transaction.type === 'saida' ? '-' : ''}
-                  {formatCurrency(transaction.amount)}
-                </span>
+              <TableCell numeric className="text-muted-foreground whitespace-nowrap">
+                {format(new Date(transaction.date), 'dd/MM/yyyy', { locale: ptBR })}
+              </TableCell>
+              <TableCell numeric className={cn('font-medium whitespace-nowrap', amountClassName[transaction.type])}>
+                {amountSign[transaction.type]}
+                {formatCurrency(transaction.amount)}
               </TableCell>
               {!readOnly && (
-                <TableCell>
+                <TableCell className="text-right">
                   {actions === 'edit' ? (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label={`Editar transação: ${transaction.description}`}
+                    <IconButton
+                      icon="pencil"
+                      size="sm"
+                      label={`Editar transação: ${transaction.description}`}
                       data-transaction-edit-trigger={transaction.id}
-                      onClick={() => onEdit?.(transaction)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                      onClick={() => onEdit?.(transaction)}
+                    />
                   ) : (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Abrir menu</span>
-                        </Button>
+                        <IconButton icon="more-horizontal" size="sm" label={`Mais ações: ${transaction.description}`} />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onEdit?.(transaction)}>
-                          <Edit className="mr-2 h-4 w-4" />
+                          <Icon name="pencil" size={20} />
                           Editar
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onDuplicate?.(transaction)}>
-                          <Copy className="mr-2 h-4 w-4" />
+                          <Icon name="copy" size={20} />
                           Duplicar
                         </DropdownMenuItem>
                         <DropdownMenuItem
+                          variant="destructive"
                           onClick={() => setTransactionToDelete(transaction)}
-                          className="text-destructive"
                           disabled={deletingId === transaction.id}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {deletingId === transaction.id ? 'Excluindo...' : 'Excluir'}
+                          <Icon name="trash" size={20} />
+                          {deletingId === transaction.id ? 'Excluindo' : 'Excluir'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -238,24 +249,28 @@ export function TransactionsTable({
       </Table>
 
       {!readOnly && actions === 'all' && (
-        <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
-          <AlertDialogContent>
+        <AlertDialog
+          open={!!transactionToDelete}
+          onOpenChange={open => {
+            if (!open && !deleteMutation.isPending) setTransactionToDelete(null)
+          }}>
+          <AlertDialogContent destructive>
             <AlertDialogHeader>
-              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+              <AlertDialogTitle>Excluir transação</AlertDialogTitle>
               <AlertDialogDescription>
-                Essa ação não pode ser desfeita. A transação &quot;{transactionToDelete?.description}&quot; será
-                excluída permanentemente.
+                A transação &quot;{transactionToDelete?.description}&quot; será excluída permanentemente e sai dos
+                totais do período. Essa ação não pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-                {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
-              </AlertDialogAction>
+              <AlertDialogCancel disabled={deleteMutation.isPending} />
+              <Button variant="destructive" loading={deleteMutation.isPending} onClick={handleDelete}>
+                {deleteMutation.isPending ? 'Excluindo' : 'Excluir transação'}
+              </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       )}
-    </div>
+    </>
   )
 }

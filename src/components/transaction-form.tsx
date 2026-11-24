@@ -1,7 +1,6 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowDownCircle, ArrowUpCircle, Loader2, Wallet, X } from 'lucide-react'
 import React, { useCallback } from 'react'
 import { type Resolver, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -13,13 +12,15 @@ import { insertTransactionSchema } from '@/app/db/schemas/transaction-schema'
 import { CategoryIcon } from '@/components/category-icon'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Combobox } from '@/components/ui/combobox'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { DatePicker } from '@/components/ui/date-picker'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Icon } from '@/components/ui/icon'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SelectionButton } from '@/components/ui/selection-button'
 import { Textarea } from '@/components/ui/textarea'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 import { useCategories } from '@/hooks/use-categories'
 import { useReserves } from '@/hooks/use-reserves'
@@ -27,7 +28,6 @@ import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useTags } from '@/hooks/use-tags'
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/use-transactions'
 
-import { formatBrazilianAmountInput } from '@/lib/amount-utils'
 import { useSession } from '@/lib/auth-client'
 import { getTransactionFormContextDefaults, type TransactionInitialValues } from '@/lib/transaction-form-utils'
 
@@ -136,9 +136,10 @@ export function TransactionForm({
     availableCategories.push(contextCategory)
   }
 
-  // Máscara de real para o campo amount
-  function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
-    form.setValue('amount', formatBrazilianAmountInput(e.target.value))
+  // Máscara de real para o campo amount: o CurrencyInput já entrega o valor mascarado
+  // por formatBrazilianAmountInput.
+  function handleAmountChange(maskedValue: string) {
+    form.setValue('amount', maskedValue)
   }
 
   // Submit
@@ -168,7 +169,10 @@ export function TransactionForm({
       form.reset()
       onSuccess?.()
     } catch (error) {
-      toast.error('Erro ao salvar transação')
+      toast.error('Não foi possível salvar a transação. Verifique a conexão e tente novamente.', {
+        duration: Infinity,
+        closeButton: true,
+      })
       console.error('Erro ao salvar transação:', error)
     }
   }
@@ -188,97 +192,81 @@ export function TransactionForm({
     )
   }
 
+  const tagOptions = existingTags.map(tag => ({ value: tag, label: tag }))
+  const submitError = createMutation.error?.message || updateMutation.error?.message
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="max-h-[80vh] space-y-6 overflow-y-auto px-2">
-        {/* Tipo de Transação */}
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tipo de Transação</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  className="mt-2 flex flex-wrap gap-x-6 gap-y-3"
-                  disabled={isLoading}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="entrada" id="entrada" />
-                    <label
-                      htmlFor="entrada"
-                      className="flex items-center gap-1 text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      <ArrowDownCircle className="h-4 w-4 text-green-600" aria-label="Entrada" /> Entrada
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="saida" id="saida" />
-                    <label
-                      htmlFor="saida"
-                      className="flex items-center gap-1 text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      <ArrowUpCircle className="h-4 w-4 text-red-600" aria-label="Saída" /> Saída
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="reserva" id="reserva" />
-                    <label
-                      htmlFor="reserva"
-                      className="flex items-center gap-1 text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      <Wallet className="h-4 w-4 text-blue-600" aria-label="Reserva" /> Reserva
-                    </label>
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Descrição */}
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição *</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  placeholder="Descreva a transação..."
-                  className="resize-none"
-                  rows={3}
-                  disabled={isLoading}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Grid para Valor, Data e Categoria */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Tipo de transação */}
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Tipo</FormLabel>
+                <FormControl>
+                  <ToggleGroup
+                    type="single"
+                    fullWidth
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={isLoading}
+                    aria-label="Tipo de transação">
+                    <ToggleGroupItem value="entrada" icon="arrow-up-circle">
+                      Entrada
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="saida" icon="arrow-down-circle">
+                      Saída
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="reserva" icon="piggy-bank">
+                      Reserva
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Descrição */}
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Descrição</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Ex.: Compra no mercado"
+                    className="resize-none"
+                    rows={3}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Valor */}
           <FormField
             control={form.control}
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Valor *</FormLabel>
+                <FormLabel>Valor</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 transform">R$</span>
-                    <Input
-                      {...field}
-                      placeholder="0,00"
-                      className="h-9 pl-10"
-                      inputMode="decimal"
-                      pattern="[0-9,.]*"
-                      autoComplete="off"
-                      onChange={handleAmountChange}
-                      disabled={isLoading}
-                    />
-                  </div>
+                  <CurrencyInput
+                    ref={field.ref}
+                    name={field.name}
+                    value={field.value}
+                    onBlur={field.onBlur}
+                    onChange={handleAmountChange}
+                    disabled={isLoading}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -291,15 +279,13 @@ export function TransactionForm({
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Data *</FormLabel>
+                <FormLabel>Data</FormLabel>
                 <FormControl>
                   <DatePicker
-                    className="h-9 w-full"
                     date={field.value}
                     onSelect={field.onChange}
                     placeholder="Selecione uma data"
                     disabled={isLoading}
-                    error={form.formState.errors.date}
                     defaultMonth={monthStartDate}
                     showNavigation
                   />
@@ -308,57 +294,57 @@ export function TransactionForm({
               </FormItem>
             )}
           />
-        </div>
 
-        {/* Categoria - apenas para entrada e saída */}
-        {currentType !== 'reserva' && (
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoria</FormLabel>
-                <div role="group" aria-label="Categoria" className="flex flex-wrap gap-2">
-                  {availableCategories.map((category, index) => {
-                    const button = (
-                      <SelectionButton
-                        key={category}
-                        ref={index === 0 ? field.ref : undefined}
-                        aria-label={category}
-                        selected={field.value === category}
-                        onClick={() => field.onChange(category)}
-                        onBlur={field.onBlur}
-                        disabled={isLoading}>
-                        <CategoryIcon name={category} className="size-4" aria-hidden="true" />
-                        <span className="min-w-0 break-words">{category}</span>
-                      </SelectionButton>
-                    )
+          {/* Categoria - apenas para entrada e saída */}
+          {currentType !== 'reserva' && (
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Categoria</FormLabel>
+                  <div role="group" aria-label="Categoria" className="flex flex-wrap gap-2">
+                    {availableCategories.map((category, index) => {
+                      const button = (
+                        <SelectionButton
+                          key={category}
+                          ref={index === 0 ? field.ref : undefined}
+                          aria-label={category}
+                          selected={field.value === category}
+                          onClick={() => field.onChange(category)}
+                          onBlur={field.onBlur}
+                          disabled={isLoading}>
+                          <CategoryIcon name={category} size={18} />
+                          <span>{category}</span>
+                        </SelectionButton>
+                      )
 
-                    return index === 0 ? <FormControl key={category}>{button}</FormControl> : button
-                  })}
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+                      return index === 0 ? <FormControl key={category}>{button}</FormControl> : button
+                    })}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
-        {/* Reserva - apenas para tipo reserva */}
-        {currentType === 'reserva' && (
-          <FormField
-            control={form.control}
-            name="reserveId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Reserva *</FormLabel>
-                <FormControl>
+          {/* Reserva - apenas para tipo reserva */}
+          {currentType === 'reserva' && (
+            <FormField
+              control={form.control}
+              name="reserveId"
+              render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Reserva</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
-                    <SelectTrigger className="h-9 w-full">
-                      <SelectValue placeholder="Selecione uma reserva" />
-                    </SelectTrigger>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione uma reserva" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
                       {activeReserves.length === 0 ? (
-                        <div className="text-muted-foreground px-2 py-1.5 text-sm">Nenhuma reserva ativa</div>
+                        <div className="text-muted-foreground px-3 py-2 text-sm">Nenhuma reserva ativa</div>
                       ) : (
                         activeReserves.map(reserve => (
                           <SelectItem key={reserve.id} value={reserve.id}>
@@ -368,79 +354,60 @@ export function TransactionForm({
                       )}
                     </SelectContent>
                   </Select>
-                </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Tags - seleção apenas das cadastradas */}
+          <FormField
+            control={form.control}
+            name="tags"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Tags (opcional)</FormLabel>
+                {existingTags.length === 0 ? (
+                  <FormDescription>Nenhuma tag cadastrada. Cadastre tags na página de tags.</FormDescription>
+                ) : (
+                  <FormControl>
+                    <Combobox
+                      multiple
+                      options={tagOptions}
+                      value={field.value ?? []}
+                      onChange={field.onChange}
+                      placeholder="Selecione as tags"
+                      searchPlaceholder="Buscar tag"
+                      emptyText="Nenhuma tag encontrada"
+                      disabled={isLoading}
+                    />
+                  </FormControl>
+                )}
                 <FormMessage />
               </FormItem>
             )}
           />
+        </div>
+
+        {/* Erro global */}
+        {submitError && (
+          <p role="alert" className="text-error-text flex items-start gap-1.5 text-[13px]/[18px]">
+            <Icon name="alert-circle" size={14} className="mt-0.5" />
+            <span className="min-w-0">{submitError}</span>
+          </p>
         )}
 
-        {/* Tags - Seleção apenas das cadastradas */}
-        <FormField
-          control={form.control}
-          name="tags"
-          render={({ field }) => {
-            const currentTags = field.value ?? []
-            const toggleTag = (tag: string) => {
-              if (currentTags.includes(tag)) {
-                field.onChange(currentTags.filter((t: string) => t !== tag))
-              } else {
-                field.onChange([...currentTags, tag])
-              }
-            }
-            return (
-              <FormItem>
-                <FormLabel>Tags</FormLabel>
-                <FormControl>
-                  <div className="space-y-2">
-                    {existingTags.length === 0 ? (
-                      <span className="text-muted-foreground text-xs">
-                        Nenhuma tag cadastrada. Cadastre tags na página de tags.
-                      </span>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {existingTags.map((tag: string) => {
-                          const selected = currentTags.includes(tag)
-                          return (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => toggleTag(tag)}
-                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors ${selected ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary text-secondary-foreground border-secondary'}`}
-                              disabled={isLoading}>
-                              {selected ? <X className="mr-1 h-3 w-3" /> : '+'}
-                              {tag}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )
-          }}
-        />
-
-        {/* Botões */}
-        <div className="flex justify-end gap-3">
+        {/* Ações */}
+        <div className="flex flex-wrap justify-end gap-2">
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
               Cancelar
             </Button>
           )}
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEditing ? 'Atualizar' : 'Criar'} Transação
+          <Button type="submit" variant="primary" loading={isLoading}>
+            {isLoading ? 'Salvando' : isEditing ? 'Salvar alterações' : 'Salvar transação'}
           </Button>
         </div>
-        {/* Erro global */}
-        {(createMutation.error || updateMutation.error) && (
-          <div className="text-destructive mt-2 text-sm">
-            {createMutation.error?.message || updateMutation.error?.message}
-          </div>
-        )}
       </form>
     </Form>
   )

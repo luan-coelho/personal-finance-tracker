@@ -89,7 +89,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           </Button>
 
           {callbackUrl !== routes.frontend.admin.index && (
-            <p className="bg-info-soft text-info-text flex items-start gap-2 rounded-control px-3 py-2.5 text-sm leading-5">
+            <p className="bg-info-soft text-info-text rounded-control flex items-start gap-2 px-3 py-2.5 text-sm leading-5">
               <Icon name="info" size={16} className="mt-0.5" />
               <span>Depois de entrar, você volta para a página que tentou abrir.</span>
             </p>

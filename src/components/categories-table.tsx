@@ -1,13 +1,12 @@
 'use client'
 
-import { ArrowDownCircle, ArrowUpCircle, Edit, Loader2, MoreVertical, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import type { Category } from '@/app/db/schemas/category-schema'
 
+import { CategoryIcon } from '@/components/category-icon'
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -16,8 +15,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Button, IconButton } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Icon } from '@/components/ui/icon'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 import { useDeleteCategory } from '@/hooks/use-categories'
@@ -25,12 +33,61 @@ import { useDeleteCategory } from '@/hooks/use-categories'
 interface CategoriesTableProps {
   categories: Category[]
   isLoading?: boolean
+  /** Há busca ou filtro de tipo ativo (muda o texto do estado vazio). */
+  isFiltered?: boolean
   onEdit: (category: Category) => void
 }
 
-export function CategoriesTable({ categories, isLoading, onEdit }: CategoriesTableProps) {
+const SKELETON_ROWS = ['row-1', 'row-2', 'row-3', 'row-4', 'row-5']
+
+function CategoriesTableHeader() {
+  return (
+    <TableHeader>
+      <TableRow>
+        <TableHead>Nome</TableHead>
+        <TableHead>Tipo</TableHead>
+        <TableHead numeric>Criada em</TableHead>
+        <TableHead className="w-14">
+          <span className="sr-only">Ações</span>
+        </TableHead>
+      </TableRow>
+    </TableHeader>
+  )
+}
+
+export function CategoriesTableSkeleton() {
+  return (
+    <Table aria-busy="true">
+      <CategoriesTableHeader />
+      <TableBody>
+        {SKELETON_ROWS.map(row => (
+          <TableRow key={row}>
+            <TableCell>
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-8 rounded-sm" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+            </TableCell>
+            <TableCell>
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </TableCell>
+            <TableCell numeric>
+              <Skeleton className="ml-auto h-4 w-20" />
+            </TableCell>
+            <TableCell>
+              <Skeleton className="rounded-control size-9" />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+export function CategoriesTable({ categories, isLoading, isFiltered = false, onEdit }: CategoriesTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const deleteMutation = useDeleteCategory()
+  const categoryToDelete = categories.find(category => category.id === deleteId)
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -44,97 +101,93 @@ export function CategoriesTable({ categories, isLoading, onEdit }: CategoriesTab
   }
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
-      </div>
-    )
+    return <CategoriesTableSkeleton />
   }
 
   if (categories.length === 0) {
-    return (
-      <div className="py-8 text-center">
-        <p className="text-muted-foreground">Nenhuma categoria encontrada.</p>
-      </div>
+    return isFiltered ? (
+      <EmptyState
+        bordered
+        icon="search"
+        title="Nenhuma categoria encontrada"
+        description="Ajuste a busca ou o filtro de tipo para ver outras categorias."
+      />
+    ) : (
+      <EmptyState
+        bordered
+        icon="folder-open"
+        title="Nenhuma categoria cadastrada"
+        description="Crie categorias para organizar as entradas e saídas do espaço."
+      />
     )
   }
 
   return (
     <>
-      <div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Criada em</TableHead>
-              <TableHead className="w-[70px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories.map(category => (
-              <TableRow key={category.id}>
-                <TableCell className="font-medium">{category.name}</TableCell>
-                <TableCell>
-                  <Badge variant={category.type === 'entrada' ? 'default' : 'secondary'} className="gap-1">
-                    {category.type === 'entrada' ? (
-                      <>
-                        <ArrowUpCircle className="h-3 w-3" />
-                        Entrada
-                      </>
-                    ) : (
-                      <>
-                        <ArrowDownCircle className="h-3 w-3" />
-                        Saída
-                      </>
-                    )}
+      <Table>
+        <CategoriesTableHeader />
+        <TableBody>
+          {categories.map(category => (
+            <TableRow key={category.id}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <span className="bg-muted text-muted-foreground inline-flex size-8 shrink-0 items-center justify-center rounded-sm">
+                    <CategoryIcon name={category.name} />
+                  </span>
+                  <span className="font-medium whitespace-nowrap">{category.name}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                {category.type === 'entrada' ? (
+                  <Badge tone="success" icon="arrow-up-circle">
+                    Entrada
                   </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {new Date(category.createdAt).toLocaleDateString('pt-BR')}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                        <span className="sr-only">Abrir menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(category)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => setDeleteId(category.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Deletar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                ) : (
+                  <Badge tone="error" icon="arrow-down-circle">
+                    Saída
+                  </Badge>
+                )}
+              </TableCell>
+              <TableCell numeric className="text-muted-foreground">
+                {new Date(category.createdAt).toLocaleDateString('pt-BR')}
+              </TableCell>
+              <TableCell className="w-14">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <IconButton icon="more-horizontal" label={`Ações de ${category.name}`} className="size-9!" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit(category)}>
+                      <Icon name="pencil" size={18} />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" onClick={() => setDeleteId(category.id)}>
+                      <Icon name="trash" size={18} />
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
 
-      {/* Dialog de confirmação de exclusão */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent destructive>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir categoria?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. A categoria será permanentemente excluída.
+              {categoryToDelete ? `"${categoryToDelete.name}" será excluída` : 'A categoria será excluída'}{' '}
+              permanentemente. Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              Deletar
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={deleteMutation.isPending} />
+            <Button variant="destructive" loading={deleteMutation.isPending} onClick={handleDelete}>
+              {deleteMutation.isPending ? 'Excluindo' : 'Excluir categoria'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

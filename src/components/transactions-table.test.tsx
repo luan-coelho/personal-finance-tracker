@@ -40,16 +40,28 @@ describe('TransactionsTable readOnly', () => {
     assert.ok(html.includes('Alimentação/Mercado'))
     assert.ok(html.includes('12,34'))
     assert.ok(html.includes('casa'))
-    assert.equal(html.includes('Abrir menu'), false)
-    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 6)
-    assert.equal((html.match(/data-slot="table-head"/g) ?? []).length, 6)
+    assert.ok(html.includes('-R$'), 'saída mostra o sinal negativo')
+    assert.ok(html.includes('text-error-text'), 'saída usa o tom de erro')
+    assert.equal(html.includes('Mais ações'), false)
+    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 5)
+    assert.equal((html.match(/data-slot="table-head"/g) ?? []).length, 5)
+  })
+
+  it('shows income with a positive sign in the success tone', () => {
+    const html = renderTable([{ ...transaction, type: 'entrada' }], true)
+
+    assert.ok(html.includes('+R$'))
+    assert.ok(html.includes('text-success-text'))
+    assert.equal(html.includes('text-error-text'), false)
   })
 
   it('preserves actions by default', () => {
     const html = renderTable([transaction])
 
-    assert.ok(html.includes('Abrir menu'))
-    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 7)
+    assert.ok(html.includes('aria-label="Mais ações: Compra de mercado"'))
+    assert.ok(html.includes('data-slot="dropdown-menu-trigger"'))
+    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 6)
+    assert.equal((html.match(/data-slot="table-head"/g) ?? []).length, 6)
   })
 
   it('shows only a directly accessible edit action in edit-only mode', () => {
@@ -57,12 +69,12 @@ describe('TransactionsTable readOnly', () => {
 
     assert.ok(html.includes('aria-label="Editar transação: Compra de mercado"'))
     assert.ok(html.includes('data-transaction-edit-trigger="transaction-1"'))
-    assert.equal(html.includes('Abrir menu'), false)
+    assert.equal(html.includes('Mais ações'), false)
     assert.equal(html.includes('data-slot="dropdown-menu-trigger"'), false)
     assert.equal(html.includes('Duplicar'), false)
     assert.equal(html.includes('Excluir'), false)
-    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 7)
-    assert.equal((html.match(/data-slot="table-head"/g) ?? []).length, 7)
+    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 6)
+    assert.equal((html.match(/data-slot="table-head"/g) ?? []).length, 6)
   })
 
   it('keeps edit actions hidden when read-only mode is also enabled', () => {
@@ -70,13 +82,14 @@ describe('TransactionsTable readOnly', () => {
 
     assert.equal(html.includes('Editar transação:'), false)
     assert.equal(html.includes('data-transaction-edit-trigger'), false)
-    assert.equal(html.includes('Abrir menu'), false)
-    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 6)
+    assert.equal(html.includes('Mais ações'), false)
+    assert.equal((html.match(/data-slot="table-cell"/g) ?? []).length, 5)
   })
 
   it('shows an empty budget without suggesting transaction creation', () => {
     const html = renderTable([], true)
 
+    assert.ok(html.includes('data-slot="empty-state"'))
     assert.ok(html.includes('Nenhuma saída neste orçamento.'))
     assert.equal(html.includes('Comece criando'), false)
   })

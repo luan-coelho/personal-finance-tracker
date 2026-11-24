@@ -1,33 +1,27 @@
 'use client'
 
-import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  CalendarIcon,
-  Check,
-  DollarSign,
-  Filter,
-  LayoutGrid,
-  PiggyBank,
-  Search,
-  User,
-  Users,
-  X,
-} from 'lucide-react'
 import { useState } from 'react'
 
 import type { TransactionType } from '@/app/db/schemas'
 
-import { CategoryIcon } from '@/components/category-icon'
-import { Badge } from '@/components/ui/badge'
+import { getCategoryIconName } from '@/components/category-icon'
 import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Input } from '@/components/ui/input'
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox'
+import { CurrencyInput } from '@/components/ui/currency-input'
+import { DateRangeField } from '@/components/ui/date-range-field'
+import {
+  FilterBar,
+  FilterBarApplied,
+  FilterBarAppliedChip,
+  FilterBarFiltersButton,
+  FilterBarQuick,
+  FilterBarRow,
+  FilterBarSearch,
+} from '@/components/ui/filter-bar'
 import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { SelectionButton } from '@/components/ui/selection-button'
 import {
   Sheet,
+  SheetBody,
   SheetContent,
   SheetDescription,
   SheetFooter,
@@ -35,18 +29,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { UserAvatarDisplay } from '@/components/user-avatar-display'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 import { useSelectedSpace } from '@/hooks/use-selected-space'
 import { useSpaceMembers } from '@/hooks/use-space-members'
 import { useTags } from '@/hooks/use-tags'
 import { useTransactionCategories } from '@/hooks/use-transactions'
 
-import { formatBrazilianAmountInput } from '@/lib/amount-utils'
 import { useSession } from '@/lib/auth-client'
 import { formatCurrency } from '@/lib/currency'
 import { getActiveTransactionFiltersCount, parseAmountFilterParam } from '@/lib/transaction-filter-utils'
-import { cn } from '@/lib/utils'
 
 export interface TransactionFilters {
   search?: string
@@ -67,6 +59,20 @@ interface TransactionsFiltersProps {
   hideBadges?: boolean
 }
 
+const ALL = 'all'
+
+const typeLabels: Record<TransactionType, string> = {
+  entrada: 'Entradas',
+  saida: 'Saídas',
+  reserva: 'Reservas',
+}
+
+const typeQuickFilters = [
+  { value: 'entrada', label: 'Entradas', icon: 'arrow-up-circle' },
+  { value: 'saida', label: 'Saídas', icon: 'arrow-down-circle' },
+  { value: 'reserva', label: 'Reservas', icon: 'piggy-bank' },
+] as const
+
 function formatAmountFilterValue(value: number | undefined) {
   if (value === undefined) {
     return ''
@@ -79,6 +85,21 @@ function formatAmountFilterValue(value: number | undefined) {
   })
 }
 
+/** Data inicial às 00:00:00.000 e final às 23:59:59.999, como os filtros sempre enviaram. */
+function startOfFilterDay(date: Date | undefined) {
+  if (!date) return undefined
+  const adjustedDate = new Date(date)
+  adjustedDate.setHours(0, 0, 0, 0)
+  return adjustedDate
+}
+
+function endOfFilterDay(date: Date | undefined) {
+  if (!date) return undefined
+  const adjustedDate = new Date(date)
+  adjustedDate.setHours(23, 59, 59, 999)
+  return adjustedDate
+}
+
 export function TransactionsFilters({
   filters,
   onFiltersChange,
@@ -87,8 +108,6 @@ export function TransactionsFilters({
 }: TransactionsFiltersProps) {
   const { selectedSpace } = useSelectedSpace()
   const { data: session } = useSession()
-  const [dateFromOpen, setDateFromOpen] = useState(false)
-  const [dateToOpen, setDateToOpen] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState<TransactionFilters>(filters)
 
@@ -102,6 +121,17 @@ export function TransactionsFilters({
   const draftFiltersCount = getActiveTransactionFiltersCount(draftFilters)
   const hasActiveFilters = activeFiltersCount > 0
   const hasDraftFilters = draftFiltersCount > 0
+  const currentUserId = session?.user?.id
+
+  const categoryOptions: ComboboxOption[] = [
+    { value: ALL, label: 'Todas as categorias', icon: 'grid' },
+    ...categories.map(category => ({ value: category, label: category, icon: getCategoryIconName(category) })),
+  ]
+  const userOptions: ComboboxOption[] = [
+    { value: ALL, label: 'Todos os usuários', icon: 'users' },
+    ...spaceMembers.map(({ user }) => ({ value: user.id, label: user.name || 'Sem nome', icon: 'user' as const })),
+  ]
+  const tagOptions: ComboboxOption[] = tags.map(tag => ({ value: tag, label: tag }))
 
   const handleFiltersOpenChange = (open: boolean) => {
     setFiltersOpen(open)
@@ -118,42 +148,42 @@ export function TransactionsFilters({
   const handleTypeChange = (type: string) => {
     onFiltersChange({
       ...filters,
-      type: type === 'all' ? undefined : (type as TransactionType),
+      type: type === ALL ? undefined : (type as TransactionType),
     })
   }
 
   const handleDraftTypeChange = (type: string) => {
     setDraftFilters(currentFilters => ({
       ...currentFilters,
-      type: type === 'all' ? undefined : (type as TransactionType),
+      type: type === ALL ? undefined : (type as TransactionType),
     }))
   }
 
   const handleCategoryChange = (category: string) => {
     onFiltersChange({
       ...filters,
-      category: category === 'all' ? undefined : category,
+      category: category === ALL ? undefined : category,
     })
   }
 
   const handleDraftCategoryChange = (category: string) => {
     setDraftFilters(currentFilters => ({
       ...currentFilters,
-      category: category === 'all' ? undefined : category,
+      category: category === ALL ? undefined : category,
     }))
   }
 
   const handleUserChange = (userId: string) => {
     onFiltersChange({
       ...filters,
-      userId: userId === 'all' ? undefined : userId,
+      userId: userId === ALL ? undefined : userId,
     })
   }
 
   const handleDraftUserChange = (userId: string) => {
     setDraftFilters(currentFilters => ({
       ...currentFilters,
-      userId: userId === 'all' ? undefined : userId,
+      userId: userId === ALL ? undefined : userId,
     }))
   }
 
@@ -167,88 +197,30 @@ export function TransactionsFilters({
     })
   }
 
-  const handleDraftTagToggle = (tag: string) => {
-    setDraftFilters(currentFilters => {
-      const currentTags = currentFilters.tags || []
-      const newTags = currentTags.includes(tag) ? currentTags.filter(t => t !== tag) : [...currentTags, tag]
-
-      return {
-        ...currentFilters,
-        tags: newTags.length > 0 ? newTags : undefined,
-      }
-    })
+  const handleDraftTagsChange = (newTags: string[]) => {
+    setDraftFilters(currentFilters => ({
+      ...currentFilters,
+      tags: newTags.length > 0 ? newTags : undefined,
+    }))
   }
 
-  const handleDateFromChange = (date: Date | undefined) => {
-    if (date) {
-      // Garantir que a data inicial comece às 00:00:00
-      const adjustedDate = new Date(date)
-      adjustedDate.setHours(0, 0, 0, 0)
-      onFiltersChange({ ...filters, dateFrom: adjustedDate })
-    } else {
-      onFiltersChange({ ...filters, dateFrom: undefined })
-    }
-    setDateFromOpen(false)
+  const handleDraftDateRangeChange = ({ from, to }: { from?: Date; to?: Date }) => {
+    setDraftFilters(currentFilters => ({
+      ...currentFilters,
+      dateFrom: startOfFilterDay(from),
+      dateTo: endOfFilterDay(to),
+    }))
   }
 
-  const handleDraftDateFromChange = (date: Date | undefined) => {
-    setDraftFilters(currentFilters => {
-      if (!date) {
-        return { ...currentFilters, dateFrom: undefined }
-      }
-
-      const adjustedDate = new Date(date)
-      adjustedDate.setHours(0, 0, 0, 0)
-      return { ...currentFilters, dateFrom: adjustedDate }
-    })
-    setDateFromOpen(false)
-  }
-
-  const handleDateToChange = (date: Date | undefined) => {
-    if (date) {
-      // Garantir que a data final termine às 23:59:59.999
-      const adjustedDate = new Date(date)
-      adjustedDate.setHours(23, 59, 59, 999)
-      onFiltersChange({ ...filters, dateTo: adjustedDate })
-    } else {
-      onFiltersChange({ ...filters, dateTo: undefined })
-    }
-    setDateToOpen(false)
-  }
-
-  const handleDraftDateToChange = (date: Date | undefined) => {
-    setDraftFilters(currentFilters => {
-      if (!date) {
-        return { ...currentFilters, dateTo: undefined }
-      }
-
-      const adjustedDate = new Date(date)
-      adjustedDate.setHours(23, 59, 59, 999)
-      return { ...currentFilters, dateTo: adjustedDate }
-    })
-    setDateToOpen(false)
-  }
-
-  const handleAmountFromChange = (value: string) => {
-    const maskedValue = formatBrazilianAmountInput(value)
-    onFiltersChange({ ...filters, amountFrom: parseAmountFilterParam(maskedValue) })
-  }
-
-  const handleDraftAmountFromChange = (value: string) => {
-    const maskedValue = formatBrazilianAmountInput(value)
+  // O CurrencyInput já entrega o valor mascarado por formatBrazilianAmountInput.
+  const handleDraftAmountFromChange = (maskedValue: string) => {
     setDraftFilters(currentFilters => ({
       ...currentFilters,
       amountFrom: parseAmountFilterParam(maskedValue),
     }))
   }
 
-  const handleAmountToChange = (value: string) => {
-    const maskedValue = formatBrazilianAmountInput(value)
-    onFiltersChange({ ...filters, amountTo: parseAmountFilterParam(maskedValue) })
-  }
-
-  const handleDraftAmountToChange = (value: string) => {
-    const maskedValue = formatBrazilianAmountInput(value)
+  const handleDraftAmountToChange = (maskedValue: string) => {
     setDraftFilters(currentFilters => ({
       ...currentFilters,
       amountTo: parseAmountFilterParam(maskedValue),
@@ -265,370 +237,207 @@ export function TransactionsFilters({
     onClearFilters()
   }
 
-  return (
-    <div className="w-full space-y-4">
-      {/* Barra de busca */}
-      <div className="flex gap-2">
-        <div className="relative min-w-0 flex-1 md:w-72 md:flex-none">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-          <Input
-            placeholder="Buscar transações..."
-            value={filters.search || ''}
-            onChange={e => handleSearchChange(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+  const userName = (userId: string) => spaceMembers.find(m => m.user.id === userId)?.user.name || 'Desconhecido'
 
-        {/* Botão "Eu" - atalho para filtrar pelo usuário logado */}
-        {session?.user?.id && (
-          <Button
-            variant={filters.userId === session.user.id ? 'default' : 'outline'}
-            className="h-10 shrink-0 gap-2"
-            onClick={() => {
-              const isActive = filters.userId === session.user.id
-              onFiltersChange({
-                ...filters,
-                userId: isActive ? undefined : session.user.id,
-              })
-            }}>
-            <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Eu</span>
-          </Button>
+  return (
+    <FilterBar>
+      <FilterBarRow>
+        <FilterBarSearch
+          value={filters.search || ''}
+          onValueChange={handleSearchChange}
+          placeholder="Buscar por descrição"
+        />
+
+        {/* Filtros rápidos de tipo */}
+        {typeQuickFilters.map(({ value, label, icon }) => (
+          <FilterBarQuick
+            key={value}
+            icon={icon}
+            selected={filters.type === value}
+            onClick={() => handleTypeChange(filters.type === value ? ALL : value)}>
+            {label}
+          </FilterBarQuick>
+        ))}
+
+        {/* "Eu": atalho para filtrar pelo usuário logado */}
+        {currentUserId && (
+          <FilterBarQuick
+            icon="user"
+            selected={filters.userId === currentUserId}
+            onClick={() => handleUserChange(filters.userId === currentUserId ? ALL : currentUserId)}>
+            Eu
+          </FilterBarQuick>
         )}
 
-        {/* Botão de filtros */}
         <Sheet open={filtersOpen} onOpenChange={handleFiltersOpenChange}>
           <SheetTrigger asChild>
-            <Button variant="outline" aria-label="Filtros" className="relative h-10 shrink-0 gap-2">
-              <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">Filtros</span>
-              {activeFiltersCount > 0 && (
-                <Badge className="flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs">
-                  {activeFiltersCount}
-                </Badge>
-              )}
-            </Button>
+            <FilterBarFiltersButton count={activeFiltersCount} />
           </SheetTrigger>
-          <SheetContent className="flex h-full w-full flex-col overflow-hidden p-0">
-            <SheetHeader className="flex-shrink-0 px-5 pt-5">
+          <SheetContent>
+            <SheetHeader>
               <SheetTitle>Filtros</SheetTitle>
               <SheetDescription>Filtre as transações por tipo, categoria, tags, valor e período.</SheetDescription>
             </SheetHeader>
 
-            <div className="flex-1 space-y-6 overflow-y-auto px-5 py-4">
+            <SheetBody>
               {/* Tipo */}
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <div role="group" aria-label="Tipo" className="grid grid-cols-3 gap-2">
-                  {(
-                    [
-                      {
-                        value: 'entrada',
-                        label: 'Entrada',
-                        icon: ArrowUpCircle,
-                        color: 'text-green-600 dark:text-green-500',
-                      },
-                      {
-                        value: 'saida',
-                        label: 'Saída',
-                        icon: ArrowDownCircle,
-                        color: 'text-red-600 dark:text-red-500',
-                      },
-                      {
-                        value: 'reserva',
-                        label: 'Reserva',
-                        icon: PiggyBank,
-                        color: 'text-blue-600 dark:text-blue-500',
-                      },
-                    ] as const
-                  ).map(({ value, label, icon: Icon, color }) => (
-                    <Button
-                      key={value}
-                      type="button"
-                      variant={draftFilters.type === value ? 'default' : 'outline'}
-                      aria-pressed={draftFilters.type === value}
-                      onClick={() => handleDraftTypeChange(draftFilters.type === value ? 'all' : value)}
-                      className="min-w-0 gap-1.5 px-2 has-[>svg]:px-2">
-                      <Icon className={draftFilters.type === value ? 'size-4' : `size-4 ${color}`} aria-hidden="true" />
-                      {label}
-                    </Button>
-                  ))}
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  {draftFilters.type ? 'Clique no tipo selecionado para mostrar todos.' : 'Mostrando todos os tipos.'}
-                </p>
+              <div className="flex flex-col gap-1.5">
+                <Label id="filter-type-label">Tipo</Label>
+                <ToggleGroup
+                  type="single"
+                  fullWidth
+                  aria-labelledby="filter-type-label"
+                  value={draftFilters.type ?? ALL}
+                  onValueChange={handleDraftTypeChange}>
+                  <ToggleGroupItem value={ALL}>Todos</ToggleGroupItem>
+                  <ToggleGroupItem value="entrada">Entrada</ToggleGroupItem>
+                  <ToggleGroupItem value="saida">Saída</ToggleGroupItem>
+                  <ToggleGroupItem value="reserva">Reserva</ToggleGroupItem>
+                </ToggleGroup>
               </div>
 
               {/* Categoria */}
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <div role="group" aria-label="Categoria" className="flex flex-wrap gap-2">
-                  <SelectionButton selected={!draftFilters.category} onClick={() => handleDraftCategoryChange('all')}>
-                    <LayoutGrid className="size-4" aria-hidden="true" />
-                    Todas
-                  </SelectionButton>
-                  {categories.map(category => (
-                    <SelectionButton
-                      key={category}
-                      selected={draftFilters.category === category}
-                      onClick={() => handleDraftCategoryChange(category)}>
-                      <CategoryIcon name={category} className="size-4" aria-hidden="true" />
-                      <span className="min-w-0 break-words">{category}</span>
-                    </SelectionButton>
-                  ))}
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="filter-category">Categoria</Label>
+                <Combobox
+                  id="filter-category"
+                  options={categoryOptions}
+                  value={draftFilters.category ?? ALL}
+                  onChange={handleDraftCategoryChange}
+                  searchPlaceholder="Buscar categoria"
+                  emptyText="Nenhuma categoria encontrada"
+                />
               </div>
 
               {/* Usuário */}
-              <div className="space-y-2">
-                <Label>Usuário</Label>
-                <div role="group" aria-label="Usuário" className="flex flex-wrap gap-2">
-                  <SelectionButton selected={!draftFilters.userId} onClick={() => handleDraftUserChange('all')}>
-                    <Users className="size-4" aria-hidden="true" />
-                    Todos
-                  </SelectionButton>
-                  {spaceMembers.map(({ user }) => (
-                    <SelectionButton
-                      key={user.id}
-                      selected={draftFilters.userId === user.id}
-                      onClick={() => handleDraftUserChange(user.id)}>
-                      <span className="shrink-0" aria-hidden="true">
-                        <UserAvatarDisplay user={user} size="sm" showTooltip={false} />
-                      </span>
-                      <span className="min-w-0 break-words">{user.name || 'Sem nome'}</span>
-                    </SelectionButton>
-                  ))}
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="filter-user">Usuário</Label>
+                <Combobox
+                  id="filter-user"
+                  options={userOptions}
+                  value={draftFilters.userId ?? ALL}
+                  onChange={handleDraftUserChange}
+                  searchPlaceholder="Buscar usuário"
+                  emptyText="Nenhum usuário encontrado"
+                />
               </div>
 
               {/* Tags */}
               {tags.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Tags</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag: string) => {
-                      const isSelected = draftFilters.tags?.includes(tag)
-                      return (
-                        <Button
-                          key={tag}
-                          variant={isSelected ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => handleDraftTagToggle(tag)}
-                          className="h-7">
-                          {tag}
-                          {isSelected && <X className="ml-1 h-3 w-3" />}
-                        </Button>
-                      )
-                    })}
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="filter-tags">Tags</Label>
+                  <Combobox
+                    id="filter-tags"
+                    multiple
+                    options={tagOptions}
+                    value={draftFilters.tags ?? []}
+                    onChange={handleDraftTagsChange}
+                    placeholder="Todas as tags"
+                    searchPlaceholder="Buscar tag"
+                    emptyText="Nenhuma tag encontrada"
+                  />
                 </div>
               )}
 
-              {/* Faixa de Valor */}
-              <div className="space-y-4">
-                <Label className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Faixa de valor
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground text-sm">Mínimo</Label>
-                    <div className="relative">
-                      <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 transform">
-                        R$
-                      </span>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        pattern="[0-9,.]*"
-                        autoComplete="off"
-                        placeholder="0,00"
-                        value={formatAmountFilterValue(draftFilters.amountFrom)}
-                        onChange={e => handleDraftAmountFromChange(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
+              {/* Faixa de valor */}
+              <fieldset className="flex min-w-0 flex-col gap-1.5">
+                <legend className="mb-1.5 text-sm leading-5 font-medium">Faixa de valor</legend>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <Label htmlFor="filter-amount-from" className="text-muted-foreground text-[13px]">
+                      Mínimo
+                    </Label>
+                    <CurrencyInput
+                      id="filter-amount-from"
+                      value={formatAmountFilterValue(draftFilters.amountFrom)}
+                      onChange={handleDraftAmountFromChange}
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground text-sm">Máximo</Label>
-                    <div className="relative">
-                      <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 transform">
-                        R$
-                      </span>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        pattern="[0-9,.]*"
-                        autoComplete="off"
-                        placeholder="9999,99"
-                        value={formatAmountFilterValue(draftFilters.amountTo)}
-                        onChange={e => handleDraftAmountToChange(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <Label htmlFor="filter-amount-to" className="text-muted-foreground text-[13px]">
+                      Máximo
+                    </Label>
+                    <CurrencyInput
+                      id="filter-amount-to"
+                      placeholder="9.999,99"
+                      value={formatAmountFilterValue(draftFilters.amountTo)}
+                      onChange={handleDraftAmountToChange}
+                    />
                   </div>
                 </div>
-              </div>
+              </fieldset>
 
               {/* Período */}
-              <div className="space-y-4">
-                <Label>Período</Label>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Data inicial */}
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">De</Label>
-                    <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !draftFilters.dateFrom && 'text-muted-foreground',
-                          )}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {draftFilters.dateFrom ? draftFilters.dateFrom.toLocaleDateString('pt-BR') : 'Data inicial'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={draftFilters.dateFrom}
-                          onSelect={handleDraftDateFromChange}
-                          autoFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {/* Data final */}
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground text-sm">Até</Label>
-                    <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !draftFilters.dateTo && 'text-muted-foreground',
-                          )}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {draftFilters.dateTo ? draftFilters.dateTo.toLocaleDateString('pt-BR') : 'Data final'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={draftFilters.dateTo}
-                          onSelect={handleDraftDateToChange}
-                          autoFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="filter-period">Período</Label>
+                <DateRangeField
+                  id="filter-period"
+                  numberOfMonths={1}
+                  value={{ from: draftFilters.dateFrom, to: draftFilters.dateTo }}
+                  onChange={handleDraftDateRangeChange}
+                />
               </div>
-            </div>
+            </SheetBody>
 
-            <SheetFooter className="flex-shrink-0 border-t px-5 pb-5">
-              <Button onClick={handleApplyFilters} className="w-full">
-                <Check className="mr-2 h-4 w-4" />
-                Aplicar Filtros
-              </Button>
+            <SheetFooter>
               {(hasActiveFilters || hasDraftFilters) && (
-                <Button variant="outline" onClick={handleClearAllFilters} className="w-full">
-                  <X className="mr-2 h-4 w-4" />
-                  Limpar Filtros
+                <Button variant="ghost" onClick={handleClearAllFilters}>
+                  Limpar filtros
                 </Button>
               )}
+              <Button variant="primary" icon="check" className="ml-auto" onClick={handleApplyFilters}>
+                Aplicar filtros
+              </Button>
             </SheetFooter>
           </SheetContent>
         </Sheet>
+      </FilterBarRow>
 
-        {/* Botão limpar filtros (visível quando há filtros ativos) */}
-        {hasActiveFilters && (
-          <Button variant="outline" className="h-10 shrink-0" onClick={onClearFilters}>
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-
-      {/* Filtros ativos */}
-      {!hideBadges && hasActiveFilters && (
-        <div className="flex flex-wrap gap-2">
+      {/* Filtros aplicados (a linha some sem filtros) */}
+      {!hideBadges && (
+        <FilterBarApplied onClear={onClearFilters}>
           {filters.type && (
-            <Badge variant="secondary">
-              Tipo: {filters.type === 'entrada' ? 'Entradas' : filters.type === 'saida' ? 'Saídas' : 'Reservas'}
-              <button onClick={() => handleTypeChange('all')} className="hover:text-destructive ml-1">
-                ×
-              </button>
-            </Badge>
+            <FilterBarAppliedChip onRemove={() => handleTypeChange(ALL)}>
+              {`Tipo: ${typeLabels[filters.type]}`}
+            </FilterBarAppliedChip>
           )}
-
           {filters.category && (
-            <Badge variant="secondary">
-              Categoria: {filters.category}
-              <button onClick={() => handleCategoryChange('all')} className="hover:text-destructive ml-1">
-                ×
-              </button>
-            </Badge>
+            <FilterBarAppliedChip onRemove={() => handleCategoryChange(ALL)}>
+              {`Categoria: ${filters.category}`}
+            </FilterBarAppliedChip>
           )}
-
           {filters.tags?.map(tag => (
-            <Badge key={tag} variant="secondary">
-              Tag: {tag}
-              <button onClick={() => handleTagToggle(tag)} className="hover:text-destructive ml-1">
-                ×
-              </button>
-            </Badge>
+            <FilterBarAppliedChip key={tag} onRemove={() => handleTagToggle(tag)}>
+              {`Tag: ${tag}`}
+            </FilterBarAppliedChip>
           ))}
-
           {filters.userId && (
-            <Badge variant="secondary">
-              Usuário: {spaceMembers.find(m => m.user.id === filters.userId)?.user.name || 'Desconhecido'}
-              <button onClick={() => handleUserChange('all')} className="hover:text-destructive ml-1">
-                ×
-              </button>
-            </Badge>
+            <FilterBarAppliedChip onRemove={() => handleUserChange(ALL)}>
+              {`Usuário: ${userName(filters.userId)}`}
+            </FilterBarAppliedChip>
           )}
-
           {filters.dateFrom && (
-            <Badge variant="secondary">
-              De: {filters.dateFrom.toLocaleDateString('pt-BR')}
-              <button onClick={() => handleDateFromChange(undefined)} className="hover:text-destructive ml-1">
-                ×
-              </button>
-            </Badge>
+            <FilterBarAppliedChip onRemove={() => onFiltersChange({ ...filters, dateFrom: undefined })}>
+              {`De: ${filters.dateFrom.toLocaleDateString('pt-BR')}`}
+            </FilterBarAppliedChip>
           )}
-
           {filters.dateTo && (
-            <Badge variant="secondary">
-              Até: {filters.dateTo.toLocaleDateString('pt-BR')}
-              <button onClick={() => handleDateToChange(undefined)} className="hover:text-destructive ml-1">
-                ×
-              </button>
-            </Badge>
+            <FilterBarAppliedChip onRemove={() => onFiltersChange({ ...filters, dateTo: undefined })}>
+              {`Até: ${filters.dateTo.toLocaleDateString('pt-BR')}`}
+            </FilterBarAppliedChip>
           )}
-
           {filters.amountFrom !== undefined && (
-            <Badge variant="secondary">
-              Valor mínimo: {formatCurrency(filters.amountFrom)}
-              <button onClick={() => handleAmountFromChange('')} className="hover:text-destructive ml-1">
-                ×
-              </button>
-            </Badge>
+            <FilterBarAppliedChip onRemove={() => onFiltersChange({ ...filters, amountFrom: undefined })}>
+              {`Valor mínimo: ${formatCurrency(filters.amountFrom)}`}
+            </FilterBarAppliedChip>
           )}
-
           {filters.amountTo !== undefined && (
-            <Badge variant="secondary">
-              Valor máximo: {formatCurrency(filters.amountTo)}
-              <button onClick={() => handleAmountToChange('')} className="hover:text-destructive ml-1">
-                ×
-              </button>
-            </Badge>
+            <FilterBarAppliedChip onRemove={() => onFiltersChange({ ...filters, amountTo: undefined })}>
+              {`Valor máximo: ${formatCurrency(filters.amountTo)}`}
+            </FilterBarAppliedChip>
           )}
-        </div>
+        </FilterBarApplied>
       )}
-    </div>
+    </FilterBar>
   )
 }

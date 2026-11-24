@@ -3,6 +3,7 @@
 import type { Reserve } from '@/app/db/schemas/reserve-schema'
 
 import { ReserveCard } from '@/components/reserve-card'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface ReservesGridProps {
   reserves: Reserve[]
@@ -12,17 +13,17 @@ interface ReservesGridProps {
 export function ReservesGrid({ reserves, spaceId }: ReservesGridProps) {
   if (reserves.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-        <p className="text-muted-foreground">Nenhuma reserva encontrada</p>
-        <p className="text-muted-foreground mt-2 text-sm">
-          Crie sua primeira reserva para começar a organizar suas finanças
-        </p>
-      </div>
+      <EmptyState
+        bordered
+        icon="piggy-bank"
+        title="Nenhuma reserva criada"
+        description="Use Nova reserva para separar dinheiro por objetivo."
+      />
     )
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {reserves.map(reserve => (
         <ReserveCard key={reserve.id} reserve={reserve} spaceId={spaceId} />
       ))}

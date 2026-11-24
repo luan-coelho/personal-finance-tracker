@@ -1,42 +1,46 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import * as LucideIcons from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import type { Reserve, ReserveFormValues } from '@/app/db/schemas/reserve-schema'
 
+import { ReserveIconTile } from '@/components/reserve-card'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Icon, type IconName } from '@/components/ui/icon'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SelectionButton } from '@/components/ui/selection-button'
 import { Textarea } from '@/components/ui/textarea'
 
 import { useCreateReserve, useUpdateReserve } from '@/hooks/use-reserves'
 
+import { formatCurrency } from '@/lib/currency'
 import { routes } from '@/lib/routes'
 
-const AVAILABLE_ICONS = [
-  { value: 'piggy-bank', label: 'Porquinho', icon: LucideIcons.PiggyBank },
-  { value: 'wallet', label: 'Carteira', icon: LucideIcons.Wallet },
-  { value: 'shield', label: 'Escudo', icon: LucideIcons.Shield },
-  { value: 'plane', label: 'Avião', icon: LucideIcons.Plane },
-  { value: 'trending-up', label: 'Crescimento', icon: LucideIcons.TrendingUp },
-  { value: 'shopping-cart', label: 'Compras', icon: LucideIcons.ShoppingCart },
-  { value: 'home', label: 'Casa', icon: LucideIcons.Home },
-  { value: 'car', label: 'Carro', icon: LucideIcons.Car },
-  { value: 'heart', label: 'Coração', icon: LucideIcons.Heart },
-  { value: 'gift', label: 'Presente', icon: LucideIcons.Gift },
-  { value: 'graduation-cap', label: 'Educação', icon: LucideIcons.GraduationCap },
-  { value: 'briefcase', label: 'Trabalho', icon: LucideIcons.Briefcase },
-  { value: 'smartphone', label: 'Celular', icon: LucideIcons.Smartphone },
-  { value: 'laptop', label: 'Notebook', icon: LucideIcons.Laptop },
-  { value: 'droplet', label: 'Gota', icon: LucideIcons.Droplet },
-  { value: 'zap', label: 'Energia', icon: LucideIcons.Zap },
+const AVAILABLE_ICONS: { value: IconName; label: string }[] = [
+  { value: 'piggy-bank', label: 'Porquinho' },
+  { value: 'wallet', label: 'Carteira' },
+  { value: 'shield', label: 'Escudo' },
+  { value: 'plane', label: 'Avião' },
+  { value: 'trending-up', label: 'Crescimento' },
+  { value: 'shopping-cart', label: 'Compras' },
+  { value: 'home', label: 'Casa' },
+  { value: 'car', label: 'Carro' },
+  { value: 'heart', label: 'Coração' },
+  { value: 'gift', label: 'Presente' },
+  { value: 'graduation-cap', label: 'Educação' },
+  { value: 'briefcase', label: 'Trabalho' },
+  { value: 'smartphone', label: 'Celular' },
+  { value: 'laptop', label: 'Notebook' },
+  { value: 'droplet', label: 'Gota' },
+  { value: 'zap', label: 'Energia' },
 ]
 
+// Valores gravados em `reserves.color` (dado do usuário, aplicado via `style`).
 const AVAILABLE_COLORS = [
   { value: '#ef4444', label: 'Vermelho' },
   { value: '#f97316', label: 'Laranja' },
@@ -65,6 +69,8 @@ const formSchema = z.object({
 })
 
 type FormData = z.infer<typeof formSchema>
+
+const swatchButtonClass = 'h-11! w-full justify-center rounded-control! px-0'
 
 export function ReserveForm({ spaceId, reserve, mode }: ReserveFormProps) {
   const router = useRouter()
@@ -104,156 +110,154 @@ export function ReserveForm({ spaceId, reserve, mode }: ReserveFormProps) {
     }
   }
 
-  const selectedIcon = AVAILABLE_ICONS.find(i => i.value === form.watch('icon'))
-  const IconComponent = selectedIcon?.icon || LucideIcons.PiggyBank
-
   const isLoading = createMutation.isPending || updateMutation.isPending
+  const watchedIcon = form.watch('icon')
+  const watchedColor = form.watch('color')
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome da Reserva *</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Fundo de Emergência" {...field} />
-              </FormControl>
-              <FormDescription>Nome para identificar sua reserva</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-3xl">
+        <Card>
+          <CardContent className="flex flex-col gap-6">
+            <div className="flex items-start gap-4">
+              <ReserveIconTile icon={watchedIcon} color={watchedColor} size={44} className="mt-[26px]" />
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="min-w-0 flex-1">
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex.: Fundo de emergência" autoComplete="off" {...field} />
+                    </FormControl>
+                    <FormDescription>Como a reserva aparece nas listas e transações</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Descreva o objetivo desta reserva..." className="resize-none" {...field} />
-              </FormControl>
-              <FormDescription>Opcional: adicione mais detalhes sobre a reserva</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="targetAmount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Meta (R$)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                </FormControl>
-                <FormDescription>Opcional: valor que deseja alcançar</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {mode === 'edit' && reserve && (
-            <FormItem>
-              <FormLabel>Saldo Atual (R$)</FormLabel>
-              <FormControl>
-                <Input value={reserve.currentAmount} disabled />
-              </FormControl>
-              <FormDescription>Calculado automaticamente</FormDescription>
-            </FormItem>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="icon"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Ícone</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição (opcional)</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um ícone">
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="h-4 w-4" />
-                          <span>{selectedIcon?.label}</span>
-                        </div>
-                      </SelectValue>
-                    </SelectTrigger>
+                    <Textarea placeholder="Para que serve esta reserva" className="resize-none" {...field} />
                   </FormControl>
-                  <SelectContent>
-                    {AVAILABLE_ICONS.map(icon => {
-                      const Icon = icon.icon
-                      return (
-                        <SelectItem key={icon.value} value={icon.value}>
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-4 w-4" />
-                            <span>{icon.label}</span>
-                          </div>
-                        </SelectItem>
-                      )
-                    })}
-                  </SelectContent>
-                </Select>
-                <FormDescription>Ícone para identificar visualmente</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="color"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cor</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="targetAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Meta (opcional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        inputMode="decimal"
+                        prefix="R$"
+                        placeholder="0.00"
+                        className="tabular-nums"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>Valor que você quer alcançar</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {mode === 'edit' && reserve && (
+                <FormItem>
+                  <FormLabel>Saldo atual</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma cor">
-                        <div className="flex items-center gap-2">
-                          <div className="h-4 w-4 rounded-full" style={{ backgroundColor: field.value }} />
-                          <span>{AVAILABLE_COLORS.find(c => c.value === field.value)?.label}</span>
-                        </div>
-                      </SelectValue>
-                    </SelectTrigger>
+                    <Input value={formatCurrency(reserve.currentAmount)} className="tabular-nums" readOnly disabled />
                   </FormControl>
-                  <SelectContent>
-                    {AVAILABLE_COLORS.map(color => (
-                      <SelectItem key={color.value} value={color.value}>
-                        <div className="flex items-center gap-2">
-                          <div className="h-4 w-4 rounded-full" style={{ backgroundColor: color.value }} />
-                          <span>{color.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>Cor para destacar a reserva</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                  <FormDescription>Calculado pelas movimentações da reserva</FormDescription>
+                </FormItem>
+              )}
+            </div>
 
-        <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push(routes.frontend.admin.reserves.index)}
-            disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Salvando...' : mode === 'create' ? 'Criar Reserva' : 'Salvar Alterações'}
-          </Button>
-        </div>
+            <FormField
+              control={form.control}
+              name="icon"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ícone</FormLabel>
+                  <FormControl>
+                    <fieldset aria-label="Ícone" className="grid min-w-0 grid-cols-6 gap-2 sm:grid-cols-8">
+                      {AVAILABLE_ICONS.map(option => (
+                        <SelectionButton
+                          key={option.value}
+                          selected={field.value === option.value}
+                          aria-label={option.label}
+                          title={option.label}
+                          className={swatchButtonClass}
+                          onClick={() => field.onChange(option.value)}>
+                          <Icon name={option.value} size={20} />
+                        </SelectionButton>
+                      ))}
+                    </fieldset>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cor</FormLabel>
+                  <FormControl>
+                    <fieldset aria-label="Cor" className="grid min-w-0 grid-cols-6 gap-2 sm:grid-cols-9">
+                      {AVAILABLE_COLORS.map(option => (
+                        <SelectionButton
+                          key={option.value}
+                          selected={field.value === option.value}
+                          aria-label={option.label}
+                          title={option.label}
+                          className={swatchButtonClass}
+                          onClick={() => field.onChange(option.value)}>
+                          <span
+                            aria-hidden
+                            className="border-border-strong size-5 rounded-full border"
+                            style={{ backgroundColor: option.value }}
+                          />
+                        </SelectionButton>
+                      ))}
+                    </fieldset>
+                  </FormControl>
+                  <FormDescription>Tom de fundo do ícone da reserva</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+
+          <CardFooter className="border-border border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push(routes.frontend.admin.reserves.index)}
+              disabled={isLoading}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="primary" loading={isLoading}>
+              {isLoading ? 'Salvando' : mode === 'create' ? 'Criar reserva' : 'Salvar alterações'}
+            </Button>
+          </CardFooter>
+        </Card>
       </form>
     </Form>
   )

@@ -187,7 +187,7 @@ function Sidebar({
             data-side={side}
             aria-describedby={undefined}
             className={cn(
-              'bg-card text-foreground border-border fixed inset-y-0 z-50 flex h-full w-(--sidebar-width) max-w-[calc(100vw-48px)] flex-col gap-4 px-3 py-5 text-sm leading-5 outline-none duration-200',
+              'bg-card text-foreground border-border fixed inset-y-0 z-50 flex h-full w-(--sidebar-width) max-w-[calc(100vw-48px)] flex-col gap-4 px-3 py-5 text-sm leading-5 duration-200 outline-none',
               'data-[state=open]:animate-in data-[state=closed]:animate-out',
               side === 'left'
                 ? 'data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left left-0 border-r'
@@ -281,7 +281,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
       onClick={toggleSidebar}
       title="Recolher ou expandir menu"
       className={cn(
-        'hover:after:bg-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-colors after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 group-data-[side=left]:-right-4 group-data-[side=right]:left-0 lg:flex',
+        'hover:after:bg-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-colors group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 lg:flex',
         'in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize',
         '[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize',
         className,
@@ -349,7 +349,7 @@ function SidebarContent({ className, ...props }: React.ComponentProps<'div'>) {
       data-sidebar="content"
       className={cn(
         // -m-1 p-1: espaço para o anel de foco dos itens dentro da área rolável.
-        '-m-1 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        '-m-1 flex min-h-0 flex-1 [scrollbar-width:none] flex-col gap-4 overflow-y-auto p-1 [&::-webkit-scrollbar]:hidden',
         'group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:gap-1',
         className,
       )}
@@ -535,7 +535,7 @@ function SidebarMenuAction({
       data-slot="sidebar-menu-action"
       data-sidebar="menu-action"
       className={cn(
-        'text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:shadow-focus-ring absolute top-2 right-1.5 flex size-6 items-center justify-center rounded-sm outline-none group-data-[collapsible=icon]:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=lg]/menu-button:top-3 [&>svg]:size-4 [&>svg]:shrink-0',
+        'text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:shadow-focus-ring absolute top-2 right-1.5 flex size-6 items-center justify-center rounded-sm outline-none group-data-[collapsible=icon]:hidden peer-data-[size=lg]/menu-button:top-3 peer-data-[size=sm]/menu-button:top-1 [&>svg]:size-4 [&>svg]:shrink-0',
         showOnHover &&
           'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 aria-expanded:opacity-100 lg:opacity-0',
         className,
@@ -551,7 +551,7 @@ function SidebarMenuBadge({ className, ...props }: React.ComponentProps<'div'>) 
       data-slot="sidebar-menu-badge"
       data-sidebar="menu-badge"
       className={cn(
-        'text-muted-foreground peer-data-[active=true]/menu-button:text-primary-text pointer-events-none absolute top-2.5 right-2 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums select-none group-data-[collapsible=icon]:hidden peer-data-[size=sm]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-3.5',
+        'text-muted-foreground peer-data-[active=true]/menu-button:text-primary-text pointer-events-none absolute top-2.5 right-2 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums select-none group-data-[collapsible=icon]:hidden peer-data-[size=lg]/menu-button:top-3.5 peer-data-[size=sm]/menu-button:top-1.5',
         className,
       )}
       {...props}
@@ -573,7 +573,7 @@ function SidebarMenuSkeleton({
     <div
       data-slot="sidebar-menu-skeleton"
       data-sidebar="menu-skeleton"
-      className={cn('flex h-control-md items-center gap-3 rounded-control px-2.5', className)}
+      className={cn('h-control-md rounded-control flex items-center gap-3 px-2.5', className)}
       {...props}>
       {showIcon && <Skeleton className="size-icon-md rounded-sm" data-sidebar="menu-skeleton-icon" />}
       <Skeleton
@@ -630,7 +630,7 @@ function SidebarMenuSubButton({
       data-size={size}
       data-active={isActive}
       className={cn(
-        'text-foreground hover:bg-accent focus-visible:shadow-focus-ring flex min-h-control-sm min-w-0 items-center gap-2 overflow-hidden rounded-control px-2.5 font-medium outline-none transition-colors duration-150 group-data-[collapsible=icon]:hidden',
+        'text-foreground hover:bg-accent focus-visible:shadow-focus-ring min-h-control-sm rounded-control flex min-w-0 items-center gap-2 overflow-hidden px-2.5 font-medium transition-colors duration-150 outline-none group-data-[collapsible=icon]:hidden',
         'aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[size=md]:text-sm data-[size=sm]:text-xs',
         'data-[active=true]:bg-primary-soft data-[active=true]:text-primary-text data-[active=true]:font-semibold',
         '[&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',

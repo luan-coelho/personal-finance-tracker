@@ -1,7 +1,6 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 
 import type { BudgetWithSpending } from '@/app/db/schemas/budget-schema'
 import type { TransactionWithUser } from '@/app/db/schemas/transaction-schema'
@@ -10,7 +9,15 @@ import { QueryErrorCard } from '@/components/query-error-card'
 import { TransactionForm } from '@/components/transaction-form'
 import { TransactionsTable } from '@/components/transactions-table'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { useTransactionSummary, useTransactions } from '@/hooks/use-transactions'
@@ -31,6 +38,15 @@ const PAGE_SIZE = 20
 type TransactionEditor =
   | { mode: 'create'; initialValues: TransactionInitialValues }
   | { mode: 'edit'; transaction: TransactionWithUser }
+
+function SummaryTile({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="border-border flex min-w-0 flex-col gap-1 rounded-md border px-4 py-3">
+      <dt className="text-muted-foreground text-[13px] leading-5 font-medium">{label}</dt>
+      <dd className="text-foreground text-xl leading-7 font-semibold tabular-nums">{children}</dd>
+    </div>
+  )
+}
 
 export function BudgetTransactionsDialog({ budget, onClose, onCloseAutoFocus }: BudgetTransactionsDialogProps) {
   const [page, setPage] = useState(1)
@@ -100,10 +116,8 @@ export function BudgetTransactionsDialog({ budget, onClose, onCloseAutoFocus }: 
 
   return (
     <Dialog open onOpenChange={open => !open && onClose()}>
-      <DialogContent
-        className="flex max-h-[calc(100dvh-2rem)] flex-col sm:max-w-5xl"
-        onCloseAutoFocus={onCloseAutoFocus}>
-        <DialogHeader className="shrink-0 pr-6">
+      <DialogContent size="lg" onCloseAutoFocus={onCloseAutoFocus}>
+        <DialogHeader>
           <DialogTitle>
             {editor ? (editor.mode === 'create' ? 'Nova transação' : 'Editar transação') : 'Transações do orçamento'}
           </DialogTitle>
@@ -112,7 +126,7 @@ export function BudgetTransactionsDialog({ budget, onClose, onCloseAutoFocus }: 
           </DialogDescription>
         </DialogHeader>
 
-        <div ref={contentRef} className="min-h-0 space-y-4 overflow-y-auto">
+        <DialogBody ref={contentRef} className="gap-4">
           {editor ? (
             <TransactionForm
               mode={editor.mode}
@@ -123,41 +137,26 @@ export function BudgetTransactionsDialog({ budget, onClose, onCloseAutoFocus }: 
             />
           ) : (
             <>
-              <div className="flex justify-end">
-                <Button ref={addButtonRef} onClick={handleCreate}>
-                  <Plus className="h-4 w-4" />
-                  Adicionar transação
-                </Button>
-              </div>
               <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border p-3">
-                  <dt className="text-muted-foreground text-sm">Valor orçado</dt>
-                  <dd className="mt-1 font-semibold">{formatCurrency(budget.amount)}</dd>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <dt className="text-muted-foreground text-sm">Gasto total</dt>
-                  <dd className="mt-1 font-semibold">
-                    {summaryQuery.isPending ? (
-                      <Skeleton className="h-6 w-28" />
-                    ) : hasError ? (
-                      '—'
-                    ) : (
-                      formatCurrency(summaryQuery.data?.totalSaidas ?? 0)
-                    )}
-                  </dd>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <dt className="text-muted-foreground text-sm">Transações</dt>
-                  <dd className="mt-1 font-semibold">
-                    {summaryQuery.isPending ? (
-                      <Skeleton className="h-6 w-12" />
-                    ) : hasError ? (
-                      '—'
-                    ) : (
-                      (summaryQuery.data?.count ?? 0)
-                    )}
-                  </dd>
-                </div>
+                <SummaryTile label="Valor orçado">{formatCurrency(budget.amount)}</SummaryTile>
+                <SummaryTile label="Gasto total">
+                  {summaryQuery.isPending ? (
+                    <Skeleton className="h-7 w-28" />
+                  ) : hasError ? (
+                    '—'
+                  ) : (
+                    formatCurrency(summaryQuery.data?.totalSaidas ?? 0)
+                  )}
+                </SummaryTile>
+                <SummaryTile label="Transações">
+                  {summaryQuery.isPending ? (
+                    <Skeleton className="h-7 w-12" />
+                  ) : hasError ? (
+                    '—'
+                  ) : (
+                    (summaryQuery.data?.count ?? 0)
+                  )}
+                </SummaryTile>
               </dl>
 
               {hasError ? (
@@ -172,32 +171,37 @@ export function BudgetTransactionsDialog({ budget, onClose, onCloseAutoFocus }: 
               )}
             </>
           )}
-        </div>
+        </DialogBody>
 
-        {!editor && !hasError && totalPages > 1 && (
-          <nav
-            aria-label="Paginação das transações do orçamento"
-            className="flex shrink-0 items-center justify-between gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 1 || transactionsQuery.isFetching}
-              onClick={() => setPage(current => current - 1)}>
-              <ChevronLeft className="h-4 w-4" />
-              Anterior
+        {!editor && (
+          <DialogFooter className="justify-between">
+            {!hasError && totalPages > 1 ? (
+              <nav aria-label="Paginação das transações do orçamento" className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  icon="chevron-left"
+                  disabled={page === 1 || transactionsQuery.isFetching}
+                  onClick={() => setPage(current => current - 1)}>
+                  Anterior
+                </Button>
+                <span aria-live="polite" className="text-muted-foreground text-[13px] tabular-nums">
+                  Página {page} de {totalPages}
+                </span>
+                <Button
+                  size="sm"
+                  iconRight="chevron-right"
+                  disabled={page >= totalPages || transactionsQuery.isFetching}
+                  onClick={() => setPage(current => current + 1)}>
+                  Próxima
+                </Button>
+              </nav>
+            ) : (
+              <span />
+            )}
+            <Button ref={addButtonRef} variant="primary" icon="plus" onClick={handleCreate}>
+              Adicionar transação
             </Button>
-            <span aria-live="polite" className="text-muted-foreground text-center text-sm">
-              Página {page} de {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages || transactionsQuery.isFetching}
-              onClick={() => setPage(current => current + 1)}>
-              Próxima
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </nav>
+          </DialogFooter>
         )}
       </DialogContent>
     </Dialog>

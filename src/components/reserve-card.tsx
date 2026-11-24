@@ -1,7 +1,5 @@
 'use client'
 
-import * as LucideIcons from 'lucide-react'
-import { Edit, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -9,7 +7,6 @@ import type { Reserve } from '@/app/db/schemas/reserve-schema'
 
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -18,21 +15,65 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button, IconButton } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Icon } from '@/components/ui/icon'
 import { Progress } from '@/components/ui/progress'
 
 import { useDeleteReserve, useToggleReserveStatus } from '@/hooks/use-reserves'
 
+import { formatCurrency } from '@/lib/currency'
+import { toIconName } from '@/lib/icons'
 import { routes } from '@/lib/routes'
+import { cn } from '@/lib/utils'
+
+/** Cor padrão de `reserves.color` no banco. */
+const DEFAULT_RESERVE_COLOR = '#3b82f6'
+
+export function formatReserveProgress(progress: number) {
+  return `${progress.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+}
+
+interface ReserveIconTileProps {
+  icon?: string | null
+  color?: string | null
+  /** Lado do tile em px (40 em cards, 32 no cabeçalho, 44 ao lado de um campo). */
+  size?: 32 | 40 | 44
+  className?: string
+}
+
+/**
+ * Tile do ícone da reserva (raio 10). A cor escolhida pelo usuário entra só como tinta suave do fundo
+ * e da borda (misturada com `card`), e o ícone fica em `foreground`, então o contraste não depende da cor.
+ */
+export function ReserveIconTile({ icon, color, size = 40, className }: ReserveIconTileProps) {
+  const tint = color || DEFAULT_RESERVE_COLOR
+
+  return (
+    <span
+      data-slot="reserve-icon-tile"
+      aria-hidden
+      className={cn(
+        'text-foreground rounded-control inline-flex shrink-0 items-center justify-center border',
+        className,
+      )}
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: `color-mix(in oklab, ${tint} 16%, var(--card))`,
+        borderColor: `color-mix(in oklab, ${tint} 36%, var(--card))`,
+      }}>
+      <Icon name={toIconName(icon)} size={size >= 44 ? 24 : size === 32 ? 18 : 20} />
+    </span>
+  )
+}
 
 interface ReserveCardProps {
   reserve: Reserve
@@ -47,17 +88,7 @@ export function ReserveCard({ reserve, spaceId }: ReserveCardProps) {
   const currentAmount = parseFloat(reserve.currentAmount)
   const targetAmount = reserve.targetAmount ? parseFloat(reserve.targetAmount) : null
   const progress = targetAmount && targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0
-
-  // Get the icon component dynamically
-  const iconName = reserve.icon || 'piggy-bank'
-  const IconComponent = (LucideIcons as any)[
-    iconName
-      .split('-')
-      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join('')
-  ] as React.ComponentType<{ className?: string }> | undefined
-
-  const reserveColor = reserve.color || '#3b82f6'
+  const movementsHref = routes.frontend.admin.reserves.movements(reserve.id)
 
   async function handleDelete() {
     await deleteReserveMutation.mutateAsync(reserve.id)
@@ -70,110 +101,97 @@ export function ReserveCard({ reserve, spaceId }: ReserveCardProps) {
 
   return (
     <>
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-3" style={{ borderLeftWidth: '4px', borderLeftColor: reserveColor }}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full"
-                style={{ backgroundColor: `${reserveColor}20` }}>
-                {IconComponent && (
-                  <div style={{ color: reserveColor }}>
-                    <IconComponent className="h-5 w-5" />
-                  </div>
-                )}
-              </div>
-              <div>
-                <CardTitle className="text-lg">{reserve.name}</CardTitle>
-                {reserve.description && <p className="text-muted-foreground mt-1 text-sm">{reserve.description}</p>}
-              </div>
+      <Card
+        interactive
+        className={cn(
+          'relative px-6',
+          'has-[[data-slot=reserve-card-link]:focus-visible]:border-border-strong has-[[data-slot=reserve-card-link]:focus-visible]:shadow-[var(--sh-md),var(--focus-ring)]',
+        )}>
+        <div className="flex items-start gap-3">
+          <ReserveIconTile icon={reserve.icon} color={reserve.color} />
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <div className="flex min-w-0 items-center gap-2">
+              <Link
+                href={movementsHref}
+                data-slot="reserve-card-link"
+                className="text-foreground min-w-0 truncate text-base leading-6 font-semibold outline-none after:absolute after:inset-0 after:rounded-lg after:content-['']">
+                {reserve.name}
+              </Link>
+              {!reserve.active && <Badge>Inativa</Badge>}
             </div>
+            {reserve.description && (
+              <p className="text-muted-foreground line-clamp-2 text-[13px] leading-[18px]">{reserve.description}</p>
+            )}
+          </div>
+          <div className="relative z-10 -mt-1 -mr-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="sr-only">Abrir menu</span>
-                </Button>
+                <IconButton icon="more-horizontal" label={`Ações da reserva ${reserve.name}`} size="sm" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Ações</DropdownMenuLabel>
                 <DropdownMenuItem asChild>
-                  <Link href={routes.frontend.admin.reserves.movements(reserve.id)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Movimentação
+                  <Link href={movementsHref}>
+                    <Icon name="arrow-left-right" />
+                    Ver movimentações
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href={routes.frontend.admin.reserves.edit(reserve.id)}>
-                    <Edit className="mr-2 h-4 w-4" />
+                    <Icon name="pencil" />
                     Editar
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleToggleStatus}>
+                  <Icon name="power" />
                   {reserve.active ? 'Desativar' : 'Ativar'}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive" onClick={() => setShowDeleteDialog(true)}>
-                  <Trash2 className="mr-2 h-4 w-4" />
+                <DropdownMenuItem variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                  <Icon name="trash" />
                   Excluir
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="pb-3">
-          <div className="space-y-3">
-            <div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold">
-                  {currentAmount.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  })}
-                </span>
-                {!reserve.active && <Badge variant="secondary">Inativa</Badge>}
-              </div>
-              {targetAmount && (
-                <p className="text-muted-foreground mt-1 text-sm">
-                  Meta: {targetAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              )}
-            </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-foreground text-2xl leading-8 font-bold tracking-[-0.02em] tabular-nums">
+            {formatCurrency(currentAmount)}
+          </span>
+          <span className="text-muted-foreground text-[13px] leading-[18px] tabular-nums">
+            {targetAmount ? `Meta ${formatCurrency(targetAmount)}` : 'Sem meta definida'}
+          </span>
+        </div>
 
-            {targetAmount && targetAmount > 0 && (
-              <div className="space-y-1">
-                <Progress value={Math.min(progress, 100)} className="h-2" />
-                <p className="text-muted-foreground text-right text-xs">{progress.toFixed(1)}% da meta</p>
-              </div>
-            )}
+        {targetAmount && targetAmount > 0 ? (
+          <div className="flex items-center gap-3">
+            <Progress
+              value={Math.min(progress, 100)}
+              tone={progress >= 100 ? 'success' : 'primary'}
+              aria-label={`Progresso da meta de ${reserve.name}`}
+            />
+            <span className="text-muted-foreground shrink-0 text-xs leading-4 font-medium tabular-nums">
+              {formatReserveProgress(progress)}
+            </span>
           </div>
-        </CardContent>
-
-        <CardFooter className="bg-muted/50 pt-3">
-          <Button variant="outline" size="sm" className="w-full" asChild>
-            <Link href={routes.frontend.admin.reserves.movements(reserve.id)}>Ver Movimentações</Link>
-          </Button>
-        </CardFooter>
+        ) : null}
       </Card>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent destructive>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Excluir reserva?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza de que deseja excluir a reserva &quot;{reserve.name}&quot;? Esta ação não pode ser desfeita e
-              todas as movimentações serão perdidas.
+              A reserva &quot;{reserve.name}&quot; e todas as movimentações dela serão excluídas. Esta ação não pode ser
+              desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteReserveMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {deleteReserveMutation.isPending ? 'Excluindo...' : 'Excluir'}
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={deleteReserveMutation.isPending} />
+            <Button variant="destructive" loading={deleteReserveMutation.isPending} onClick={handleDelete}>
+              {deleteReserveMutation.isPending ? 'Excluindo' : 'Excluir reserva'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

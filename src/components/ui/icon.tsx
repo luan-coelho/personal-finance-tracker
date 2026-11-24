@@ -32,8 +32,7 @@ export function Icon({ name, size = 20, strokeWidth = 1.5, className, label, ...
       strokeLinejoin="round"
       className={cn('shrink-0', className)}
       {...a11y}
-      {...props}
-    >
+      {...props}>
       <path d={icons[name]} />
     </svg>
   )
