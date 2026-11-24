@@ -32,7 +32,7 @@ function SkeletonCard({ className, rows = 4, chart = false }: { className?: stri
 export function DashboardSkeleton() {
   return (
     <div aria-busy="true" aria-label="Carregando o painel" className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-12 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 max-sm:*:first:col-span-2 max-sm:*:last:col-span-2 sm:gap-4 lg:col-span-12 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (
           <MetricCard key={index} label="" value="" loading />
         ))}

@@ -104,7 +104,8 @@ function MetricCard({
   ...props
 }: MetricCardProps) {
   const base =
-    'flex min-w-0 flex-col rounded-lg border border-border bg-card px-6 py-5 text-card-foreground shadow-sh-sm'
+    // `@container/metric`: em coluna estreita (grade 2×2 do mobile) o valor cai para 18px e a nota para 2 linhas.
+    '@container/metric flex min-w-0 flex-col rounded-lg border border-border bg-card px-6 py-5 text-card-foreground shadow-sh-sm max-sm:px-4 max-sm:py-4'
 
   if (loading) {
     return (
@@ -125,7 +126,10 @@ function MetricCard({
     <>
       <span
         data-slot="metric-card-value"
-        className={cn('text-[32px] leading-9 font-bold tracking-[-0.02em] tabular-nums', valueToneClass[tone])}>
+        className={cn(
+          'text-[32px] leading-9 font-bold tracking-[-0.02em] tabular-nums @max-[220px]/metric:text-lg @max-[220px]/metric:leading-6 @max-[220px]/metric:tracking-normal',
+          valueToneClass[tone],
+        )}>
         {value}
         {unit && <span className="text-muted-foreground text-xl font-medium tracking-normal">{unit}</span>}
       </span>
@@ -144,7 +148,7 @@ function MetricCard({
   )
 
   return (
-    <div data-slot="metric-card" className={cn(base, 'gap-3', className)} {...props}>
+    <div data-slot="metric-card" className={cn(base, 'gap-3 @max-[220px]/metric:gap-2', className)} {...props}>
       <div
         data-slot="metric-card-label"
         className="text-muted-foreground flex min-w-0 items-center gap-2 text-[13px] font-medium">
@@ -189,7 +193,10 @@ function MetricCard({
       {note && (
         <p
           data-slot="metric-card-note"
-          className={cn('text-muted-foreground text-xs leading-4', noteTone && noteToneClass[noteTone])}>
+          className={cn(
+            'text-muted-foreground text-xs leading-4 @max-[220px]/metric:line-clamp-2',
+            noteTone && noteToneClass[noteTone],
+          )}>
           {note}
         </p>
       )}

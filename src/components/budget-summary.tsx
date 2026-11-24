@@ -27,7 +27,7 @@ export function BudgetSummary({ summary, isLoading, month }: BudgetSummaryProps)
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <MetricCard key={i} label="" value="" loading />
         ))}
@@ -58,7 +58,7 @@ export function BudgetSummary({ summary, isLoading, month }: BudgetSummaryProps)
   ].filter(Boolean)
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       <MetricCard
         icon="wallet"
         label="Orçado"

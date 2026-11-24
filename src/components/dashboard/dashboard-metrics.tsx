@@ -33,7 +33,7 @@ export function DashboardMetrics({ overview }: { overview: DashboardOverview }) 
   const average = dailyAverage(overview)
 
   return (
-    <section aria-label="Resumo do mês" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section aria-label="Resumo do mês" className="grid grid-cols-2 gap-3 max-sm:*:first:col-span-2 max-sm:*:last:col-span-2 sm:gap-4 xl:grid-cols-4">
       <MetricCard
         label="Saldo do mês"
         icon="wallet"

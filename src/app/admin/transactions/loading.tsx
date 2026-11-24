@@ -13,9 +13,15 @@ export default function TransacoesLoading() {
         <Skeleton className="h-control-md w-64 rounded-full" />
       </PageActions>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (
-          <MetricCard key={index} label="" value="" loading />
+          <MetricCard
+            key={index}
+            label=""
+            value=""
+            loading
+            className={index === 0 ? 'max-sm:col-span-2' : index === 3 ? 'max-sm:hidden' : undefined}
+          />
         ))}
       </div>
 

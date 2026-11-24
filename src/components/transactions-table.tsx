@@ -7,6 +7,7 @@ import { useState } from 'react'
 import type { TransactionType, TransactionWithUser } from '@/app/db/schemas'
 
 import { CategoryIconTile } from '@/components/category-icon'
+import { TransactionsList, TransactionsListSkeleton } from '@/components/transactions-list'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -121,39 +122,43 @@ export function TransactionsTable({
     </TableHeader>
   )
 
+  // Abaixo de `md` a tabela dá lugar à lista (`TransactionsList`); a troca é só por CSS.
   if (isLoading) {
     return (
-      <Table aria-busy="true">
-        {head}
-        <TableBody>
-          {Array.from({ length: 5 }, (_, index) => (
-            <TableRow key={index}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Skeleton className="rounded-control size-8" />
-                  <div className="flex flex-col gap-1.5">
-                    <Skeleton className="h-3.5 w-40" />
-                    <Skeleton className="h-3 w-24" />
+      <>
+        <TransactionsListSkeleton className="md:hidden" />
+        <Table aria-busy="true" containerClassName="max-md:hidden">
+          {head}
+          <TableBody>
+            {Array.from({ length: 5 }, (_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="rounded-control size-8" />
+                    <div className="flex flex-col gap-1.5">
+                      <Skeleton className="h-3.5 w-40" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Skeleton className="size-6 rounded-full" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-6 w-16 rounded-full" />
-              </TableCell>
-              <TableCell numeric>
-                <Skeleton className="ml-auto h-3.5 w-20" />
-              </TableCell>
-              <TableCell numeric>
-                <Skeleton className="ml-auto h-3.5 w-24" />
-              </TableCell>
-              {!readOnly && <TableCell />}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="size-6 rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                </TableCell>
+                <TableCell numeric>
+                  <Skeleton className="ml-auto h-3.5 w-20" />
+                </TableCell>
+                <TableCell numeric>
+                  <Skeleton className="ml-auto h-3.5 w-24" />
+                </TableCell>
+                {!readOnly && <TableCell />}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </>
     )
   }
 
@@ -174,7 +179,17 @@ export function TransactionsTable({
 
   return (
     <>
-      <Table>
+      <TransactionsList
+        className="md:hidden"
+        transactions={transactions}
+        readOnly={readOnly}
+        actions={actions}
+        onEdit={onEdit}
+        onDuplicate={onDuplicate}
+        onDelete={setTransactionToDelete}
+      />
+
+      <Table containerClassName="max-md:hidden">
         {head}
         <TableBody>
           {transactions.map(transaction => (
